@@ -1,0 +1,20 @@
+# codetypes.txt -- what kind of code each path is, so the codedev skill knows how
+# much it may change (skill principle 1).
+#
+#   application     free to change; reuse before create
+#   infrastructure  makes other code shorter -- extend only for a general use-case;
+#                   a major change needs discussion and sign-off
+#   utility, demo   free to change
+#   test            proves and times code (benchtest skill)
+#   skill           a copy of skill code -- never edited here
+#   retired         kept for history -- not edited, not imported
+#
+# A path ending in / covers everything beneath it. The most specific line wins.
+# Format:  <path>  <type>   # why
+
+primary/                   application      # the micromixing model and its support modules
+primary/odeproblem.py      infrastructure   # semantic ODE problems: p, v, f -> a scipy solver
+primary/fields.py          infrastructure   # attribute-access struct used by ODEproblem
+tests/                     test
+demos/                     demo
+tools/                     skill            # copy of the benchtest harness
