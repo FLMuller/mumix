@@ -66,7 +66,7 @@ BOUND = {module: load(module, into={}) for module in SOURCES}
 
 class b_kvcmp(bench):
     BenchName = 'kvcmp'
-    BenchVersion = 'M1.0.5'
+    BenchVersion = 'M1.0.6'
     BenchHeader = ''
     sources = SOURCES
 

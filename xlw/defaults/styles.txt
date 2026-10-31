@@ -1,0 +1,346 @@
+% xlWriter default styles
+% Format: style_name  property:value
+% valign default=top (Excel default=bottom)
+
+default
+    font:Calibri
+    sz:11
+    bold:false
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:
+    color:000000
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Heading_1
+    font:Calibri
+    sz:15
+    bold:true
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:
+    color:000000
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Heading_2
+    font:Calibri
+    sz:13
+    bold:true
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:
+    color:000000
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Heading_3
+    font:Calibri
+    sz:11
+    bold:true
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:
+    color:000000
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Heading_4
+    font:Calibri
+    sz:11
+    bold:false
+    italic:false
+    underline:true
+    strikethrough:false
+    fill:
+    color:000000
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Good
+    font:Calibri
+    sz:11
+    bold:false
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:C6EFCE
+    color:006100
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Bad
+    font:Calibri
+    sz:11
+    bold:false
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:FFC7CE
+    color:9C0006
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Neutral
+    font:Calibri
+    sz:11
+    bold:false
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:FFEB9C
+    color:9C6500
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Title
+    font:Cambria
+    sz:18
+    bold:true
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:
+    color:000000
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Total
+    font:Calibri
+    sz:11
+    bold:true
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:
+    color:000000
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:n:thin,s:double
+    bcolor:000000
+
+Input
+    font:Calibri
+    sz:11
+    bold:false
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:FFCC99
+    color:3F3F76
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:n:thin,e:thin,s:thin,w:thin
+    bcolor:7F7F7F
+
+Output
+    font:Calibri
+    sz:11
+    bold:true
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:F2F2F2
+    color:3F3F3F
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:n:thin,e:thin,s:thin,w:thin
+    bcolor:3F3F3F
+
+Calculation
+    font:Calibri
+    sz:11
+    bold:true
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:F2F2F2
+    color:FA7D00
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:n:thin,e:thin,s:thin,w:thin
+    bcolor:7F7F7F
+
+Check_Cell
+    font:Calibri
+    sz:11
+    bold:true
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:A5A5A5
+    color:FFFFFF
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:n:double,e:double,s:double,w:double
+    bcolor:3F3F3F
+
+Linked_Cell
+    font:Calibri
+    sz:11
+    bold:false
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:
+    color:FA7D00
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:s:double
+    bcolor:FF8001
+
+Note
+    font:Calibri
+    sz:11
+    bold:false
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:FFFFCC
+    color:000000
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:n:thin,e:thin,s:thin,w:thin
+    bcolor:B2B2B2
+
+Warning_Text
+    font:Calibri
+    sz:11
+    bold:false
+    italic:false
+    underline:false
+    strikethrough:false
+    fill:
+    color:FF0000
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
+Explanatory_Text
+    font:Calibri
+    sz:11
+    bold:false
+    italic:true
+    underline:false
+    strikethrough:false
+    fill:
+    color:7F7F7F
+    halign:
+    valign:top
+    numfmt:
+    wrap:false
+    indent:0
+    shrink:false
+    rotation:0
+    border:
+    bcolor:000000
+
