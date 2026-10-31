@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Colour editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fffaf5;--ink:#3a2a1c;--acc:#b34700;--line:#eedcd0;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;font:13px Verdana,sans-serif;color:var(--ink);background:var(--bg)}
+header{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:8px 14px;
+  background:#fff;border-bottom:2px solid var(--acc);position:sticky;top:0;z-index:5}
+header h1{font-size:15px;margin:0 8px 0 0;color:var(--acc)}
+header label{display:flex;gap:5px;align-items:center}
+button,select,input[type=number]{font:inherit;padding:2px 8px;border:1px solid #c9b8a8;
+  background:#fff;border-radius:3px;color:var(--ink)}
+button{cursor:pointer}button:hover{background:#fdebd0}
+main{display:grid;grid-template-columns:minmax(560px,46%) 1fr;gap:12px;padding:12px 14px}
+@media(max-width:1000px){main{grid-template-columns:1fr}}
+#rules{overflow:auto;max-height:calc(100vh - 70px);background:var(--card);
+  border:1px solid var(--line);border-radius:4px}
+#rules h2{margin:0;padding:6px 10px;font-size:13px;background:var(--acc);color:#fff;
+  position:sticky;top:0;z-index:2}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-weight:600;padding:3px 6px;background:#fdebd0;font-size:11px;
+  position:sticky;top:29px;z-index:1}
+td{padding:2px 6px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+#rules tr[data-r]:nth-child(even) td{background:#f3e5d8}
+#rules tr[data-r]:nth-child(odd) td{background:#fff}
+#rules tr[data-r]:hover td{background:#ffe9b8}
+#rules tr[data-r].sel td{background:#ffd966}
+#rules tr[data-r].sel td:first-child{box-shadow:inset 4px 0 0 #d35400;font-weight:700}
+.mono{font-family:'JetBrains Mono',Consolas,monospace}
+.sample{font-size:13px;padding:0 3px}
+.box{position:relative;display:inline-block;width:26px;height:20px;border:1px solid #888;
+  border-radius:3px;vertical-align:middle;overflow:hidden;cursor:pointer;
+  background:repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/8px 8px}
+.box .sw{position:absolute;inset:0}
+.box input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.x{padding:0 4px;margin-left:2px;font-size:11px;line-height:16px}
+input[type=range]{width:84px;vertical-align:middle}
+.w{display:inline-block;width:24px;text-align:right;color:#888;font-size:11px}
+.pal{padding:0 4px;margin-left:2px;font-size:10px;line-height:16px}
+#pane{display:flex;flex-direction:column;min-width:0}
+#tabs{display:flex;gap:2px}
+#tabs button{border-radius:4px 4px 0 0;border-bottom:0;background:#f4e6d8}
+#tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+#wrap{overflow:auto;max-height:calc(100vh - 110px);border:1px solid var(--line);display:flex;align-items:flex-start}
+#wrap>pre{flex:none}
+#wrap>#code{flex:1 0 auto}
+#gut,#code{margin:0;padding:8px 6px;font:13px/1.45 'JetBrains Mono',Consolas,monospace;
+  tab-size:4;white-space:pre}
+#gut{color:#999;text-align:right;background:#f3ede6;user-select:none;position:sticky;left:0}
+#code{flex:1;min-width:max-content}
+#code span{cursor:pointer}
+#code .L{display:block;margin:0 -6px -1px;padding:0 6px 1px}
+#pop{position:fixed;display:none;z-index:20;background:#fff;border:1px solid #888;border-radius:4px;
+  padding:8px;box-shadow:0 4px 18px rgba(0,0,0,.25);max-width:420px;max-height:70vh;overflow:auto}
+#pop h4{margin:6px 0 3px;font-size:11px;color:#888;font-weight:600}
+#pop .g{display:flex;flex-wrap:wrap;gap:2px}
+#pop .c{width:20px;height:20px;border:1px solid #aaa;cursor:pointer;border-radius:2px}
+#pop .c:hover{outline:2px solid #000}
+#pop .c.sel{outline:2px solid #d35400;outline-offset:1px}
+#pop .cur{padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:4px}
+#pop .tg{display:inline-block;padding:2px 6px;border:1px solid #ccc;border-radius:3px;cursor:pointer}
+#pop .tg.on{border-color:#d35400;background:#fdebd0}
+#pop .tg .c{display:inline-block;vertical-align:middle;cursor:pointer;
+  background:repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/8px 8px}
+small{color:#999}
+.where{flex-basis:100%;font:12px 'JetBrains Mono',Consolas,monospace;color:#555;word-break:break-all}
+.where b{color:var(--acc);font-family:Verdana,sans-serif}.where .warn{color:#c00;font-weight:700}
+</style></head><body>
+<header>
+  <h1>Colour editor</h1>
+  <label>Vision <select id="vision">
+    <option value="none">normal</option><option value="protanopia">protanopia (no red)</option>
+    <option value="deuteranopia">deuteranopia (no green)</option>
+    <option value="tritanopia">tritanopia (no blue)</option>
+    <option value="monochrome">monochrome</option></select></label>
+  <label>Palette sort <select id="sort"><option value="color">colour (hue, chroma, lightness)</option>
+    <option value="intensity">intensity (lightness, chroma, hue)</option>
+    <option value="none">as listed</option></select></label>
+  <label>Page <span class="box"><span class="sw" id="pagesw"></span><input type="color" id="pagebg"></span></label>
+  <label>Size <input type="number" id="size" min="8" max="30" value="13" style="width:54px"></label>
+  <button id="savedir" title="choose a folder: python.mu and cython.mu are written into it">Save .mu files to folder</button><button id="loaddir" title="choose a folder holding python.mu and cython.mu">Load .mu files from folder</button><button id="undo" title="back to the last loaded or saved rules">Undo unsaved changes</button>
+  <small id="msg"></small>
+  <div id="where" class="where"></div>
+</header>
+<main>
+  <section id="rules"></section>
+  <section id="pane">
+    <div id="tabs"><button data-t="py" class="on">Python</button><button data-t="pyx">Cython</button></div>
+    <div id="wrap"><pre id="gut"></pre><pre id="code"></pre></div>
+  </section>
+</main>
+<div id="pop"></div>
+<script>
+/* ---------- data ---------- */
+const ROLES=[
+['py','default','default text','name  value'],
+['py','fileline','file boundary line','# ---- file ----'],
+['py','keyword','keyword','def if while'],['py','kwconst','keyword constant','True None'],
+['py','module','imported module','os np cython'],['py','imported','imported function / class','sqrt Ordered'],
+['py','classuse','class use','Shape(  Shape'],
+['py','defname','def name','def parse('],['py','classname','class name','class Shape'],
+['py','self','self / cls / me','self.name'],['py','attribute','attribute','.extra'],
+['py','methodcall','method call','.append('],['py','call','call','print('],
+['py','localcall','call of a def in this file','parse('],['py','builtin','builtin','len range'],
+['py','special','special name','__init__'],['py','exception','exception','ValueError'],
+['py','constant','CONSTANT','MAX_ITEMS'],['py','decorator','decorator','@property'],
+['py','annotation','annotation','x: int'],['py','number','number','0x1F 3.5e-3'],
+['py','string','string','"text"'],['py','format','format code','%4.1f !r :>5'],
+['py','escape','escape','\\n {{ }}'],['py','docstring','docstring','"""Doc."""'],
+['py','triple','other triple string',"'''text'''"],['py','operator','operator','+ == ->'],
+['py','punct','punctuation',', ; : .'],['py','br0','bracket, outer pair','( )'],
+['py','br1','bracket, level 1 (6, 11 ...)','( )'],['py','br2','bracket, level 2 (7, 12 ...)','( )'],
+['py','br3','bracket, level 3 (8 ...)','( )'],['py','br4','bracket, level 4 (9 ...)','( )'],
+['py','br5','bracket, level 5 (10 ...)','( )'],['py','lcomment','comment, whole line','# note line'],['py','comment','comment, inline (after code)','x = 1  # note'],
+['py','marker','comment marker','TODO FIXME'],['py','url','comment url','https://x.org'],
+['py','invalid','invalid','$'],
+['pyx','ckeyword','cdef, cpdef, nogil ...','cdef nogil'],['pyx','ctype','C type','int double'],['pyx','cobject','object (any Python object)','cdef object f('],
+['pyx','cconst','NULL','NULL'],['pyx','cdefname','cdef function name','cdef f('],
+['pyx','cdefclass','cdef class name','cdef class C'],['pyx','cstruct','struct, enum, fused name','struct P'],
+['pyx','directive','# cython: directive','# cython:'],['pyx','cymod','cython module','cython.cfunc'],
+['pyx','cydeco','cython decorator','@cython.cfunc'],['pyx','cast','cast','<int>'],
+['pyx','pointer','pointer, address','* &'],['pyx','memview','memoryview','int[:]']
+].map(([g,id,label,ex])=>({g,id,label,ex}));
+const DEF={ /* fg, bg, weight, italic, underline */
+default:['1F2328'],keyword:['0033B3',0,700],kwconst:['0B6FA4',0,700],defname:['C0198C'],
+classname:['C0198C',0,700],self:['B34700'],attribute:['C77D00',0,400,1],methodcall:['C77D00',0,700,1],
+call:['1F2328'],localcall:['C0198C'],builtin:['7A3E9D',0,700],special:['7A3E9D'],
+exception:['A40E26',0,700],constant:['0B7A75',0,700],decorator:['9A6700',0,400,1],
+annotation:['6F42C1'],number:['D40000'],string:['0B7A75'],format:['E8590C',0,700],
+escape:['B34700'],docstring:['0A7D0A','E6EEF8',400,1],triple:['808080'],operator:['5A6472'],
+punct:['5A6472'],br0:['5A6472'],br1:['7A1F1F',0,700],br2:['8A4B00',0,700],
+br3:['1F3FBF',0,700],br4:['0B6B4F',0,700],br5:['6B2F8A',0,700],lcomment:['0A7D0A','E8F3E8'],comment:['0A7D0A'],marker:['7A4B00','FFF4C2',700],url:['0A7D0A',0,400,0,1],
+invalid:['D40000',0,400,0,1],classuse:['C0198C',0,700,1],module:['5C7A00',0,700],imported:['00829B',0,700],
+ckeyword:['0033B3',0,700],ctype:['6F42C1',0,700],cobject:['A0522D',0,700,1],fileline:['FFFFFF','8A4B00',700],cconst:['0B6FA4',0,700],cdefname:['C0198C'],
+cdefclass:['C0198C',0,700],cstruct:['C0198C',0,700],directive:['7A4B00','FFF4C2',700],
+cymod:['7A3E9D',0,700],cydeco:['9A6700',0,400,1],cast:['6F42C1'],pointer:['D40000',0,700],
+memview:['6F42C1']};
+function defaults(){const r={};for(const k in DEF){const d=DEF[k];
+  r[k]={fg:'#'+d[0],bg:d[1]?'#'+d[1]:'',w:d[2]||400,i:!!d[3],u:!!d[4]};}
+  return {roles:r,vision:'none',sort:'color',bg:'#FFFFFF',size:13};}
+
+const PAL=[
+['ours',[['ink','1F2328'],['navy','0033B3'],['pink','C0198C'],['ember','B34700'],['amber','C77D00'],
+ ['gold','9A6700'],['violet','7A3E9D'],['lilac','6F42C1'],['teal','0B7A75'],['sky','0B6FA4'],
+ ['leaf','0A7D0A'],['scarlet','D40000'],['crimson','A40E26'],['slate','5A6472'],['grey','808080'],
+ ['brown','7A4B00'],['wash','FFF4C2']]],
+['RAL (ralmap)',[[188,128,189],[128,115,172],[106,61,154],[33,102,172],[67,147,195],[80,191,230],
+ [103,146,172],[124,173,172],[166,206,227],[209,229,240],[183,206,172],[141,211,199],[170,240,209],
+ [102,194,165],[27,139,140],[0,106,76],[0,132,80],[89,154,57],[127,188,65],[184,225,134],
+ [204,235,197],[230,245,152],[204,255,0],[102,255,102],[255,237,111],[255,255,102],[255,183,0],
+ [255,127,0],[255,96,55],[222,83,6],[227,26,28],[255,53,94],[251,154,153],[255,0,204],[255,110,255],
+ [252,205,229],[215,160,166],[222,119,174],[187,62,119],[224,130,20],[162,57,46],[135,154,119]]],
+['Crayola (crayolamap)',[['Outrageous Orange',255,96,55],['Laser Lemon',255,255,102],
+ ['Electric Lime',204,255,0],["Screamin' Green",102,255,102],['Magic Mint',170,240,209],
+ ['Blizzard Blue',80,191,230],['Shocking Pink',255,110,255],['Radical Red',255,53,94],
+ ['Neon Carrot',255,153,51],['Sunglow',255,204,51],['Hot Magenta',255,0,204]]],
+['Solarized',['002b36','073642','586e75','657b83','839496','93a1a1','eee8d5','fdf6e3','b58900',
+ 'cb4b16','dc322f','d33682','6c71c4','268bd2','2aa198','859900']],
+['GitHub light',['cf222e','8250df','0a3069','0550ae','6e7781','953800','116329','82071e','24292f']],
+['Notepad++',['0000FF','880088','FF00FF','FF0000','808080','FF8000','008000','000080','000000',
+ '8000FF','804000','008080']]];
+
+/* ---------- colour maths (after pico.m) ---------- */
+const HPE=[[.31399022,.63951294,.04649755],[.15537241,.75789446,.08670142],[.01775239,.10944209,.87256922]];
+const HPEI=[[5.47221206,-4.6419601,.16963708],[-1.1252419,2.29317094,-.1678952],[.02980165,-.19318073,1.16364789]];
+const SIM={protanopia:[[0,1.05118294,-.05116099],[0,1,0],[0,0,1]],
+ deuteranopia:[[1,0,0],[.9513092,0,.04866992],[0,0,1]],tritanopia:[[1,0,0],[0,1,0],[-.86744736,1.86727089,0]]};
+const mul=(M,v)=>M.map(r=>r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+const lin=c=>c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);
+const gam=c=>{c=c<=.0031308?c*12.92:Math.pow(c,1/2.4)*1.055-.055;return Math.min(1,Math.max(0,c));};
+const h2v=h=>{h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16)/255);};
+const v2h=v=>'#'+v.map(c=>Math.round(c*255).toString(16).padStart(2,'0')).join('').toUpperCase();
+function sim(hex){
+  if(!hex||S.vision==='none')return hex;
+  const l=h2v(hex).map(lin);
+  if(S.vision==='monochrome'){const y=gam(.2126*l[0]+.7152*l[1]+.0722*l[2]);return v2h([y,y,y]);}
+  return v2h(mul(HPEI,mul(SIM[S.vision],mul(HPE,l))).map(gam));
+}
+const XYZM=[[.4124564,.3575761,.1804375],[.2126729,.7151522,.072175],[.0193339,.119192,.9503041]];
+function lch(hex){ /* rgb -> xyz -> Lab -> LCh as pico does */
+  const x=mul(XYZM,h2v(hex).map(lin)).map((v,i)=>v/[.95047,1,1.08883][i]);
+  const f=x.map(t=>t>Math.pow(6/29,3)?Math.cbrt(t):t*Math.pow(29/6,2)/3+4/29);
+  const L=116*f[1]-16,a=500*(f[0]-f[1]),b=200*(f[1]-f[2]);
+  return [L,Math.hypot(a,b),(Math.atan2(b,a)*180/Math.PI+360)%360];}
+function sorted(list){
+  if(S.sort==='none')return list;
+  const k=list.map(c=>({c,v:lch(c.hex)}));
+  const [a,b,d]=S.sort==='color'?[2,1,0]:[0,1,2]; /* hCL or LCh */
+  k.sort((p,q)=>p.v[a]-q.v[a]||p.v[b]-q.v[b]||p.v[d]-q.v[d]);
+  return k.map(e=>e.c);}
+
+/* ---------- state ---------- */
+let S=defaults(),CODE={py:'',pyx:''},TAB='py',TOK={};
+const LANGFILE={py:'python.mu',pyx:'cython.mu'};
+/* the two rule files as they were when this page was built; replaced by what is loaded or saved */
+const LANGTXT={py:"# python.mu -- how a Python file is coloured\n\nChosen in colour_editor.html and saved from it (2026-10-29). Colours are hex RRGGBB, Back \"-\" is\nnone, Weight is 100 thin to 800 heavy (400 normal, 700 bold). The Id is what the programs\nread; the Role text is for people. Load this file in the editor with the Load .mu button.\n\nPage background #FFFFFF, font size 13px.\n\nFiles: .py\n\n## Words\n\nWords the tokenizer cannot tell from the text: the word lists. The rest of the roles come from\nposition (after def, after a dot, before an open bracket) and shape (UPPER_CASE, __dunder__).\n\n| List | Words |\n|:--|:--|\n| keyword | False None True _ and as assert async await break case class continue def del elif else except finally for from global if import in is lambda match nonlocal not or pass raise return try type while with yield |\n| keyword constant | True False None |\n| builtin | False None True abs aiter all anext any ascii bin bool breakpoint bytearray bytes callable chr classmethod compile complex copyright credits delattr dict dir divmod enumerate eval exec exit filter float format frozenset getattr globals hasattr hash help hex id input int isinstance issubclass iter len license list locals map max memoryview min next object oct open ord pow print property quit range repr reversed round set setattr slice sorted staticmethod str sum super tuple type vars zip |\n| self | self cls me |\n\n## Rules\n\n| Role | Id | Matches | Colour | Back | Weight | Italic | Underline |\n|:--|:--|:--|:--|:--|:--|:--|:--|\n| default text | default | `name  value` | #1F2328 | - | 400 | no | no |\n| file boundary line | fileline | `# ---- file ----` | #FFFFFF | #8A4B00 | 600 | no | no |\n| keyword | keyword | `def if while` | #0000FF | - | 600 | no | no |\n| keyword constant | kwconst | `True None` | #6A3D9A | - | 600 | no | no |\n| imported module | module | `os np cython` | #4393C3 | - | 600 | no | no |\n| imported function / class | imported | `sqrt Ordered` | #DE77AE | - | 600 | no | no |\n| class use | classuse | `Shape(  Shape` | #FF00CC | - | 400 | no | no |\n| def name | defname | `def parse(` | #C0198C | - | 600 | no | no |\n| class name | classname | `class Shape` | #FF00CC | - | 600 | no | no |\n| self / cls / me | self | `self.name` | #FF6037 | - | 600 | no | no |\n| attribute | attribute | `.extra` | #1F2328 | - | 400 | no | no |\n| method call | methodcall | `.append(` | #C0198C | - | 400 | no | no |\n| call | call | `print(` | #1F2328 | - | 400 | no | no |\n| call of a def in this file | localcall | `parse(` | #C0198C | - | 400 | no | no |\n| builtin | builtin | `len range` | #7A3E9D | - | 600 | no | no |\n| special name | special | `__init__` | #7A3E9D | - | 400 | no | no |\n| exception | exception | `ValueError` | #FF355E | - | 600 | no | no |\n| CONSTANT | constant | `MAX_ITEMS` | #5A6472 | - | 400 | no | no |\n| decorator | decorator | `@property` | #9A6700 | - | 400 | yes | no |\n| annotation | annotation | `x: int` | #6F42C1 | - | 400 | no | no |\n| number | number | `0x1F 3.5e-3` | #0000FF | - | 400 | no | no |\n| string | string | `\"text\"` | #1F2328 | - | 400 | no | no |\n| format code | format | `%4.1f !r :>5` | #808080 | - | 600 | no | no |\n| escape | escape | `\\n {{ }}` | #808080 | - | 400 | no | no |\n| docstring | docstring | `\"\"\"Doc.\"\"\"` | #0A7D0A | #D1E5F0 | 400 | yes | no |\n| other triple string | triple | `'''text'''` | #1F2328 | - | 400 | no | no |\n| operator | operator | `+ == ->` | #1F2328 | - | 400 | no | no |\n| punctuation | punct | `, ; : .` | #1F2328 | - | 400 | no | no |\n| bracket, outer pair | br0 | `( )` | #5A6472 | - | 500 | no | no |\n| bracket, level 1 (6, 11 ...) | br1 | `( )` | #7A1F1F | - | 500 | no | no |\n| bracket, level 2 (7, 12 ...) | br2 | `( )` | #8A4B00 | - | 500 | no | no |\n| bracket, level 3 (8 ...) | br3 | `( )` | #1F3FBF | - | 500 | no | no |\n| bracket, level 4 (9 ...) | br4 | `( )` | #0B6B4F | - | 500 | no | no |\n| bracket, level 5 (10 ...) | br5 | `( )` | #6B2F8A | - | 500 | no | no |\n| comment, whole line | lcomment | `# note line` | #0A7D0A | #E8F3E8 | 400 | no | no |\n| comment, inline (after code) | comment | `x = 1  # note` | #0A7D0A | - | 400 | no | no |\n| comment marker | marker | `TODO FIXME` | #7A4B00 | #FFF4C2 | 600 | no | no |\n| comment url | url | `https://x.org` | #0033B3 | - | 400 | no | yes |\n| invalid | invalid | `$` | #FF0000 | - | 400 | no | yes |\n",pyx:"# cython.mu -- how a Cython file is coloured\n\nChosen in colour_editor.html and saved from it (2026-10-29). Colours are hex RRGGBB, Back \"-\" is\nnone, Weight is 100 thin to 800 heavy (400 normal, 700 bold). The Id is what the programs\nread; the Role text is for people. Load this file in the editor with the Load .mu button.\n\nPage background #FFFFFF, font size 13px.\n\nFiles: .pyx .pxd .pxi\n\nExtends: python (every Python rule and word list holds; these are added)\n\n## Words\n\n| List | Words |\n|:--|:--|\n| keyword | DEF ELIF ELSE IF cdef cimport cpdef ctypedef cython enum extern fused gil inline noexcept nogil packed public readonly sizeof struct typeof union |\n| builtin | NULL Py_ssize_t bint bytearray bytes char complex const dict double float frozenset int int16_t int32_t int64_t int8_t list long object set short signed size_t str tuple uint16_t uint32_t uint64_t uint8_t unsigned void |\n| C type | Py_ssize_t bint bytearray bytes char complex const dict double float frozenset int int16_t int32_t int64_t int8_t list long object set short signed size_t str tuple uint16_t uint32_t uint64_t uint8_t unsigned void |\n\n## Rules\n\n| Role | Id | Matches | Colour | Back | Weight | Italic | Underline |\n|:--|:--|:--|:--|:--|:--|:--|:--|\n| cdef, cpdef, nogil ... | ckeyword | `cdef nogil` | #0033B3 | - | 500 | no | no |\n| C type | ctype | `int double` | #6F42C1 | - | 500 | no | no |\n| object (any Python object) | cobject | `cdef object f(` | #FF00CC | - | 400 | no | no |\n| NULL | cconst | `NULL` | #7A3E9D | - | 400 | no | no |\n| cdef function name | cdefname | `cdef f(` | #C0198C | - | 600 | no | no |\n| cdef class name | cdefclass | `cdef class C` | #FF00CC | - | 600 | no | no |\n| struct, enum, fused name | cstruct | `struct P` | #C0198C | - | 600 | no | no |\n| # cython: directive | directive | `# cython:` | #7A4B00 | #FFF4C2 | 600 | no | no |\n| cython module | cymod | `cython.cfunc` | #7A3E9D | - | 600 | no | no |\n| cython decorator | cydeco | `@cython.cfunc` | #5A6472 | - | 400 | no | no |\n| cast | cast | `<int>` | #5A6472 | - | 400 | no | no |\n| pointer, address | pointer | `* &` | #0000FF | - | 600 | no | no |\n| memoryview | memview | `int[:]` | #808080 | - | 400 | no | no |\n"};
+let SOURCE='the copy of lang/python.mu and cython.mu built into this page',DIRTY=false,HANDLE=null;
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function persist(){DIRTY=true;where();} /* a change: nothing is written until Save */
+
+/* ---------- tokenizer ---------- */
+const KW=new Set('and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield'.split(' '));
+const KWC=new Set(['True','False','None']);
+const CKW=new Set('cdef cpdef cimport ctypedef nogil gil inline extern struct union enum public readonly noexcept fused packed DEF IF ELIF ELSE sizeof typeof'.split(' '));
+const CT=new Set('int long short char float double bint unsigned signed size_t Py_ssize_t void object bytes bytearray str list dict tuple set frozenset complex uint8_t uint16_t uint32_t uint64_t int8_t int16_t int32_t int64_t Py_UCS4 const'.split(' '));
+const BI=new Set('print len range open int str list dict set tuple bytes bool float super isinstance issubclass type enumerate zip map filter sorted reversed min max sum abs round any all iter next getattr setattr hasattr id hash repr format input object bytearray frozenset complex slice vars dir callable chr ord divmod pow'.split(' '));
+const EXC=/^(?:[A-Z]\w*(?:Error|Exception|Warning|Exit)|StopIteration|StopAsyncIteration|KeyboardInterrupt|GeneratorExit)$/;
+const SELF=new Set(['self','cls','me']);
+
+function tokenize(src,cy){
+  const lines=src.split('\n'),defined=new Set(),modules=new Set(),imported=new Set(),classes=new Set(),kinds=new Map();
+  for(const ln of lines){const cm=/^\s*(?:cdef\s+)?class\s+(\w+)/.exec(ln);if(cm)classes.add(cm[1]);
+    const m=/^\s*(?:async\s+)?(?:cdef\s+class|cdef|cpdef|def|class)\b([^(:]*)/.exec(ln);
+    if(m){const w=m[1].trim().split(/[\s*]+/).pop();if(w){defined.add(w);kinds.set(w,cm?'class':'def');}}}
+  for(let k=0;k<lines.length;k++){ /* names bound by import / from-import / cimport */
+    let m=/^\s*(?:from\s+(\S+)\s+)?c?import\s+(.+)$/.exec(lines[k]);if(!m)continue;
+    let rest=m[2];
+    while(rest.includes('(')&&!rest.includes(')')&&k+1<lines.length)rest+=' '+lines[++k];
+    for(const item of rest.replace(/[()]/g,'').split(',')){
+      const mm=/^\s*([\w.*]+)(?:\s+as\s+(\w+))?/.exec(item.replace(/#.*/,''));if(!mm||mm[1]==='*')continue;
+      (m[1]?imported:modules).add(mm[2]||mm[1].split('.')[0]);}}
+  const ctx={defined,modules,imported,classes,kinds};
+  const st={tri:null,role:'',docOK:true,bd:0,imp:false},out=[];
+  for(const line of lines){
+    if(line==='')st.docOK=true; /* a form feed starts a new file: the next string can be its docstring */
+    if(st.ff){st.ff=false;out.push([['fileline',line]]);continue;} /* the line after a form feed names the file */
+    st.ff=(line==='\f');
+    const inDoc=st.tri&&st.role==='docstring';
+    const tk=lexLine(line,st,cy,ctx);
+    if(inDoc&&!tk.length)tk.push(['docstring','']); /* a blank line inside a docstring */
+    out.push(tk);}
+  return out;
+}
+/* bracket colour by nesting depth: outer pair normal, then levels 1..5 repeating */
+const brRole=d=>d===0?'br0':'br'+((d-1)%5+1);
+/* an f-string or str.format field {expr!r:spec}: braces are brackets, the expression is code,
+   conversion and spec are format code; fields may nest inside the spec */
+function fieldEnd(line,j,q){
+  let d=0;
+  for(let k=j;k<line.length;k++){
+    const c=line[k];
+    if(c==='{')d++;
+    else if(c==='}'){d--;if(!d)return k;}
+    else if(c===q)return -1;
+    else if(c==="'"||c==='"'){const e=line.indexOf(c,k+1);if(e<0)return -1;k=e;}}
+  return -1;
+}
+function fieldTokens(body,isCode,depth,push,cy,ctx){
+  push(brRole(depth),'{');
+  let cut=body.length,d=0;
+  for(let k=0;k<body.length;k++){
+    const c=body[k];
+    if('([{'.includes(c))d++;else if(')]}'.includes(c))d--;
+    else if(c==="'"||c==='"'){const e=body.indexOf(c,k+1);if(e<0)break;k=e;}
+    else if(!d&&((c==='!'&&body[k+1]!=='=')||c===':')){cut=k;break;}}
+  const expr=body.slice(0,cut);
+  if(isCode){for(const t of lexLine(expr,{tri:null,role:'',docOK:false,bd:depth+1,imp:false},cy,ctx))push(t[0],t[1]);}
+  else{for(const m of expr.match(/\d+|\W+|\w+/g)||[])push(/^\d/.test(m)?'number':'default',m);}
+  let rest=body.slice(cut);
+  const cv=/^![rsa]/.exec(rest);if(cv){push('format',cv[0]);rest=rest.slice(2);}
+  if(rest[0]===':'){push('format',':');rest=rest.slice(1);
+    for(const part of rest.split(/(\{[^{}]*\})/)){
+      if(part[0]==='{'&&part.length>1)fieldTokens(part.slice(1,-1),isCode,depth+1,push,cy,ctx);
+      else push('format',part);}}
+  push(brRole(depth),'}');
+}
+const PCT=/^%(?:\([^)]*\))?[-+#0]*(?:\d+|\*)?(?:\.(?:\d+|\*))?[hlL]?[diouxXeEfFgGcrsa%]/;
+/* a regular expression inside a string: brackets rotate by depth, literals are string text,
+   digits are numbers; | * + ? . ^ $ are operators and \d-style escapes are escapes */
+function regexTokens(text,depth,push){
+  let k=0,inClass=false,lit='';
+  const flush=()=>{push('string',lit);lit='';};
+  while(k<text.length){
+    const c=text[k];
+    if(c==='\\'){flush();push('escape',text.substr(k,2));k+=2;continue;}
+    if(inClass){
+      if(c===']'){flush();depth--;push(brRole(Math.max(depth,0)),c);inClass=false;}
+      else if(c==='-'||(c==='^'&&text[k-1]==='[')){flush();push('operator',c);}
+      else if(/\d/.test(c)){flush();push('number',c);}
+      else lit+=c;
+      k++;continue;}
+    if(c==='['){flush();push(brRole(depth),c);depth++;inClass=true;k++;continue;}
+    if(c==='('||c==='{'){flush();push(brRole(depth),c);depth++;k++;continue;}
+    if(c===')'||c==='}'){flush();depth--;push(brRole(Math.max(depth,0)),c);k++;continue;}
+    if(/\d/.test(c)){flush();let m=/^\d+/.exec(text.slice(k))[0];push('number',m);k+=m.length;continue;}
+    if('|*+?.^$,'.includes(c)){flush();push('operator',c);k++;continue;}
+    lit+=c;k++;}
+  flush();
+}
+function lexLine(line,st,cy,ctx){
+  const defined=ctx.defined;
+  const out=[],n=line.length;let i=0,first=true;
+  const push=(r,t)=>{if(t)out.push([r,t]);};
+  const startedTri=!!st.tri;
+  const defLine=/^\s*(?:async\s+)?(?:def|cdef|cpdef)\b/.test(line);
+  const cLine=cy&&/^\s*(?:cdef|cpdef|ctypedef)\b/.test(line);
+  let depth=0,annot=false,afterDot=false,cyNext=false,prevWord='',prev2='',prevRole='';
+  let imp=st.imp?'names':(/^\s*from\b/.test(line)||/^\s*c?import\b/.test(line)?'mod':'');
+  const isFrom=/^\s*from\b/.test(line);
+  const inAll=st.all||/^\s*__all__\s*\+?=/.test(line); /* names listed in __all__ */
+  const eatTri=(from,q,role)=>{const e=line.indexOf(q,from);
+    if(e<0){push(role,line.slice(from));st.tri=q;st.role=role;return n;}
+    push(role,line.slice(from,e+3));st.tri=null;return e+3;};
+  if(st.tri){i=eatTri(0,st.tri,st.role);first=false;}
+  while(i<n){
+    const c=line[i],rest=line.slice(i);let m;
+    if(c===' '||c==='\t'){m=/^\s+/.exec(rest);push('default',m[0]);i+=m[0].length;continue;}
+    if(c==='#'){
+      if(cy&&first&&/^#\s*(?:cython|distutils)\s*:/.test(rest)){push('directive',rest);i=n;break;}
+      const cr=first?'lcomment':'comment';
+      const re=/(https?:\/\/\S+)|\b(TODO|FIXME|XXX|HACK|NOTE)\b/g;let p=0,x;
+      while((x=re.exec(rest))){push(cr,rest.slice(p,x.index));
+        push(x[1]?'url':'marker',x[0]);p=x.index+x[0].length;}
+      push(cr,rest.slice(p));i=n;break;}
+    if((m=/^([rRbBuUfF]{0,2})('''|"""|'|")/.exec(rest))){
+      const p=m[1],q=m[2];
+      if(q.length===3){const role=(first&&st.docOK&&!/[fFbB]/.test(p))?'docstring':'triple'; /* r and u docstrings count */
+        push(role,p+q);i+=p.length+3;i=eatTri(i,q,role);}
+      else{
+        const isF=/[fF]/.test(p);let j=i+p.length+1,buf=p+q;
+        let e=j;while(e<n&&line[e]!==q){e+=line[e]==='\\'?2:1;}
+        const body=line.slice(j,e),before=line.slice(0,i);
+        const isRe=!isF&&e<n&&(/\bre\.\w+\(\s*(?:pattern\s*=\s*)?$/.test(before)||
+          /\b\w*(?:regex|pattern|rx)\w*\s*=\s*$/i.test(before)||
+          (/[rR]/.test(p)&&/[\[\](){}|*+?^$]|\\[dDwWsSbB]/.test(body)));
+        if(inAll&&e<n){const kd=ctx.kinds.get(body);
+          const ar=kd==='class'?'classname':kd==='def'?'defname':ctx.imported.has(body)?'imported':
+            ctx.modules.has(body)?'module':null;
+          if(ar){push(ar,p+q+body+q);i=e+1;first=false;prevRole='string';continue;}}
+        if(isRe){push('string',p+q);regexTokens(body,st.bd,push);push('string',q);i=e+1;first=false;
+          prevRole='string';continue;}
+        const flush=()=>{push('string',buf);buf='';};
+        while(j<n){
+          const ch=line[j];
+          if(ch==='\\'){flush();push('escape',line.substr(j,2));j+=2;continue;}
+          if(ch===q){buf+=q;j++;break;}
+          if((ch==='{'||ch==='}')&&line[j+1]===ch){flush();push('escape',ch+ch);j+=2;continue;}
+          if(ch==='{'){const fe=fieldEnd(line,j,q);
+            if(fe>0){const fb=line.slice(j+1,fe);
+              if(isF||/^(?:\w*(?:\.\w+|\[\w+\])*)?(?:![rsa])?(?::[^{}]*)?$/.test(fb)){
+                flush();fieldTokens(fb,isF,st.bd,push,cy,ctx);j=fe+1;continue;}}}
+          if(ch==='%'){const pm=PCT.exec(line.slice(j));
+            if(pm){flush();push('format',pm[0]);j+=pm[0].length;continue;}}
+          buf+=ch;j++;}
+        flush();i=j;}
+      first=false;prevRole='string';continue;}
+    if(c==='@'&&first){m=/^@[\w.]+/.exec(rest);if(m){push(/^@cython\./.test(m[0])?'cydeco':'decorator',m[0]);
+      i+=m[0].length;first=false;continue;}}
+    if(/\d/.test(c)){m=/^(?:0[xX][0-9a-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|\d[\d_]*\.?[\d_]*(?:[eE][+-]?\d+)?[jJ]?)[uUlLfF]?/.exec(rest);
+      push('number',m[0]);i+=m[0].length;first=false;prevRole='number';continue;}
+    if(cy&&c==='<'&&(m=/^<\s*(?:(?:unsigned|const)\s+)?[A-Za-z_]\w*(?:\s*\*+)?\s*>(?=\s*[\w(&<-])/.exec(rest))){
+      push('cast',m[0]);i+=m[0].length;first=false;prevRole='cast';continue;}
+    if(/[A-Za-z_]/.test(c)){
+      m=/^[A-Za-z_]\w*/.exec(rest);const w=m[0],after=rest.slice(w.length),nc=after[0]||'';
+      let role='default';
+      if(imp&&!afterDot&&!/^(?:from|import|cimport|as)$/.test(w)){role=imp==='mod'?'module':'imported';}
+      else if(/^__\w+__$/.test(w)){role='special';} /* a definition, a call or a use */
+      else if(afterDot){role=imp?(imp==='mod'?'module':'imported'):cyNext?'cymod':(nc==='('?'methodcall':'attribute');}
+      else if(prevWord==='def'){role='defname';}
+      else if(prevWord==='class'){role=(prev2==='cdef')?'cdefclass':'classname';}
+      else if(cy&&/^(?:struct|union|enum|fused)$/.test(prevWord)){role='cstruct';}
+      else if(KWC.has(w)){role='kwconst';}
+      else if(KW.has(w)||((w==='match'||w==='case')&&first&&/:\s*$/.test(line))){role='keyword';}
+      else if(cy&&CKW.has(w)){role='ckeyword';}
+      else if(cy&&w==='NULL'){role='cconst';}
+      else if(SELF.has(w)){role='self';}
+      else if(cy&&w==='cython'&&nc==='.'){role='cymod';cyNext=true;}
+      else if(cy&&CT.has(w)&&nc!=='('&&(cLine||annot||/^\s*[A-Za-z_*\[&]/.test(after))){
+        role=w==='object'?'cobject':'ctype';const mv=/^\[[\s:,1]*\]/.exec(after);if(mv){push('memview',w+mv[0]);i+=w.length+mv[0].length;
+          first=false;prev2=prevWord;prevWord=w;prevRole='ctype';continue;}}
+      else if(ctx.classes.has(w)){role='classuse';}
+      else if(ctx.modules.has(w)&&nc!=='='&&!defined.has(w)){role='module';}
+      else if(ctx.imported.has(w)&&!defined.has(w)){role='imported';}
+      else if(annot){role='annotation';}
+      else if(cLine&&depth===0&&nc==='('){role='cdefname';}
+      else if(EXC.test(w)){role='exception';}
+      else if(BI.has(w)){role='builtin';}
+      else if(/^__\w+__$/.test(w)){role='special';}
+      else if(/^[A-Z][A-Z0-9_]+$/.test(w)){role='constant';}
+      else if(nc==='('){role=defined.has(w)?'localcall':'call';}
+      push(role,w);i+=w.length;
+      if(isFrom&&(w==='import'||w==='cimport'))imp='names';
+      if(afterDot&&cyNext)cyNext=false;
+      afterDot=false;first=false;prev2=prevWord;prevWord=w;prevRole=role;continue;}
+    if(cy&&c==='&'&&/^&[A-Za-z_]/.test(rest)){push('pointer','&');i++;first=false;prevRole='pointer';continue;}
+    if(cy&&c==='*'&&(prevRole==='ctype'||prevRole==='pointer')){push('pointer','*');i++;prevRole='pointer';continue;}
+    if((m=/^(?:\*\*=?|\/\/=?|->|:=|==|!=|<=|>=|<<=?|>>=?|[-+*\/%@&|^~<>=!]=?)/.exec(rest))){
+      const o=m[0];push('operator',o);i+=o.length;first=false;prevRole='operator';
+      if(o==='->'&&defLine)annot=true;
+      if(o==='='&&defLine&&depth===1)annot=false;
+      if(o==='!'){out.pop();push('invalid','!');}
+      continue;}
+    if(/[()[\]{},;.:]/.test(c)){
+      let pr='punct';
+      if('([{'.includes(c)){pr=brRole(st.bd);st.bd++;}
+      else if(')]}'.includes(c)){st.bd--;if(st.bd<0){st.bd=0;pr='invalid';}else pr=brRole(st.bd);}
+      push(pr,c);i++;first=false;prevRole='punct';
+      if(c==='(')depth++;else if(c===')'){depth--;if(depth<=0)annot=false;}
+      if(c==='.')afterDot=true;
+      if(defLine){if(c===':'&&depth===1)annot=true;if(c===','&&depth===1)annot=false;
+        if(c===':'&&depth===0)annot=false;}
+      continue;}
+    push('invalid',c);i++;first=false;
+  }
+  st.imp=(imp!==''&&st.bd>0);st.all=inAll&&st.bd>0;
+  if(!startedTri||out.length){const t=line.trim();
+    if(t!==''&&t[0]!=='#'&&!(startedTri&&st.tri)){
+      st.docOK=/^(?:async\s+)?(?:def|cdef|cpdef|class|cdef\s+class)\b/.test(t)&&/:$/.test(t);}}
+  return out;
+}
+
+/* ---------- views ---------- */
+function styleCss(){
+  let s='';
+  for(const r of ROLES){const v=S.roles[r.id];
+    s+=`.r-${r.id}{color:${sim(v.fg)};${v.bg?`background:${sim(v.bg)};`:''}font-weight:${v.w};`+
+       `font-style:${v.i?'italic':'normal'};text-decoration:${v.u?'underline':'none'}}\n`;}
+  s+=`#code{background:${sim(S.bg)};font-size:${S.size}px}#gut{font-size:${S.size}px}#code,#gut{line-height:${Math.round(S.size*1.45)}px}`;
+  $('dyn').textContent=s;
+  $('pagesw').style.background=sim(S.bg);$('pagebg').value=S.bg.toLowerCase();
+  document.querySelectorAll('#rules tr[data-r]').forEach(tr=>{
+    const v=S.roles[tr.dataset.r];
+    tr.querySelector('.fg .sw').style.background=sim(v.fg);
+    tr.querySelector('.bgb .sw').style.background=v.bg?sim(v.bg):'transparent';
+    tr.querySelector('.fg input').value=v.fg.toLowerCase();
+    if(v.bg)tr.querySelector('.bgb input').value=v.bg.toLowerCase();
+    tr.querySelector('input[type=range]').value=v.w;
+    tr.querySelector('.w').textContent=v.w;
+    tr.querySelector('.it').checked=v.i;tr.querySelector('.un').checked=v.u;});
+}
+function rulesHtml(){
+  let h='';
+  for(const [g,t] of [['py','Python rules'],['pyx','Cython rules (added; Python rules apply too)']]){
+    h+=`<h2>${t}</h2><table><tr><th>Role</th><th>Example</th><th>Colour</th><th>Back</th>`+
+       `<th>Density</th><th>Italic</th><th>Under</th></tr>`;
+    for(const r of ROLES.filter(x=>x.g===g)){
+      h+=`<tr data-r="${r.id}"><td>${esc(r.label)}</td>`+
+        `<td class="mono"><span class="sample r-${r.id}">${esc(r.ex)}</span></td>`+
+        `<td class="fg"><span class="box"><span class="sw"></span><input type="color" data-k="fg"></span>`+
+        `<button class="pal" data-k="pal" data-t="fg" title="palettes: set the text colour">▾</button></td>`+
+        `<td class="bgb"><span class="box"><span class="sw"></span><input type="color" data-k="bg"></span>`+
+        `<button class="pal" data-k="pal" data-t="bg" title="palettes: set the background">▾</button>`+
+        `<button class="x" data-k="nobg" title="no background">×</button></td>`+
+        `<td><input type="range" min="100" max="800" step="100" data-k="w"> <span class="w"></span></td>`+
+        `<td><input type="checkbox" class="it" data-k="i"></td>`+
+        `<td><input type="checkbox" class="un" data-k="u"></td>`+
+        `</tr>`;}
+    h+='</table>';}
+  $('rules').innerHTML=h;
+}
+function showCode(){
+  if(!TOK[TAB])TOK[TAB]=tokenize(CODE[TAB],TAB==='pyx');
+  const L=TOK[TAB];let g='',c='';
+  for(let k=0;k<L.length;k++){g+=(k+1)+'\n';
+    const lead=L[k].find(x=>!(x[0]==='default'&&/^\s*$/.test(x[1])));
+    /* a comment-only line or a docstring line: one band, left to right */
+    const whole=lead&&(lead[0]==='lcomment'||lead[0]==='fileline'||(lead[0]==='docstring'&&L[k].every(x=>x[0]==='docstring'||
+      (x[0]==='default'&&/^\s*$/.test(x[1])))));
+    let row='';
+    for(const [r,t] of L[k])row+=`<span class="r-${r}" data-r="${r}">${esc(t)}</span>`;
+    if(!L[k].some(x=>x[1]))row+='&#8203;';
+    c+=whole?`<span class="L r-${lead[0]}" data-r="${lead[0]}">${row}</span>`:row+'\n';}
+  $('gut').textContent=g;$('code').innerHTML=c;
+}
+function popup(btn,tr,target){
+  const p=$('pop');let h='';
+  for(const [name,items] of PAL){
+    const list=items.map(it=>{
+      if(typeof it==='string')return {hex:'#'+it.toUpperCase(),n:'#'+it};
+      if(Array.isArray(it)&&typeof it[0]==='number')return {hex:v2h(it.map(x=>x/255)),n:it.join(',')};
+      if(typeof it[1]==='number')return {hex:v2h(it.slice(1).map(x=>x/255)),n:it[0]};
+      return {hex:'#'+it[1],n:it[0]};});
+    h+=`<h4>${name}</h4><div class="g">`+sorted(list).map(c=>
+      `<span class="c" data-h="${c.hex}" title="${esc(c.n)} ${c.hex}" style="background:${sim(c.hex)}"></span>`).join('')+'</div>';}
+  const lab=ROLES.find(x=>x.id===tr.dataset.r).label;
+  h=`<div class="cur"><b>${esc(lab)}</b> &nbsp; set: `+
+    `<span class="tg" data-t="fg">text <span class="c" id="curfg"></span></span> `+
+    `<span class="tg" data-t="bg">back <span class="c" id="curbg"></span></span> `+
+    `<button class="x" data-k="nobg2">no back</button></div>`+h;
+  p.innerHTML=h;p.dataset.r=tr.dataset.r;p.dataset.target=target||'fg';popMark();p.style.display='block';
+  const b=btn.getBoundingClientRect();
+  p.style.left=Math.max(4,Math.min(innerWidth-p.offsetWidth-8,b.left-p.offsetWidth+30))+'px';
+  p.style.top=Math.min(innerHeight-p.offsetHeight-8,b.bottom+4)+'px';
+}
+
+function popMark(){ /* show the rule's current text and back colours; outline the one being set */
+  const p=$('pop'),v=S.roles[p.dataset.r],tg=p.dataset.target,cur=v[tg];
+  $('curfg').style.background=sim(v.fg);
+  $('curbg').style.background=v.bg?sim(v.bg):'transparent';
+  p.querySelectorAll('.tg').forEach(e=>e.classList.toggle('on',e.dataset.t===tg));
+  p.querySelectorAll('.g .c').forEach(e=>e.classList.toggle('sel',!!cur&&e.dataset.h===cur.toUpperCase()));
+}
+/* ---------- events ---------- */
+document.addEventListener('input',e=>{
+  const t=e.target,tr=t.closest&&t.closest('tr[data-r]');
+  if(t.id==='pagebg'){S.bg=t.value.toUpperCase();}
+  else if(t.id==='size'){S.size=+t.value||13;}
+  else if(tr){const v=S.roles[tr.dataset.r],k=t.dataset.k;
+    if(k==='fg')v.fg=t.value.toUpperCase();else if(k==='bg')v.bg=t.value.toUpperCase();
+    else if(k==='w')v.w=+t.value;else if(k==='i')v.i=t.checked;else if(k==='u')v.u=t.checked;}
+  else return;
+  styleCss();persist();});
+document.addEventListener('click',e=>{
+  const t=e.target,tr=t.closest&&t.closest('tr[data-r]');
+  if(!t.closest('#pop')&&!(t.dataset&&t.dataset.k==='pal'))$('pop').style.display='none';
+  if(t.dataset&&t.dataset.k==='nobg'&&tr){S.roles[tr.dataset.r].bg='';styleCss();persist();}
+  else if(t.dataset&&t.dataset.k==='pal'&&tr){popup(t,tr,t.dataset.t);}
+  else if(t.dataset&&t.dataset.k==='nobg2'){S.roles[$('pop').dataset.r].bg='';styleCss();persist();popMark();}
+  else if(t.closest('.tg')){$('pop').dataset.target=t.closest('.tg').dataset.t;popMark();}
+  else if(t.classList.contains('c')&&t.dataset.h){const p=$('pop');
+    S.roles[p.dataset.r][p.dataset.target]=t.dataset.h;styleCss();persist();popMark();}
+  else if(t.dataset&&t.dataset.r&&t.closest('#code')){
+    const row=document.querySelector(`#rules tr[data-r="${t.dataset.r}"]`);
+    if(row){document.querySelectorAll('#rules tr.sel').forEach(r=>r.classList.remove('sel'));
+      row.classList.add('sel');row.scrollIntoView({block:'center'});}}
+  else if(t.dataset&&t.dataset.t){TAB=t.dataset.t;
+    document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b===t));showCode();}
+});
+$('vision').onchange=e=>{S.vision=e.target.value;styleCss();
+  if($('pop').style.display==='block')$('pop').style.display='none';};
+$('sort').onchange=e=>{S.sort=e.target.value;};
+function msg(t){$('msg').textContent=t;setTimeout(()=>$('msg').textContent='',5000);}
+function parseMu(text,d){
+  let head=null,n=0;
+  const pg=/Page background (#[0-9A-Fa-f]{6}), font size (\d+)px/.exec(text);
+  if(pg){d.bg=pg[1].toUpperCase();d.size=+pg[2];}
+  for(const line of text.split('\n')){
+    if(!line.startsWith('|')){head=null;continue;}
+    const cells=line.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+    if(/^:?-+/.test(cells[0]))continue;
+    if(!head){head=cells.map(c=>c.toLowerCase());continue;}
+    const col=k=>cells[head.indexOf(k)];
+    const key=(col('id')||col('role')||'').replace(/`/g,'');
+    const r=ROLES.find(x=>x.id===key||x.label===key);
+    if(!r||head.indexOf('colour')<0)continue;
+    const hex=h=>/^#[0-9A-Fa-f]{6}$/.test(h||'')?h.toUpperCase():'';
+    const v=d.roles[r.id];
+    v.fg=hex(col('colour'))||v.fg;v.bg=hex(col('back'));
+    v.w=Math.min(800,Math.max(100,+col('weight')||v.w));
+    v.i=/^y/i.test(col('italic')||'');v.u=/^y/i.test(col('underline')||'');n++;}
+  return n;
+}
+
+function fromTexts(){ /* the settings the rule files describe */
+  const d=defaults();parseMu(LANGTXT.py,d);parseMu(LANGTXT.pyx,d);
+  return Object.assign(d,{vision:S.vision,sort:S.sort});}
+function langText(g){ /* the file as it was, with only the page line, the date and the Rules table replaced */
+  const t=LANGTXT[g],i=t.indexOf('## Rules');
+  const head=t.slice(0,i).replace(/Page background #[0-9A-Fa-f]{6}, font size \d+px\./,
+      `Page background ${S.bg}, font size ${S.size}px.`)
+    .replace(/saved from it \([^)]*\)/,`saved from it (${new Date().toISOString().slice(0,10)})`);
+  let r='## Rules\n\n| Role | Id | Matches | Colour | Back | Weight | Italic | Underline |\n'+
+        '|:--|:--|:--|:--|:--|:--|:--|:--|\n';
+  for(const x of ROLES.filter(x=>x.g===g)){const v=S.roles[x.id];
+    r+=`| ${x.label} | ${x.id} | \`${x.ex}\` | ${v.fg} | ${v.bg||'-'} | ${v.w} | ${v.i?'yes':'no'} | ${v.u?'yes':'no'} |\n`;}
+  return head+r;
+}
+const idb=()=>new Promise((ok,no)=>{const q=indexedDB.open('mu-colours',1);
+  q.onupgradeneeded=()=>q.result.createObjectStore('h');q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error);});
+async function remember(h){try{(await idb()).transaction('h','readwrite').objectStore('h').put(h,'lang');}catch(e){}}
+async function recall(){try{const d=await idb();
+  return await new Promise(r=>{const q=d.transaction('h').objectStore('h').get('lang');
+    q.onsuccess=()=>r(q.result);q.onerror=()=>r(null);});}catch(e){return null;}}
+
+const EDITOR=location.protocol==='file:'?decodeURIComponent(location.pathname).slice(1)
+    :location.protocol==='data:'?'(a snapshot with no file path)':location.href;
+function where(){ /* which files are in use: the editor itself and where its rules came from */
+  $('where').innerHTML='<b>Editor</b> '+esc(EDITOR)+' &nbsp; <b>Rules</b> '+esc(SOURCE)+
+    (DIRTY?' <span class="warn">unsaved changes: Save .mu files to folder, or Undo</span>':'');}
+const now=()=>new Date().toLocaleTimeString();
+async function chooseFolder(){
+  /* a page cannot name the start folder: the dialog starts where it was last used (id), or at a
+     remembered folder; the folder this page is in is put on the clipboard to paste into the dialog */
+  const o={id:'mu-lang',mode:'readwrite'};if(HANDLE)o.startIn=HANDLE;
+  if(location.protocol==='file:'){
+    const here=EDITOR.split('/').slice(0,-1).join(String.fromCharCode(92));
+    try{navigator.clipboard.writeText(here).catch(()=>{});
+      msg('folder path copied: paste it into the Folder box of the dialog: '+here);}catch(e){}}
+  return showDirectoryPicker(o);}
+async function readFolder(h,how){
+  const t={};
+  for(const g of ['py','pyx'])t[g]=await (await (await h.getFileHandle(LANGFILE[g])).getFile()).text();
+  const d=defaults();
+  if(!parseMu(t.py,d)||!parseMu(t.pyx,d))throw new Error('no rule rows');
+  LANGTXT.py=t.py;LANGTXT.pyx=t.pyx;S=Object.assign(d,{vision:S.vision,sort:S.sort});
+  SOURCE=how+' folder '+h.name+' at '+now();DIRTY=false;HANDLE=h;
+  $('size').value=S.size;styleCss();where();}
+$('loaddir').onclick=async()=>{
+  if(!window.showDirectoryPicker){msg('this browser cannot open a folder: use Edge or Chrome');return;}
+  if(DIRTY&&!confirm('Replace your unsaved changes with the rules in the folder?'))return;
+  try{const h=await chooseFolder();await readFolder(h,'loaded from');remember(h);msg('loaded python.mu and cython.mu');}
+  catch(e){if(e.name!=='AbortError')msg(e.name==='NotFoundError'?'that folder has no python.mu and cython.mu':
+    'could not load: '+e.message);}};
+$('savedir').onclick=async()=>{
+  if(!window.showDirectoryPicker){msg('this browser cannot open a folder: use Edge or Chrome');return;}
+  try{
+    const h=await chooseFolder(),out={};
+    for(const g of ['py','pyx'])out[g]=langText(g);
+    for(const g of ['py','pyx']){
+      const w=await (await h.getFileHandle(LANGFILE[g],{create:true})).createWritable();
+      await w.write(out[g]);await w.close();}
+    LANGTXT.py=out.py;LANGTXT.pyx=out.pyx;SOURCE='saved to folder '+h.name+' at '+now();DIRTY=false;HANDLE=h;
+    remember(h);where();msg('saved python.mu and cython.mu to '+h.name);}
+  catch(e){if(e.name!=='AbortError')msg('could not save: '+e.message);}};
+$('undo').onclick=()=>{S=fromTexts();DIRTY=false;$('size').value=S.size;styleCss();where();
+  msg('back to the rules from '+SOURCE);};
+addEventListener('beforeunload',e=>{if(DIRTY){e.preventDefault();e.returnValue='';}});
+/* a folder that was used before and is still allowed is read when the page opens */
+recall().then(async h=>{
+  if(!h)return;HANDLE=h;
+  try{if(await h.queryPermission({mode:'readwrite'})==='granted')await readFolder(h,'read from');}catch(e){}
+  where();});
+
+/* ---------- start ---------- */
+CODE.py="\"\"\"showcase.py -- one of every colour role, then real code below.\n\nThe module docstring is a docstring role; this paragraph too.\n\"\"\"\n# A comment line; TODO: check the marker, FIXME later, see https://example.com/page\nimport os\nimport re\nimport sys\nfrom collections import OrderedDict as Ordered\nfrom pathlib import Path, PurePath\n\n__all__ = ['Shape', 'area', 'parse']\nMAX_ITEMS = 0x1F + 1_000          # constants and numbers\nRATIO = 3.5e-3                    # float with exponent\nROOT = 2j * 4                     # complex number\nNAME = 'plain string'\nRAW = r'C:\\temp\\new'              # raw string keeps its backslashes\nBYTES = b'bytes\\x00\\xff'\nTEXT = \"double quoted with an escape \\n and a tab \\t\"\nFORMATTED = f'{NAME!r} has {len(NAME):>5} chars and {RATIO:.2e}'\nOLD = 'value %s of %d' % (NAME, 3)\nNOTE = '''a triple string\nover several lines, not a docstring'''\n\n\nclass Shape(Ordered):\n    \"\"\"A docstring on a class.\n\n    Second paragraph of the docstring, shown in the docstring colour.\n    \"\"\"\n\n    sides: int = 0\n\n    def __init__(self, name: str, sides: int = 4, *extra: float, **options) -> None:\n        \"\"\"Set up the shape: self is the dark orange.\"\"\"\n        super().__init__()\n        self.name = name\n        self.sides = sides\n        self.extra = list(extra)\n        self.options = dict(options)\n\n    @property\n    def label(self) -> str:\n        return f'{self.name}/{self.sides}'\n\n    @staticmethod\n    def unit(scale: float = 1.0) -> 'Shape':\n        return Shape('unit', 4, scale)\n\n    @classmethod\n    def square(cls, side: float) -> 'Shape':\n        shape = cls('square', 4, side)\n        shape.extra.append(side)\n        return shape\n\n    def __repr__(self):\n        return f'Shape({self.name!r}, {self.sides})'\n\n    def __eq__(self, other):\n        return isinstance(other, Shape) and self.sides == other.sides\n\n\nclass Circle(Shape):\n    \"\"\"A subclass: Shape in the bases is a class use.\"\"\"\n\n    def __init__(self, radius: float = 1.0) -> None:\n        super().__init__('circle', 0)\n        self.radius = radius\n\n    def grow(self, factor: float) -> 'Circle':\n        return Circle(self.radius * factor)\n\n\nunit = Circle()\nshapes: list[Shape] = [unit, Shape.square(2.0), Circle(3.0).grow(2)]\nbiggest = max(shapes, key=lambda item: isinstance(item, Circle) and item.radius)\n\n\ndef area(shape: Shape, scale: float = 1.0) -> float:\n    \"\"\"Return the area; a method call (.append) and an attribute (.extra) differ.\"\"\"\n    if not shape.extra:\n        raise ValueError('no extra values')\n    first, *rest = shape.extra\n    total = first * scale ** 2 + sum(rest) // 2 - 1 % 3\n    return total\n\n\ndef parse(text, default=None):\n    # Parse numbers; exceptions are red bold, builtins violet bold.\n    values = []\n    for index, word in enumerate(text.split()):\n        try:\n            values.append(int(word, 16) if word.startswith('0x') else float(word))\n        except (ValueError, OverflowError) as error:\n            print(f'bad word {index}: {word!r} ({error})', file=sys.stderr)\n        except KeyboardInterrupt:\n            raise\n        else:\n            continue\n        finally:\n            pass\n    if (count := len(values)) > 3 and default is not None or count == 0:\n        return default\n    return sorted(values, key=lambda value: -value)[:MAX_ITEMS]\n\n\ndef describe(item):\n    match item:\n        case Shape(sides=4):\n            return 'four sided'\n        case [first, second, *others] if first < second:\n            return 'sorted start'\n        case {'name': name}:\n            return name\n        case None | True | False:\n            return 'constant'\n        case _:\n            return 'other'\n\n\nasync def fetch(path: str, *, retries: int = 3) -> bytes:\n    for attempt in range(retries):\n        with open(path, 'rb') as handle:\n            data = await handle.read()\n        if data and attempt >= 0:\n            break\n    else:\n        data = b''\n    assert isinstance(data, bytes), 'must be bytes'\n    yield data\n    del data\n\n\ncounts = {key: len(key) for key in ('a', 'bb', 'ccc') if key != 'z'}\nsquares = [i ** 2 for i in range(10) if i % 2 == 0]\nmatrix = [[1, 2], [3, 4]][0][1]\ntotal = os.path.join('a', 'b').replace('\\\\', '/').upper().lower()\nflag = not (True and False) or None is None\nshift = 1 << 4 | 0b1010 & 0o17 ^ ~7\nglobal_name = __name__ == '__main__'\nbad = 5 $ 3\nnested = (plop := (3 * 5)) + f(g(h([1, {2: (3, 4)}])))\nhere = Path(os.getcwd()) / np_name\nPATTERN = re.compile(r'^(?P<name>[A-Za-z_]\\w*)\\s*(\\((\\d{2,4}|x)\\))?$')\nswapped = re.sub(r'(\\d+)-(\\d+)', r'\\2-\\1', 'ab 12-34')\nfound = re.match('[a-z]+(\\d)', 'abc7')\n\nREPORT = f'{NAME!r:>10} has {len(NAME):>5} chars, {RATIO:.2e}, {total + 1:{WIDTH}.{PREC}f} {{literal}}'\nOLDSTYLE = 'value %s of %d: %-8.3f %(key)s 100%%' % (NAME, 3, RATIO)\nTEMPLATE = 'item {0:>4} {name!r} {} {:08.3f}'.format(1, name='x')\n\n\f\n# ---- real code: marked.py ----\n\nr\"\"\"marked.py -- Markdown to HTML. One public function.\n\n    from marked import md2htm\n    htm = md2htm(md)        # md: bytes of Markdown (or a str); htm: a new bytearray of HTML\n\nmd2htm(md) -> bytearray\n    md      bytes, bytearray or memoryview of UTF-8 Markdown, or a str. Input that is not\n            UTF-8 is repaired (the bad bytes become a replacement character).\n    The HTML holds <p>, <h1>-<h6>, <pre><code>, <hr>, <blockquote>, <ul>, <ol>, <li> and\n    <table class=\"grid\">, inline emphasis, strong, ~~strike~~, `code`, [links](url \"title\"),\n    ![images](src), <autolinks>, bare http:// and www. addresses, [reference][links], hard\n    breaks. Raw HTML in the Markdown is shown as text (escaped); javascript: links are dropped.\n    The language and the markers for sections, tabs and other divs are in marker.md.\n\nThe HTML always starts with a section comment, <!--SECTION name-->: the first section is\nnamed _\\main/_ when the Markdown does not start with a section marker. htmlwriter.htmtemplate\nsplits the HTML at these comments.\n\nVERSION  M2 m02.v01 (2026-10-28): rebuilt as md2htm(md): no byte-array header, no data-md, no\n         column arguments (mdwriter has them); section markers; a bare name is a div; ids\n         are numbered by call and marker.\n         M1 (2026-10-28): marked.py with md2html(b, *md): see zprev/marked.py.\n\"\"\"\nimport re\n\n__all__ = ['md2htm']\n\nCALLS = [0]                                 # md2htm calls so far: makes ids unique on a page\n\nESCAPABLE = '\\\\`*_{}[]()#+-.!|~<>\"\\'&:;/=?@$%^,'\nFENCE = re.compile(r'^( {0,3})(`{3,}|~{3,})[ \\t]*([^\\n]*)$')\nATX = re.compile(r'^ {0,3}(#{1,6})(?:[ \\t]+(.*?))?[ \\t]*$')\nHR = re.compile(r'^ {0,3}([-*_])(?:[ \\t]*\\1){2,}[ \\t]*$')\nQUOTE = re.compile(r'^ {0,3}> ?(.*)$')\nLIST = re.compile(r'^( {0,3})([*+-]|\\d{1,9}[.)])( +|$)(.*)$')\nSETEXT = re.compile(r'^ {0,3}(=+|-+)[ \\t]*$')\nDELIM = re.compile(r'^ {0,3}\\|?[ \\t]*:?-+:?[ \\t]*(?:\\|[ \\t]*:?-+:?[ \\t]*)*\\|?[ \\t]*$')\nDEFINITION = re.compile(r'^ {0,3}\\[([^\\]\\n]+)\\]:[ \\t]*<?([^\\s>]+)>?'\n                        r'(?:[ \\t]+[\"\\'(](.*?)[\"\\')])?[ \\t]*$')\nTASK = re.compile(r'^\\[([ xX])\\][ \\t]+')\nURL = re.compile(r'(?:https?://|www\\.)[^\\s<]+')\nAUTOLINK = re.compile(r'<([A-Za-z][A-Za-z0-9+.\\-]{1,31}:[^\\s<>]*)>')\nAUTOMAIL = re.compile(r'<([^\\s<>@]+@[^\\s<>]+)>')\nENTITY = re.compile(r'&(?!(?:#\\d+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);)')\nUNSAFE = re.compile(r'^\\s*(?:javascript|vbscript):', re.I)\nMARK = re.compile(r'^ {0,3}_\\\\(.+?)/_[ \\t]*$')\nMARKEND = re.compile(r'^ {0,3}_\\\\\\|/_[ \\t]*$')\nMARKBODY = re.compile(r'(?:([A-Za-z][A-Za-z0-9-]*):)?(.*?)(?:[ \\t]*\\{([^{}]*)\\})?[ \\t]*')\nITEM = re.compile(r'^ {0,3}\\|[ \\t]?(.*)$')\nROWCLASS = re.compile(r'^\\{\\.([\\w -]+)\\}[ \\t]*')\n\n\n# ---- escaping -----------------------------------------------------------------------------\ndef esc(text):\n    \"\"\"Text for an HTML attribute or code: every & < > \" is escaped.\"\"\"\n    return (text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')\n            .replace('\"', '&quot;'))\n\n\ndef esctext(text):\n    \"\"\"Text between tags: & < > are escaped, an entity such as &amp; is left alone.\"\"\"\n    return ENTITY.sub('&amp;', text).replace('<', '&lt;').replace('>', '&gt;')\n\n\n# ---- block pass ---------------------------------------------------------------------------\ndef indent(line):\n    return len(line) - len(line.lstrip(' '))\n\n\ndef startsblock(line):\n    \"\"\"True if the line would begin a block that interrupts a paragraph.\"\"\"\n    if FENCE.match(line) or ATX.match(line) or HR.match(line) or QUOTE.match(line):\n        return True\n    if marker(line) is not None:\n        return True\n    m = LIST.match(line)\n    return bool(m and m.group(4).strip() and (not m.group(2)[0].isdigit()\n                                              or m.group(2)[:-1] == '1'))\n\n\ndef marker(line):\n    r\"\"\"The marker a line is, or None: {'kind': 'end'}, {'kind': 'section', 'name'}, or\n    {'kind': 'open' | 'next', 'type', 'name', 'cls'}. A name with _\\ or /_ inside is not one.\"\"\"\n    if MARKEND.match(line):\n        return {'kind': 'end', 'type': '', 'name': '', 'cls': []}\n    m = MARK.match(line)\n    if not m or '_\\\\' in m.group(1) or '/_' in m.group(1):\n        return None\n    kind, name, cls = MARKBODY.fullmatch(m.group(1)).groups()\n    name = name.strip()\n    cls = (cls or '').split()\n    if kind == 'section':\n        return {'kind': 'section', 'type': '', 'name': name, 'cls': []} if name else None\n    if kind == 'next':\n        return {'kind': 'next', 'type': '', 'name': name, 'cls': cls}\n    if not name and kind != 'flex':\n        return None\n    return {'kind': 'open', 'type': kind or '', 'name': name, 'cls': cls}\n\n\ndef cells(line):\n    s = line.strip()\n    if s.startswith('|'):\n        s = s[1:]\n    if s.endswith('|') and not s.endswith('\\\\|'):\n        s = s[:-1]\n    return [p.strip().replace('\\\\|', '|') for p in re.split(r'(?<!\\\\)\\|', s)]\n\n\ndef istable(lines, i, n):\n    if i + 1 >= n or '|' not in lines[i]:\n        return False\n    nxt = lines[i + 1]\n    return bool(DELIM.match(nxt) and ('|' in nxt or ':' in nxt)\n                and len(cells(lines[i])) == len(cells(nxt)))\n\n\ndef lex(lines, defs, top=False):\n    \"\"\"Blocks of a list of lines: tokens {t, first, last, ...}, first/last as indexes of\n    the lines (last excluded). Link definitions go into defs. top: the lines are the\n    document's own, so markers count (and the items of a flex).\"\"\"\n    out = []\n    i, n = 0, len(lines)\n    flex = False                                    # inside a flex: lines with | are items\n    while i < n:\n        line = lines[i]\n        if not line.strip():\n            i += 1\n            continue\n        if top:\n            mark = marker(line)\n            if mark is not None:\n                mark.update(t='mark', first=i, last=i + 1)\n                out.append(mark)\n                flex = mark['kind'] == 'open' and mark['type'] == 'flex'\n                i += 1\n                continue\n            m = ITEM.match(line) if flex else None\n            if m:\n                j = i + 1\n                body = [m.group(1)]\n                while (j < n and lines[j].strip() and not ITEM.match(lines[j])\n                       and marker(lines[j]) is None):\n                    body.append(lines[j])\n                    j += 1\n                out.append({'t': 'item', 'first': i, 'last': j, 'tokens': lex(body, defs)})\n                i = j\n                continue\n        m = FENCE.match(line)\n        if m and not (m.group(2)[0] == '`' and '`' in m.group(3)):\n            ch, size, pad = m.group(2)[0], len(m.group(2)), len(m.group(1))\n            close = re.compile(r'^ {0,3}' + re.escape(ch) + '{' + str(size) + r',}[ \\t]*$')\n            j = i + 1\n            body = []\n            while j < n and not close.match(lines[j]):\n                body.append(lines[j][min(pad, indent(lines[j])):])\n                j += 1\n            out.append({'t': 'code', 'first': i, 'last': min(j + 1, n),\n                        'lang': m.group(3).strip().split(' ')[0], 'text': '\\n'.join(body)})\n            i = min(j + 1, n)\n            continue\n        if indent(line) >= 4:\n            j = i\n            body = []\n            while j < n and (indent(lines[j]) >= 4 or not lines[j].strip()):\n                body.append(lines[j][4:])\n                j += 1\n            while body and not body[-1].strip():\n                body.pop()\n                j -= 1\n            out.append({'t': 'code', 'first': i, 'last': j, 'lang': '', 'text': '\\n'.join(body)})\n            i = j\n            continue\n        m = ATX.match(line)\n        if m:\n            text = m.group(2) or ''\n            text = '' if re.fullmatch(r'#+', text) else re.sub(r'[ \\t]+#+$', '', text)\n            out.append({'t': 'h', 'first': i, 'last': i + 1, 'depth': len(m.group(1)),\n                        'text': text.strip()})\n            i += 1\n            continue\n        if HR.match(line):\n            out.append({'t': 'hr', 'first': i, 'last': i + 1})\n            i += 1\n            continue\n        if QUOTE.match(line):\n            j = i\n            inner = []\n            while j < n:\n                q = QUOTE.match(lines[j])\n                if q:\n                    inner.append(q.group(1))\n                elif (lines[j].strip() and inner and inner[-1].strip()\n                      and not startsblock(lines[j])):\n                    inner.append(lines[j])\n                else:\n                    break\n                j += 1\n            out.append({'t': 'quote', 'first': i, 'last': j, 'tokens': lex(inner, defs)})\n            i = j\n            continue\n        m = LIST.match(line)\n        if m and not HR.match(line):\n            token, i = lexlist(lines, i, n, defs)\n            out.append(token)\n            continue\n        m = DEFINITION.match(line)\n        if m:\n            defs.setdefault(m.group(1).strip().lower(), (m.group(2), m.group(3) or ''))\n            i += 1\n            continue\n        if istable(lines, i, n):\n            align = []\n            for c in cells(lines[i + 1]):\n                align.append('center' if c.startswith(':') and c.endswith(':') else\n                             'right' if c.endswith(':') else 'left' if c.startswith(':') else '')\n            head = cells(line)\n            body = []\n            rowcls = []\n            j = i + 2\n            while j < n and lines[j].strip() and not startsblock(lines[j]):\n                row = cells(lines[j])[:len(head)]\n                row += [''] * (len(head) - len(row))\n                found = ROWCLASS.match(row[0])      # {.bad} first in the row: a class of the row\n                rowcls.append(found.group(1) if found else '')\n                if found:\n                    row[0] = row[0][found.end():]\n                body.append(row)\n                j += 1\n            out.append({'t': 'table', 'first': i, 'last': j, 'head': head,\n                        'align': align, 'rows': body, 'rowcls': rowcls})\n            i = j\n            continue\n        j = i + 1                                   # a paragraph, or a setext heading\n        depth = 0\n        while j < n and lines[j].strip():\n            s = SETEXT.match(lines[j])\n            if s:\n                depth = 1 if s.group(1)[0] == '=' else 2\n                break\n            if startsblock(lines[j]) or istable(lines, j, n):\n                break\n            j += 1\n        text = '\\n'.join(x.lstrip() for x in lines[i:j]).rstrip()   # two trailing spaces break\n        if depth:\n            out.append({'t': 'h', 'first': i, 'last': j + 1, 'depth': depth, 'text': text})\n            i = j + 1\n        else:\n            out.append({'t': 'p', 'first': i, 'last': j, 'text': text})\n            i = j\n    return out\n\n\ndef lexlist(lines, i, n, defs):\n    \"\"\"One list from line i: (token, the line after it).\"\"\"\n    m = LIST.match(lines[i])\n    ordered = m.group(2)[0].isdigit()\n    delim = m.group(2)[-1] if ordered else m.group(2)\n    start = int(m.group(2)[:-1]) if ordered else 0\n    items = []\n    loose = False\n    j = i\n    while j < n:\n        m = LIST.match(lines[j])\n        if not m or HR.match(lines[j]):\n            break\n        mark = m.group(2)\n        if mark[0].isdigit() != ordered or (mark[-1] if ordered else mark) != delim:\n            break\n        pad = len(m.group(1)) + len(mark)\n        spaces = len(m.group(3))\n        rest = m.group(4)\n        if not rest.strip():\n            width, first = pad + 1, ''\n        elif spaces > 4:\n            width, first = pad + 1, ' ' * (spaces - 1) + rest\n        else:\n            width, first = pad + spaces, rest\n        body = [first]\n        k = j + 1\n        while k < n:\n            line = lines[k]\n            if not line.strip():\n                look = k + 1\n                while look < n and not lines[look].strip():\n                    look += 1\n                if look < n and indent(lines[look]) >= width and body[0].strip():\n                    body += [''] * (look - k)\n                    k = look\n                    continue\n                break\n            if indent(line) >= width:\n                body.append(line[width:])\n            elif body[-1].strip() and not startsblock(line) and not LIST.match(line):\n                body.append(line.lstrip())\n            else:\n                break\n            k += 1\n        end = k\n        while end > j + 1 and not lines[end - 1].strip():\n            end -= 1\n        task = None\n        t = TASK.match(body[0])\n        if t:\n            task = t.group(1) != ' '\n            body[0] = body[0][t.end():]\n        tokens = lex(body, defs)\n        if any(a['last'] < b['first'] for a, b in zip(tokens, tokens[1:])):\n            loose = True\n        items.append({'first': j, 'last': end, 'tokens': tokens, 'task': task})\n        j = k\n        look = j\n        while look < n and not lines[look].strip():\n            look += 1\n        nxt = LIST.match(lines[look]) if look < n else None\n        if (not nxt or HR.match(lines[look]) or nxt.group(2)[0].isdigit() != ordered\n                or (nxt.group(2)[-1] if ordered else nxt.group(2)) != delim):\n            break                                   # the list ends; blanks after it are not a gap\n        if look > j:\n            loose = True                            # a blank line between two items\n        j = look\n    last = items[-1]['last']\n    return {'t': 'list', 'first': i, 'last': last, 'ordered': ordered, 'start': start,\n            'loose': loose, 'items': items}, last\n\n\n# ---- inline pass --------------------------------------------------------------------------\ndef punct(c):\n    return bool(c) and not (c.isalnum() or c.isspace())\n\n\ndef bracket(text, i):\n    \"\"\"Index of the ] that matches the [ at i, or -1.\"\"\"\n    depth = 0\n    n = len(text)\n    while i < n:\n        c = text[i]\n        if c == '\\\\':\n            i += 1\n        elif c == '`':\n            k = 1\n            while i + k < n and text[i + k] == '`':\n                k += 1\n            end = text.find('`' * k, i + k)\n            if end > 0:\n                i = end + k - 1\n        elif c == '[':\n            depth += 1\n        elif c == ']':\n            depth -= 1\n            if depth == 0:\n                return i\n        i += 1\n    return -1";
+CODE.pyx="# cython: language_level=3, boundscheck=False\n# distutils: language = c\n\"\"\"showcase.pyx -- one of every Cython role, then real code below.\"\"\"\n# A comment; TODO: check this, see https://cython.org/docs\ncimport cython\nfrom libc.stdlib cimport malloc, free\nfrom libc.math cimport sqrt\nimport numpy as np\nimport re\n\nDEF SIZE = 16\ncdef int COUNT = 0x10\ncdef double RATIO = 1.5e-3\ncdef unsigned char FLAG = 255\ncdef Py_ssize_t LENGTH\ncdef const char* LABEL = b'cython'\n\n\nctypedef unsigned long long uint64\nctypedef fused number:\n    int\n    double\n\ncdef struct Point:\n    double x\n    double y\n\ncdef enum Colour:\n    RED\n    GREEN\n\n\ncdef class Counter:\n    \"\"\"A cdef class: the name is pink bold.\"\"\"\n    cdef int total\n    cdef public double ratio\n    cdef readonly object name\n\n    def __init__(self, str name, int start=0):\n        self.name = name\n        self.total = start\n\n    cpdef int add(self, int step) noexcept:\n        self.total += step\n        return self.total\n\n    @cython.boundscheck(False)\n    @cython.wraparound(False)\n    cdef double scale(self, double[:] data, Py_ssize_t n) nogil:\n        cdef Py_ssize_t i\n        cdef double result = 0.0\n        for i in range(n):\n            result += data[i] * self.ratio\n        return result\n\n\ncdef inline int clamp(int value, int low, int high) noexcept nogil:\n    if value < low:\n        return low\n    elif value > high:\n        return high\n    return value\n\n\ncdef object helper(object text, int width=8):\n    # a cdef function name is pink like a def name\n    cdef list parts = text.split()\n    cdef dict seen = {}\n    cdef Point* pointer = <Point*> malloc(sizeof(Point))\n    cdef double* row = <double*> pointer\n    cdef int[:, ::1] view = np.zeros((SIZE, SIZE), dtype=np.intc)\n    cdef unsigned int count = <unsigned int> len(parts)\n    if pointer is NULL:\n        raise MemoryError()\n    pointer.x = 1.0\n    pointer[0].y = sqrt(pointer.x ** 2)\n    row = &pointer.x\n    free(pointer)\n    return parts[:width]\n\n\n@cython.cfunc\n@cython.locals(a=cython.int, b=cython.double)\ndef mixed(int a, double b) -> double:\n    cdef int i\n    for i in range(a):\n        b += i\n    return b\n\n\ndef python_side(values: list, flag: bool = True) -> int:\n    \"\"\"A plain def: int in a call is a builtin, int as a type is a C type.\"\"\"\n    cdef int total = 0\n    cdef int item\n    for item in values:\n        total += int(item) + clamp(item, 0, 255)\n    return total\n\nnested = (plop := (3 * 5)) + f(g(h([1, {2: (3, 4)}])))\ncounter = Counter('c', 2)\nvalues = [counter.add(i) for i in range(3)]\nPATTERN = re.compile(r'^(?P<name>[A-Za-z_]\\w*)\\s*(\\((\\d{2,4}|x)\\))?$')\nswapped = re.sub(r'(\\d+)-(\\d+)', r'\\2-\\1', 'ab 12-34')\nfound = re.match('[a-z]+(\\d)', 'abc7')\n\nREPORT = f'{NAME!r:>10} has {len(NAME):>5} chars, {RATIO:.2e}, {total + 1:{WIDTH}.{PREC}f} {{literal}}'\nOLDSTYLE = 'value %s of %d: %-8.3f %(key)s 100%%' % (NAME, 3, RATIO)\nTEMPLATE = 'item {0:>4} {name!r} {} {:08.3f}'.format(1, name='x')\n\n\f\n# ---- real code: marked.pyx ----\n\n# cython: language_level=3\nr\"\"\"marked.pyx -- Markdown to HTML. One public function.\n\n    from marked import md2htm\n    htm = md2htm(md)        # md: bytes of Markdown (or a str); htm: a new bytearray of HTML\n\nmd2htm(md) -> bytearray\n    md      bytes, bytearray or memoryview of UTF-8 Markdown, or a str. Input that is not\n            UTF-8 is repaired (the bad bytes become a replacement character).\n    The HTML holds <p>, <h1>-<h6>, <pre><code>, <hr>, <blockquote>, <ul>, <ol>, <li> and\n    <table class=\"grid\">, inline emphasis, strong, ~~strike~~, `code`, [links](url \"title\"),\n    ![images](src), <autolinks>, bare http:// and www. addresses, [reference][links], hard\n    breaks. Raw HTML in the Markdown is shown as text (escaped); javascript: links are dropped.\n    The language and the markers for sections, tabs and other divs are in marker.md.\n\nThe HTML always starts with a section comment, <!--SECTION name-->: the first section is\nnamed _\\main/_ when the Markdown does not start with a section marker. htmlwriter.htmtemplate\nsplits the HTML at these comments.\n\nVERSION  M2 m02.v01 (2026-10-28): rebuilt as md2htm(md): no byte-array header, no data-md, no\n         column arguments (mdwriter has them); section markers; a bare name is a div; ids\n         are numbered by call and marker.\n         M1 (2026-10-28): marked.py with md2html(b, *md): see zprev/marked.py.\n\"\"\"\nimport re\n\n__all__ = ['md2htm']\n\nCALLS = [0]                                 # md2htm calls so far: makes ids unique on a page\n\nESCAPABLE = '\\\\`*_{}[]()#+-.!|~<>\"\\'&:;/=?@$%^,'\nFENCE = re.compile(r'^( {0,3})(`{3,}|~{3,})[ \\t]*([^\\n]*)$')\nATX = re.compile(r'^ {0,3}(#{1,6})(?:[ \\t]+(.*?))?[ \\t]*$')\nHR = re.compile(r'^ {0,3}([-*_])(?:[ \\t]*\\1){2,}[ \\t]*$')\nQUOTE = re.compile(r'^ {0,3}> ?(.*)$')\nLIST = re.compile(r'^( {0,3})([*+-]|\\d{1,9}[.)])( +|$)(.*)$')\nSETEXT = re.compile(r'^ {0,3}(=+|-+)[ \\t]*$')\nDELIM = re.compile(r'^ {0,3}\\|?[ \\t]*:?-+:?[ \\t]*(?:\\|[ \\t]*:?-+:?[ \\t]*)*\\|?[ \\t]*$')\nDEFINITION = re.compile(r'^ {0,3}\\[([^\\]\\n]+)\\]:[ \\t]*<?([^\\s>]+)>?'\n                        r'(?:[ \\t]+[\"\\'(](.*?)[\"\\')])?[ \\t]*$')\nTASK = re.compile(r'^\\[([ xX])\\][ \\t]+')\nURL = re.compile(r'(?:https?://|www\\.)[^\\s<]+')\nAUTOLINK = re.compile(r'<([A-Za-z][A-Za-z0-9+.\\-]{1,31}:[^\\s<>]*)>')\nAUTOMAIL = re.compile(r'<([^\\s<>@]+@[^\\s<>]+)>')\nENTITY = re.compile(r'&(?!(?:#\\d+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);)')\nUNSAFE = re.compile(r'^\\s*(?:javascript|vbscript):', re.I)\nMARK = re.compile(r'^ {0,3}_\\\\(.+?)/_[ \\t]*$')\nMARKEND = re.compile(r'^ {0,3}_\\\\\\|/_[ \\t]*$')\nMARKBODY = re.compile(r'(?:([A-Za-z][A-Za-z0-9-]*):)?(.*?)(?:[ \\t]*\\{([^{}]*)\\})?[ \\t]*')\nITEM = re.compile(r'^ {0,3}\\|[ \\t]?(.*)$')\nROWCLASS = re.compile(r'^\\{\\.([\\w -]+)\\}[ \\t]*')\n\n\n# ---- escaping -----------------------------------------------------------------------------\ncdef object esc(text):\n    \"\"\"Text for an HTML attribute or code: every & < > \" is escaped.\"\"\"\n    return (text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')\n            .replace('\"', '&quot;'))\n\n\ncdef object esctext(text):\n    \"\"\"Text between tags: & < > are escaped, an entity such as &amp; is left alone.\"\"\"\n    return ENTITY.sub('&amp;', text).replace('<', '&lt;').replace('>', '&gt;')\n\n\n# ---- block pass ---------------------------------------------------------------------------\ncdef object indent(line):\n    return len(line) - len(line.lstrip(' '))\n\n\ncdef object startsblock(line):\n    \"\"\"True if the line would begin a block that interrupts a paragraph.\"\"\"\n    if FENCE.match(line) or ATX.match(line) or HR.match(line) or QUOTE.match(line):\n        return True\n    if marker(line) is not None:\n        return True\n    m = LIST.match(line)\n    return bool(m and m.group(4).strip() and (not m.group(2)[0].isdigit()\n                                              or m.group(2)[:-1] == '1'))\n\n\ncdef object marker(line):\n    r\"\"\"The marker a line is, or None: {'kind': 'end'}, {'kind': 'section', 'name'}, or\n    {'kind': 'open' | 'next', 'type', 'name', 'cls'}. A name with _\\ or /_ inside is not one.\"\"\"\n    if MARKEND.match(line):\n        return {'kind': 'end', 'type': '', 'name': '', 'cls': []}\n    m = MARK.match(line)\n    if not m or '_\\\\' in m.group(1) or '/_' in m.group(1):\n        return None\n    kind, name, cls = MARKBODY.fullmatch(m.group(1)).groups()\n    name = name.strip()\n    cls = (cls or '').split()\n    if kind == 'section':\n        return {'kind': 'section', 'type': '', 'name': name, 'cls': []} if name else None\n    if kind == 'next':\n        return {'kind': 'next', 'type': '', 'name': name, 'cls': cls}\n    if not name and kind != 'flex':\n        return None\n    return {'kind': 'open', 'type': kind or '', 'name': name, 'cls': cls}\n\n\ncdef object cells(line):\n    s = line.strip()\n    if s.startswith('|'):\n        s = s[1:]\n    if s.endswith('|') and not s.endswith('\\\\|'):\n        s = s[:-1]\n    return [p.strip().replace('\\\\|', '|') for p in re.split(r'(?<!\\\\)\\|', s)]\n\n\ncdef object istable(lines, i, n):\n    if i + 1 >= n or '|' not in lines[i]:\n        return False\n    nxt = lines[i + 1]\n    return bool(DELIM.match(nxt) and ('|' in nxt or ':' in nxt)\n                and len(cells(lines[i])) == len(cells(nxt)))\n\n\ncdef object lex(lines, defs, top=False):\n    \"\"\"Blocks of a list of lines: tokens {t, first, last, ...}, first/last as indexes of\n    the lines (last excluded). Link definitions go into defs. top: the lines are the\n    document's own, so markers count (and the items of a flex).\"\"\"\n    out = []\n    i, n = 0, len(lines)\n    flex = False                                    # inside a flex: lines with | are items\n    while i < n:\n        line = lines[i]\n        if not line.strip():\n            i += 1\n            continue\n        if top:\n            mark = marker(line)\n            if mark is not None:\n                mark.update(t='mark', first=i, last=i + 1)\n                out.append(mark)\n                flex = mark['kind'] == 'open' and mark['type'] == 'flex'\n                i += 1\n                continue\n            m = ITEM.match(line) if flex else None\n            if m:\n                j = i + 1\n                body = [m.group(1)]\n                while (j < n and lines[j].strip() and not ITEM.match(lines[j])\n                       and marker(lines[j]) is None):\n                    body.append(lines[j])\n                    j += 1\n                out.append({'t': 'item', 'first': i, 'last': j, 'tokens': lex(body, defs)})\n                i = j\n                continue\n        m = FENCE.match(line)\n        if m and not (m.group(2)[0] == '`' and '`' in m.group(3)):\n            ch, size, pad = m.group(2)[0], len(m.group(2)), len(m.group(1))\n            close = re.compile(r'^ {0,3}' + re.escape(ch) + '{' + str(size) + r',}[ \\t]*$')\n            j = i + 1\n            body = []\n            while j < n and not close.match(lines[j]):\n                body.append(lines[j][min(pad, indent(lines[j])):])\n                j += 1\n            out.append({'t': 'code', 'first': i, 'last': min(j + 1, n),\n                        'lang': m.group(3).strip().split(' ')[0], 'text': '\\n'.join(body)})\n            i = min(j + 1, n)\n            continue\n        if indent(line) >= 4:\n            j = i\n            body = []\n            while j < n and (indent(lines[j]) >= 4 or not lines[j].strip()):\n                body.append(lines[j][4:])\n                j += 1\n            while body and not body[-1].strip():\n                body.pop()\n                j -= 1\n            out.append({'t': 'code', 'first': i, 'last': j, 'lang': '', 'text': '\\n'.join(body)})\n            i = j\n            continue\n        m = ATX.match(line)\n        if m:\n            text = m.group(2) or ''\n            text = '' if re.fullmatch(r'#+', text) else re.sub(r'[ \\t]+#+$', '', text)\n            out.append({'t': 'h', 'first': i, 'last': i + 1, 'depth': len(m.group(1)),\n                        'text': text.strip()})\n            i += 1\n            continue\n        if HR.match(line):\n            out.append({'t': 'hr', 'first': i, 'last': i + 1})\n            i += 1\n            continue\n        if QUOTE.match(line):\n            j = i\n            inner = []\n            while j < n:\n                q = QUOTE.match(lines[j])\n                if q:\n                    inner.append(q.group(1))\n                elif (lines[j].strip() and inner and inner[-1].strip()\n                      and not startsblock(lines[j])):\n                    inner.append(lines[j])\n                else:\n                    break\n                j += 1\n            out.append({'t': 'quote', 'first': i, 'last': j, 'tokens': lex(inner, defs)})\n            i = j\n            continue\n        m = LIST.match(line)\n        if m and not HR.match(line):\n            token, i = lexlist(lines, i, n, defs)\n            out.append(token)\n            continue\n        m = DEFINITION.match(line)\n        if m:\n            defs.setdefault(m.group(1).strip().lower(), (m.group(2), m.group(3) or ''))\n            i += 1\n            continue\n        if istable(lines, i, n):\n            align = []\n            for c in cells(lines[i + 1]):\n                align.append('center' if c.startswith(':') and c.endswith(':') else\n                             'right' if c.endswith(':') else 'left' if c.startswith(':') else '')\n            head = cells(line)\n            body = []\n            rowcls = []\n            j = i + 2\n            while j < n and lines[j].strip() and not startsblock(lines[j]):\n                row = cells(lines[j])[:len(head)]\n                row += [''] * (len(head) - len(row))\n                found = ROWCLASS.match(row[0])      # {.bad} first in the row: a class of the row\n                rowcls.append(found.group(1) if found else '')\n                if found:\n                    row[0] = row[0][found.end():]\n                body.append(row)\n                j += 1\n            out.append({'t': 'table', 'first': i, 'last': j, 'head': head,\n                        'align': align, 'rows': body, 'rowcls': rowcls})\n            i = j\n            continue\n        j = i + 1                                   # a paragraph, or a setext heading\n        depth = 0\n        while j < n and lines[j].strip():\n            s = SETEXT.match(lines[j])\n            if s:\n                depth = 1 if s.group(1)[0] == '=' else 2\n                break\n            if startsblock(lines[j]) or istable(lines, j, n):\n                break\n            j += 1\n        text = '\\n'.join(x.lstrip() for x in lines[i:j]).rstrip()   # two trailing spaces break\n        if depth:\n            out.append({'t': 'h', 'first': i, 'last': j + 1, 'depth': depth, 'text': text})\n            i = j + 1\n        else:\n            out.append({'t': 'p', 'first': i, 'last': j, 'text': text})\n            i = j\n    return out\n\n\ncdef object lexlist(lines, i, n, defs):\n    \"\"\"One list from line i: (token, the line after it).\"\"\"\n    m = LIST.match(lines[i])\n    ordered = m.group(2)[0].isdigit()\n    delim = m.group(2)[-1] if ordered else m.group(2)\n    start = int(m.group(2)[:-1]) if ordered else 0\n    items = []\n    loose = False\n    j = i\n    while j < n:\n        m = LIST.match(lines[j])\n        if not m or HR.match(lines[j]):\n            break\n        mark = m.group(2)\n        if mark[0].isdigit() != ordered or (mark[-1] if ordered else mark) != delim:\n            break\n        pad = len(m.group(1)) + len(mark)\n        spaces = len(m.group(3))\n        rest = m.group(4)\n        if not rest.strip():\n            width, first = pad + 1, ''\n        elif spaces > 4:\n            width, first = pad + 1, ' ' * (spaces - 1) + rest\n        else:\n            width, first = pad + spaces, rest\n        body = [first]\n        k = j + 1\n        while k < n:\n            line = lines[k]\n            if not line.strip():\n                look = k + 1\n                while look < n and not lines[look].strip():\n                    look += 1\n                if look < n and indent(lines[look]) >= width and body[0].strip():\n                    body += [''] * (look - k)\n                    k = look\n                    continue\n                break\n            if indent(line) >= width:\n                body.append(line[width:])\n            elif body[-1].strip() and not startsblock(line) and not LIST.match(line):\n                body.append(line.lstrip())\n            else:\n                break\n            k += 1\n        end = k\n        while end > j + 1 and not lines[end - 1].strip():\n            end -= 1\n        task = None\n        t = TASK.match(body[0])\n        if t:\n            task = t.group(1) != ' '\n            body[0] = body[0][t.end():]\n        tokens = lex(body, defs)\n        if any(a['last'] < b['first'] for a, b in zip(tokens, tokens[1:])):\n            loose = True\n        items.append({'first': j, 'last': end, 'tokens': tokens, 'task': task})\n        j = k\n        look = j\n        while look < n and not lines[look].strip():\n            look += 1\n        nxt = LIST.match(lines[look]) if look < n else None\n        if (not nxt or HR.match(lines[look]) or nxt.group(2)[0].isdigit() != ordered\n                or (nxt.group(2)[-1] if ordered else nxt.group(2)) != delim):\n            break                                   # the list ends; blanks after it are not a gap\n        if look > j:\n            loose = True                            # a blank line between two items\n        j = look\n    last = items[-1]['last']\n    return {'t': 'list', 'first': i, 'last': last, 'ordered': ordered, 'start': start,\n            'loose': loose, 'items': items}, last\n\n\n# ---- inline pass --------------------------------------------------------------------------\ncdef object punct(c):\n    return bool(c) and not (c.isalnum() or c.isspace())\n\n\ncdef object bracket(text, i):\n    \"\"\"Index of the ] that matches the [ at i, or -1.\"\"\"\n    depth = 0\n    n = len(text)\n    while i < n:\n        c = text[i]\n        if c == '\\\\':\n            i += 1\n        elif c == '`':\n            k = 1\n            while i + k < n and text[i + k] == '`':\n                k += 1\n            end = text.find('`' * k, i + k)\n            if end > 0:\n                i = end + k - 1\n        elif c == '[':\n            depth += 1\n        elif c == ']':\n            depth -= 1\n            if depth == 0:\n                return i\n        i += 1\n    return -1\n\n\ncdef object destination(text, i):\n    \"\"\"Parse (url \"title\") from the ( at i: (url, title, index after the )) or None.\"\"\"\n    n = len(text)\n    i += 1\n    while i < n and text[i] in ' \\n':\n        i += 1\n    if i < n and text[i] == '<':\n        end = text.find('>', i)\n        if end < 0:\n            return None\n        url, i = text[i + 1:end], end + 1\n    else:\n        depth, k = 0, i\n        while k < n and not text[k].isspace():\n            if text[k] == '\\\\':\n                k += 1\n            elif text[k] == '(':\n                depth += 1\n            elif text[k] == ')':\n                if depth == 0:\n                    break\n                depth -= 1\n            k += 1\n        url, i = text[i:k], k\n    while i < n and text[i] in ' \\n':\n        i += 1\n    title = ''\n    if i < n and text[i] in '\"\\'(':\n        close = ')' if text[i] == '(' else text[i]\n        end = text.find(close, i + 1)\n        if end < 0:\n            return None\n        title, i = text[i + 1:end], end + 1\n        while i < n and text[i] in ' \\n':\n            i += 1\n    if i < n and text[i] == ')':\n        return url, title, i + 1\n    return None";
+const dyn=document.createElement('style');dyn.id='dyn';document.head.appendChild(dyn);
+S=fromTexts();rulesHtml();$('vision').value=S.vision;$('sort').value=S.sort;$('size').value=S.size;
+styleCss();showCode();where();
+</script></body></html>
