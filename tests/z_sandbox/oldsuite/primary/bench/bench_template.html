@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- bench-shell v3 -->
+<title>bench - {{BENCH_NAME}}</title>
+<style>
+body{font-family:Consolas,"Courier New",monospace;font-size:12px;margin:20px;background:#fffaf5}
+h1{font-family:Arial,sans-serif;color:#b34700;font-size:15px;margin-bottom:8px}
+
+/* top bar: combo | scroll-left | tab strip | scroll-right */
+.topbar{display:flex;align-items:center;gap:6px;border-bottom:2px solid #d35400;padding-bottom:4px;margin-bottom:12px}
+#tabCombo{font:inherit;font-size:11px;max-width:230px;border:1px solid #e0a878;background:#fff;color:#6b3a00;padding:2px 4px}
+.scrollbtn{font-size:11px;padding:2px 6px;border:1px solid #e0a878;border-radius:4px;background:#fdebd0;color:#8a4500;cursor:pointer;user-select:none}
+.scrollbtn:hover{background:#f5cba7}
+.tab-strip{display:flex;flex-wrap:nowrap;overflow-x:hidden;flex:1;gap:4px}
+.tbtn{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:4px 8px 4px 14px;border:1px solid #e0a878;border-radius:4px 4px 0 0;background:#fdebd0;color:#8a4500;cursor:pointer;font-weight:bold;white-space:nowrap}
+.tbtn.active{background:#e67e22;border-color:#b34700;color:#fff}
+.tclose{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid currentColor;font-size:9px;line-height:1;padding:0}
+.tclose:hover{background:#b34700;color:#fff;border-color:#b34700}
+
+/* panels: bench 2/3 left, tests 1/3 right.
+   Tables never squish (nowrap) and no column scrolls on its own -
+   the window is the single scroller, both directions.
+   flex-wrap stacks the tests below the bench only when the window
+   genuinely cannot fit both (basis 420+220+gap) - no fixed media
+   breakpoint, so display scaling cannot trigger it early. */
+.tpanel{display:none}.tpanel.active{display:block}
+.cols{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.colL{flex:2 1 420px;min-width:0}
+.colR{flex:1 1 220px;min-width:0}
+
+table{border-collapse:collapse;margin-top:6px}
+th{background:#d35400;color:#fff;padding:3px 12px;text-align:center;font-size:11px;white-space:nowrap}
+td{padding:2px 12px;border-bottom:1px solid #eedcd0;text-align:right;background:#fff;white-space:nowrap}
+td:first-child{text-align:left}
+tbody tr:nth-child(even) td{background:#fdecec}
+tr.refrow td{font-style:italic;background:#fff;color:#000}
+.hdr{margin:6px 0 2px;color:#333}
+.meta{margin:0 0 6px;color:#666;font-size:11px}
+details{margin:2px 0}
+pre{font-size:11px;background:#fbf3ee;padding:6px;overflow:auto;text-align:left;white-space:pre}
+</style>
+</head>
+<body>
+<h1>bench &mdash; {{BENCH_NAME}}</h1>
+<div class="topbar">
+  <select id="tabCombo" onchange="comboSel(this.value)"><option value="">tabs&hellip;</option></select>
+  <button class="scrollbtn" title="older"
+          onmousedown="holdStart(-1)" onmouseup="holdEnd(-1)" onmouseleave="holdEnd()">&#9664;</button>
+  <div class="tab-strip" id="tabStrip">
+<!-- BTNS:BEGIN -->
+<!-- TAB_BTNS -->
+  </div>
+  <button class="scrollbtn" title="newer"
+          onmousedown="holdStart(1)" onmouseup="holdEnd(1)" onmouseleave="holdEnd()">&#9654;</button>
+</div>
+<!-- PANELS:BEGIN -->
+<!-- TAB_PANELS -->
+<script>
+// Tabs are stored oldest-to-newest in the DOM (runbench appends on the
+// right). Hiding a tab never deletes it from the file - it only sets
+// display:none and records the id in localStorage so the hide persists
+// across reloads. The combobox lists every tab, newest first; selecting
+// a hidden one re-inserts it right of the active tab and activates it.
+var MAXTABS = 10;
+var KEY = 'benchHidden:' + document.title + ':' + location.pathname;
+
+function hiddenSet(){
+  try { return new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); }
+  catch(e){ return new Set(); }
+}
+function saveHidden(s){ localStorage.setItem(KEY, JSON.stringify(Array.from(s))); }
+function allBtns(){ return Array.prototype.slice.call(document.querySelectorAll('.tbtn')); }
+function visBtns(){ return allBtns().filter(function(b){ return b.style.display !== 'none'; }); }
+function tabIdOf(b){ return b.id.replace(/^btn_/, ''); }
+function labelOf(b){ return b.childNodes[0].textContent.trim(); }
+
+function selTab(id){
+  document.querySelectorAll('.tpanel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tbtn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  var b = document.getElementById('btn_' + id);
+  b.classList.add('active');
+  b.scrollIntoView({inline:'nearest', block:'nearest'});
+}
+
+function closeTab(id){
+  var s = hiddenSet(); s.add(id); saveHidden(s);
+  var btn = document.getElementById('btn_' + id);
+  var vis = visBtns();
+  var idx = vis.indexOf(btn);
+  var wasActive = btn.classList.contains('active');
+  btn.style.display = 'none';
+  document.getElementById(id).classList.remove('active');
+  if (wasActive){
+    var rest = visBtns();
+    if (rest.length){
+      // activate the left neighbour; if the leftmost was closed, the new leftmost
+      var next = idx > 0 ? rest[idx-1] : rest[0];
+      selTab(tabIdOf(next));
+    }
+  }
+  buildCombo();
+}
+
+function comboSel(id){
+  if (!id) return;
+  var btn = document.getElementById('btn_' + id);
+  if (btn.style.display === 'none'){
+    var s = hiddenSet();
+    if (s.delete(id)) saveHidden(s);
+    var act = document.querySelector('.tbtn.active');
+    if (act && act !== btn) act.after(btn);   // open next to the selected tab
+    btn.style.display = '';
+  }
+  selTab(id);
+  document.getElementById('tabCombo').selectedIndex = 0;
+  buildCombo();
+}
+
+// scroll arrows: a click steps one tab; press-and-hold slides continuously
+var holdTimer = null, holdIv = null, didHold = false;
+function holdStart(d){
+  didHold = false;
+  holdTimer = setTimeout(function(){
+    didHold = true;
+    holdIv = setInterval(function(){
+      document.getElementById('tabStrip').scrollBy({left: d*6});
+    }, 16);                       // ~375 px/s steady slide
+  }, 350);                        // hold threshold
+}
+function holdEnd(d){
+  clearTimeout(holdTimer);
+  if (holdIv){ clearInterval(holdIv); holdIv = null; }
+  else if (!didHold && d !== undefined){
+    var vis = visBtns();
+    var w = vis.length ? vis[0].offsetWidth + 4 : 120;   // one tab + gap
+    document.getElementById('tabStrip').scrollBy({left: d*w, behavior:'smooth'});
+  }
+}
+
+function buildCombo(){
+  var c = document.getElementById('tabCombo');
+  c.innerHTML = '<option value="">tabs&hellip;</option>';
+  var btns = allBtns().reverse();   // newest first
+  btns.forEach(function(b){
+    var o = document.createElement('option');
+    o.value = tabIdOf(b);
+    o.textContent = (b.style.display === 'none' ? '· ' : '') + labelOf(b);
+    c.appendChild(o);
+  });
+}
+
+function init(){
+  var s = hiddenSet();
+  allBtns().forEach(function(b){ if (s.has(tabIdOf(b))) b.style.display = 'none'; });
+  // limit the strip to the newest MAXTABS visible tabs (rest via combo)
+  var vis = visBtns();
+  if (vis.length > MAXTABS){
+    vis.slice(0, vis.length - MAXTABS).forEach(function(b){ b.style.display = 'none'; });
+  }
+  // make sure the active tab is visible; otherwise activate the newest visible
+  var act = document.querySelector('.tbtn.active');
+  if (!act || act.style.display === 'none'){
+    var v = visBtns();
+    if (v.length) selTab(tabIdOf(v[v.length-1]));
+  } else {
+    act.scrollIntoView({inline:'nearest', block:'nearest'});
+  }
+  buildCombo();
+}
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

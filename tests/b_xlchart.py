@@ -48,7 +48,7 @@ def chart_root(chart, values=None):
 
 class b_xlchart(bench):
     BenchName = 'xlchart'
-    BenchVersion = 'M1.0.5'
+    BenchVersion = 'M1.0.6'
     BenchHeader = ''
     sources = SOURCES
 

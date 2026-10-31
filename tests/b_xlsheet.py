@@ -208,7 +208,7 @@ def zip_parts(path):
 
 class b_xlsheet(bench):
     BenchName = 'xlsheet'
-    BenchVersion = 'M1.0.1'
+    BenchVersion = 'M1.0.2'
     BenchHeader = ''
     sources = SOURCES
 
