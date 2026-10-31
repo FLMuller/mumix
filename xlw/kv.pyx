@@ -1,8 +1,8 @@
 # cython: language_level=3
 """
-kv.pyx -- kv: an open-addressing hash map for text keys and sparse (r, c, ...) keys.
-Promoted from the sandbox variant kvc2 (timing: tests/z_sandbox/b_kvcmp.py); only the
-names changed.
+kv.pyx -- kv: an open-addressing hash map for text keys and sparse [r, c, ...] keys.
+Promoted from the sandbox variant kvc2 (its timing is in the history, commit e98424b); the
+canonical sparse key is written [5 3] (kvc2 wrote (5 3)).
 
 Algorithm
     Open addressing with a parallel TYPE array, so leaf and sparse enumeration is a
@@ -13,12 +13,38 @@ Algorithm
     (memcmp) and one the value. key2idx is inlined and emits bytes directly.
     The hash differs from kv.m, so the probe ORDER is not that of kv.m. The observable
     behaviour is the same: the parity tests assert behaviour, not probe order.
+    A sparse key d[5, 3] is stored, and shown by indici() and the repr, as the text
+    "[5 3]": a list, as in Python. That text is also an address: d["[5 3]"] reads and
+    overwrites the cell, so a key from indici() always round-trips. For the same reason a
+    NEW text key that starts with "[" is refused (KvReservedBracket); a text key that
+    starts with "(" is an ordinary leaf. Text that starts with "[" (a header such as
+    "[A] in A") cannot be a kv key; as a value, or behind a one-letter prefix, it is fine.
+    Position access. Entries sit in write order in the parallel arrays; d.at(idx) is the key
+    at position idx (the position is the slot number, the first entry written is 0), so a
+    store of unique texts is a numbered list: d.kvw(text, len(d)) and d.at(n) is the text.
+    A removal leaves a dead slot, and a resize normally compacts the live entries, which
+    renumbers them. The first call of at() PINS the store: from then on a resize never
+    compacts, so a position that was handed out stays valid (dead slots stay dead; keys(),
+    vals() and indici() skip them). A pinned store that churns would grow without bound, so
+    a new entry is refused with KvPositionOverflow when BOTH hold: more than 10 slots per
+    live entry, and the dead slots hold more than 10 x 4096 bytes (counted as 64 bytes
+    each). clear() unpins. Do not use at() on a store that deletes keys often.
 
 Use
     from kv import kv, kvr, kvw
-    d = kv(); d.x = 5; d[2, 3] = 99; d.kvr('x')
+    d = kv(); d.x = 5; d[2, 3] = 99; d.kvr('x'); d.indici()      # ['[2 3]']
+    d.at(0)                                                       # 'x'
 
 Versions
+    M03  m03.v01  2026-10-31  at(idx): the key at a position, which pins the store against
+                              compaction; KvPositionOverflow on excessive churn.
+    M02  m02.v01  2026-10-31  the sparse key is written [r c] in place of (r c), and
+                              KvReservedParen is KvReservedBracket. The delimiter costs
+                              nothing (measured). Tried and dropped: a
+                              marker byte 0xFF in place of the delimiter; no text could
+                              collide, but "[5 3]" then no longer addressed the cell, so
+                              keys from indici() did not round-trip, and indici() was 2.3x
+                              slower.
     M01  m01.v01  2026-10-31  promoted from kvc2.pyx: kvc2 -> kv, Kvc2* -> Kv*, and an
                               __all__ list added. Algorithm and code untouched.
 """
@@ -30,13 +56,18 @@ from libc.string cimport memcmp, memset
 DEF TOMB = 0xFFFFFFFF
 DEF N0   = 32
 DEF SZT0 = 64
+DEF DEADRATIO = 10                   # a pinned store may hold this many slots per live entry ...
+DEF DEADMEM   = 40960                # ... or, below this many bytes of dead slots (10 x 4096)
+DEF DEADSLOT  = 64                   # bytes counted for one dead slot
 
-__all__ = ["kv", "kvr", "kvw", "KvError", "KvSparseDimMismatch", "KvReservedParen"]
+__all__ = ["kv", "kvr", "kvw", "KvError", "KvSparseDimMismatch", "KvReservedBracket",
+           "KvPositionOverflow"]
 
 
 class KvError(Exception):            pass
 class KvSparseDimMismatch(KvError): pass
-class KvReservedParen(KvError):     pass
+class KvReservedBracket(KvError):   pass
+class KvPositionOverflow(KvError):  pass
 
 
 cdef inline bytes _numb(x):
@@ -56,7 +87,7 @@ cdef tuple _key2idx(key):
     if isinstance(key, bool):
         return (b"True" if key else b"False"), 0
     if isinstance(key, (int, float)):
-        return b"(" + _numb(key) + b")", 1
+        return b"[" + _numb(key) + b"]", 1
     if isinstance(key, (list, tuple)):
         comps = list(key)
         if len(comps) == 1:
@@ -66,7 +97,7 @@ cdef tuple _key2idx(key):
             elif isinstance(e, str):
                 return e.encode("utf-8"), 0
             else:
-                return b"(" + _numb(e) + b")", 1
+                return b"[" + _numb(e) + b"]", 1
         parts = []
         for c in comps:
             if isinstance(c, str):
@@ -76,7 +107,7 @@ cdef tuple _key2idx(key):
             else:
                 bc = _numb(c)                         # numbers never contain a space
             parts.append(bc)
-        return b"(" + b" ".join(parts) + b")", len(parts)
+        return b"[" + b" ".join(parts) + b"]", len(parts)
     return str(key).encode("utf-8"), 0
 
 
@@ -87,6 +118,7 @@ cdef class kv:
     cdef list _cles, _data               # bytes keys / object values (nbuf-long)
     cdef unsigned long long _mask
     cdef Py_ssize_t _szT, _nbuf, _nUsed, _nfill, _sparseD, _fslot
+    cdef bint _pinned                    # at() was used: resizes keep every slot where it is
 
     def __cinit__(self):
         self._idx = NULL; self._hash = NULL; self._type = NULL
@@ -110,6 +142,7 @@ cdef class kv:
         self._nUsed = 0
         self._nfill = 0
         self._sparseD = 0
+        self._pinned = 0
 
     def clear(self):
         self._setup()
@@ -190,8 +223,12 @@ cdef class kv:
         elif val is None:
             return
         qp = PyBytes_AS_STRING(bkey)
-        if ty < 202 and PyBytes_GET_SIZE(bkey) > 0 and qp[0] == 40:   # '('
-            raise KvReservedParen("parenthesised keys are reserved; index with d[r, c]")
+        if ty < 202 and PyBytes_GET_SIZE(bkey) > 0 and qp[0] == 91:   # '['
+            raise KvReservedBracket("bracketed keys are reserved; index with d[r, c]")
+        if (self._pinned and self._nfill > DEADRATIO * self._nUsed
+                and (self._nfill - self._nUsed) * DEADSLOT > DEADMEM):
+            raise KvPositionOverflow(
+                "excessive churn, dont use kv.at when frequently deleting keys")
         nf = self._nfill
         if 3 * (nf + 1) > 2 * self._szT:
             self._resize()
@@ -228,10 +265,32 @@ cdef class kv:
         self._nbuf = newbuf
 
     cdef _resize(self):
-        cdef Py_ssize_t n = self._nUsed, new_szt = self._szT, k, i, s
+        cdef Py_ssize_t n = self._nfill if self._pinned else self._nUsed
+        cdef Py_ssize_t new_szt = self._szT, k, i, s
         while new_szt < 4 * n:
             new_szt *= 2
         cdef unsigned long long new_mask = new_szt - 1, hk, perturb
+        cdef unsigned int* new_idx
+        if self._pinned:
+            # positions were handed out: grow the probe table over the live entries and
+            # leave every slot, dead ones included, where it is
+            new_idx = <unsigned int*>malloc(new_szt * sizeof(unsigned int))
+            memset(new_idx, 0, new_szt * sizeof(unsigned int))
+            for k in range(n):
+                if self._type[k] == 0:
+                    continue
+                hk = self._hash[k]
+                perturb = hk
+                s = <Py_ssize_t>(hk & new_mask)
+                while new_idx[s] != 0:
+                    perturb >>= 5
+                    s = <Py_ssize_t>(((5 * <unsigned long long>s + 1) + perturb) & new_mask)
+                new_idx[s] = <unsigned int>(k + 1)
+            free(self._idx)
+            self._idx = new_idx
+            self._szT = new_szt
+            self._mask = new_mask
+            return
         cdef list live = [i for i in range(self._nfill) if self._type[i] > 0]
         cdef list nc = [self._cles[i] for i in live]
         cdef list nd = [self._data[i] for i in live]
@@ -241,7 +300,7 @@ cdef class kv:
             self._hash[k] = self._hash[i]
             self._type[k] = self._type[i]
         # rebuild the index table
-        cdef unsigned int* new_idx = <unsigned int*>malloc(new_szt * sizeof(unsigned int))
+        new_idx = <unsigned int*>malloc(new_szt * sizeof(unsigned int))
         memset(new_idx, 0, new_szt * sizeof(unsigned int))
         for k in range(n):
             hk = self._hash[k]
@@ -294,6 +353,12 @@ cdef class kv:
 
     def kind(self, key):
         return self._typeof(_key2idx(key)[0])
+
+    def at(me, Py_ssize_t idx):
+        me._pinned = 1
+        if idx < 0 or idx >= me._nfill or me._type[idx] == 0:
+            raise IndexError(idx)
+        return me._cles[idx].decode("utf-8")
 
     def numEntries(self):
         cdef Py_ssize_t i, c = 0

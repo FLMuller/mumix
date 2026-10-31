@@ -1,15 +1,16 @@
 """
 b_kv.py - tests + benchmark for kv, the contract of xlw/kv.pyx.   (kv only, no comparisons)
-Carried from code.py/sandbox/tests/b_kv.py: the tests unchanged, the benchmark rows
-converted to the timer form (one op per iteration, no Nx or NRep).
+Carried from code.py/sandbox/tests/b_kv.py: the benchmark rows converted to the timer form
+(one op per iteration, no Nx or NRep). A sparse key is the text "[5 3]" (it was "(5 3)"),
+and it is text starting with "[" that is reserved; T93-T95 are new.
 
 WHAT kv IS
   A small hash map: open addressing, perturbed probing, tombstone deletes. Keys are
   stored as bytes and hashed with Python's own hash(). Two kinds of key share one table:
     leaf    "name"        any text; kind 201;  d.name  d["name"]  d.kvr("name")
-    sparse  (r, c, ...)   numbers or text, stored as the text "(r c)"; kind 202.
+    sparse  (r, c, ...)   numbers or text, stored as the text "[r c]"; kind 202.
                           Every sparse key in one store has the same dimension.
-  Text that starts with "(" cannot be created as a leaf (it would look sparse).
+  Text that starts with "[" cannot be created as a leaf (it would look sparse).
   A value can be anything; None means "delete". Entries sit in insertion order in
   parallel arrays, so keys(), vals() and indici() are one contiguous scan.
 
@@ -46,13 +47,13 @@ from use import load
 
 from bench import bench
 SOURCES = ['kv']                      # the module this suite proves and times
-globals().update(load('kv', into={}))  # kv, kvr, kvw, KvError, KvSparseDimMismatch, KvReservedParen
+globals().update(load('kv', into={}))  # kv, kvr, kvw, KvError, KvSparseDimMismatch, KvReservedBracket
 
 
 class b_kv(bench):
     # -- identity and tuning ------------------------------------------------
     BenchName    = "kv"                   # runbench overwrites from the class name
-    BenchVersion = "M1.0.4"               # set ONCE; runbench auto-ticks the 3rd field
+    BenchVersion = "M1.0.8"               # set ONCE; runbench auto-ticks the 3rd field
     BenchHeader  = ""                     # runbench fills this from the CLI message
     sources      = SOURCES
     NKeys        = 100                    # leaf keys and sparse keys in each bench store
@@ -253,6 +254,14 @@ class b_kv(bench):
                 for _ in test.count:
                     d.indici()
         return "d.indici", "enum"
+
+    def bench_at(self, timer):
+        d = self.ee
+        with timer as test:
+            while test.more:
+                for i in test.count:
+                    d.at(i % 200)
+        return "d.at(i)", "query"
 
     def bench_icount(self, timer):
         d = self.ee
@@ -728,15 +737,15 @@ class b_kv(bench):
     def test_T62_pair_text_number(self):
         d = kv()
         d["group", 2] = 7
-        self.assertEqual(d["group", 2], 7)          # tuple -> "(group 2)"
-        self.assertEqual(d[["group", "2"]], 7)      # list  -> "(group 2)"
-        self.assertEqual(kvr(d, "(group 2)"), 7)    # the canonical text itself
+        self.assertEqual(d["group", 2], 7)          # tuple -> "[group 2]"
+        self.assertEqual(d[["group", "2"]], 7)      # list  -> "[group 2]"
+        self.assertEqual(kvr(d, "[group 2]"), 7)    # the canonical text itself
         self.assertIsNone(d["group 2"])             # a space-string is a different key
 
     def test_T63_multi_subscript_is_sparse(self):
         d = kv()
         d["a", "b", "c"] = 5
-        self.assertEqual(kvr(d, "(a b c)"), 5)
+        self.assertEqual(kvr(d, "[a b c]"), 5)
         self.assertEqual(d["a", "b", "c"], 5)
         self.assertEqual(d.idim(), 3)
 
@@ -749,20 +758,20 @@ class b_kv(bench):
         with self.assertRaises(KvSparseDimMismatch):
             d[1, 2, 3] = 2
 
-    def test_T66_reserved_paren_create_errors(self):
-        with self.assertRaises(KvReservedParen):
-            kv()["(8 9)"] = 1
+    def test_T66_reserved_bracket_create_errors(self):
+        with self.assertRaises(KvReservedBracket):
+            kv()["[8 9]"] = 1
 
-    def test_T67_reserved_paren_overwrite_ok(self):
+    def test_T67_reserved_bracket_overwrite_ok(self):
         d = kv()
         d[6, 9] = 1
-        ix = d.indici()[0]                          # "(6 9)"
-        d[ix] = 42                                  # a literal-paren overwrite
+        ix = d.indici()[0]                          # "[6 9]"
+        d[ix] = 42                                  # a literal-bracket overwrite
         self.assertEqual(d[6, 9], 42)
         self.assertEqual(d.kind([6, 9]), 202)       # still sparse
 
-    def test_T68_literal_paren_read_miss(self):
-        self.assertIsNone(kv()["(8 9 10)"])
+    def test_T68_literal_bracket_read_miss(self):
+        self.assertIsNone(kv()["[8 9 10]"])
 
     def test_T69_idim_zero_then_two(self):
         d = kv()
@@ -805,22 +814,22 @@ class b_kv(bench):
 
     def test_T75_errors_share_the_kv_base_class(self):
         self.assertTrue(issubclass(KvSparseDimMismatch, KvError))
-        self.assertTrue(issubclass(KvReservedParen, KvError))
+        self.assertTrue(issubclass(KvReservedBracket, KvError))
         with self.assertRaises(KvError):
-            kv()["(1 2)"] = 1
+            kv()["[1 2]"] = 1
 
     def test_T76_numbers_share_one_canonical_form(self):
         d = kv()
-        d[2.0] = "two"                              # 2.0 and 2 both become "(2)"
+        d[2.0] = "two"                              # 2.0 and 2 both become "[2]"
         self.assertEqual(d[2], "two")
-        self.assertEqual(d.indici(), ["(2)"])
+        self.assertEqual(d.indici(), ["[2]"])
         d[2.5] = "half"
-        self.assertEqual(sorted(d.indici()), ["(2)", "(2.5)"])
+        self.assertEqual(sorted(d.indici()), ["[2.5]", "[2]"])      # "." sorts before "]"
 
     def test_T77_text_part_with_space_is_quoted(self):
         d = kv()
         d["a b", 2] = 5
-        self.assertEqual(d.indici(), ["('a b' 2)"])
+        self.assertEqual(d.indici(), ["['a b' 2]"])
         self.assertEqual(d["a b", 2], 5)
         self.assertEqual(d.idim(), 2)
 
@@ -849,7 +858,7 @@ class b_kv(bench):
         d["5"] = 1
         self.assertEqual(d.idim(), 0)
         self.assertEqual(d["5"], 1)
-        self.assertIsNone(d[5])                     # the number 5 is the key "(5)"
+        self.assertIsNone(d[5])                     # the number 5 is the key "[5]"
 
     def test_T81_in_operator_matches_iskey(self):
         d = kv()
@@ -893,7 +902,7 @@ class b_kv(bench):
         d.kvw("b", [1, [2, 3]])
         self.assertEqual(repr(d), "{a:1 b:[1,[2,3]]}")
         d[3, 4] = 5
-        self.assertEqual(repr(d), "{a:1 b:[1,[2,3]] [(3 4):5]}")
+        self.assertEqual(repr(d), "{a:1 b:[1,[2,3]] [[3 4]:5]}")
 
     # ====================================================================
     # T86-T92  enumeration and kind
@@ -902,7 +911,7 @@ class b_kv(bench):
         d = kv()
         d[3, 7] = 1
         d[4, 8] = 2
-        self.assertEqual(sorted(d.indici()), ["(3 7)", "(4 8)"])
+        self.assertEqual(sorted(d.indici()), ["[3 7]", "[4 8]"])
 
     def test_T87_indici_empty_no_sparse(self):
         d = kv()
@@ -941,8 +950,157 @@ class b_kv(bench):
         d[3, 7] = 1
         d[4, 8] = 2
         d.remove([3, 7])
-        self.assertEqual(d.indici(), ["(4 8)"])
+        self.assertEqual(d.indici(), ["[4 8]"])
         self.assertEqual(d.icount(), 1)
+
+
+    # ---- brackets are the sparse form, parentheses are ordinary text ---------------
+    def test_T93_parenthesised_text_is_an_ordinary_leaf(self):
+        d = kv()
+        for text in ("(paren)", "(5 3)", "(", ")", "(a b"):
+            d[text] = text
+        for text in ("(paren)", "(5 3)", "(", ")", "(a b"):
+            self.assertEqual(d[text], text)
+            self.assertEqual(d.kind(text), 201)
+        self.assertEqual(d.idim(), 0)
+
+    def test_T94_a_new_bracketed_text_key_is_refused_whatever_its_content(self):
+        for text in ("[paren]", "[5 3]", "[", "[A] in A"):
+            with self.assertRaises(KvReservedBracket):
+                kv()[text] = 1
+
+    def test_T95_a_key_from_indici_addresses_the_cell(self):
+        d = kv()
+        d[5, 3] = 7
+        d[8, 1] = 4
+        keys = d.indici()
+        self.assertEqual(keys, ["[5 3]", "[8 1]"])
+        self.assertEqual([d[key] for key in keys], [7, 4])
+        self.assertEqual([d.kvr(key) for key in keys], [7, 4])
+        d[keys[0]] = 70
+        self.assertEqual(d[5, 3], 70)
+        self.assertEqual(repr(d), "{ [[5 3]:70 [8 1]:4]}")         # no leaves: the empty part, then the list
+
+
+    # ---- position access: at(), the pin, and the churn limit ---------------------------------
+    def test_T96_at_numbers_the_entries_in_write_order(self):
+        d = kv()
+        texts = ["b", "a", "(c)", "y", "text"]
+        for number, text in enumerate(texts):
+            d.kvw(text, number)
+        for number, text in enumerate(texts):
+            self.assertEqual(d.at(number), text)
+            self.assertEqual(d.at(d.kvr(text)), text)
+
+    def test_T97_at_outside_the_entries_raises_index_error(self):
+        d = kv()
+        d.x = 1
+        for idx in (-1, 1, 99):
+            with self.assertRaises(IndexError):
+                d.at(idx)
+
+    def test_T98_a_removed_entry_has_no_key_and_its_neighbours_stay(self):
+        d = kv()
+        for text in ("a", "b", "c"):
+            d.kvw(text, 1)
+        d.at(0)                                     # pin
+        d.remove("b")
+        with self.assertRaises(IndexError):
+            d.at(1)
+        self.assertEqual((d.at(0), d.at(2)), ("a", "c"))
+
+    def test_T99_leaves_and_sparse_keys_share_one_numbering_shown_as_written(self):
+        d = kv()
+        d.name = "x"
+        d[5, 3] = 7
+        d.other = 1
+        self.assertEqual([d.at(i) for i in range(3)], ["name", "[5 3]", "other"])
+
+    def test_T100_a_store_of_unique_texts_is_a_numbered_list(self):
+        d = kv()
+        texts = [f"text {i}" for i in range(300)] + ["(paren)", "micro \u00b5"]
+        for text in texts:
+            d.kvw(text, len(d))                     # the position is the value
+        for number, text in enumerate(texts):
+            self.assertEqual(d.kvr(text), number)
+            self.assertEqual(d.at(number), text)
+
+    def test_T101_an_unpinned_store_renumbers_on_a_resize(self):
+        d = kv()
+        for i in range(40):
+            d.kvw(f"k{i}", i)
+        d.remove("k0")
+        for i in range(40, 100):                    # growth and resizes: the gap is dropped
+            d.kvw(f"k{i}", i)
+        self.assertEqual(d.at(0), "k1")             # k1 moved down into position 0
+
+    def test_T102_a_pinned_store_keeps_every_position_across_resizes(self):
+        d = kv()
+        for i in range(40):
+            d.kvw(f"k{i}", i)
+        self.assertEqual(d.at(0), "k0")             # this pins the store
+        d.remove("k0")
+        for i in range(40, 100):
+            d.kvw(f"k{i}", i)
+        with self.assertRaises(IndexError):
+            d.at(0)                                 # the gap stayed
+        self.assertEqual([d.at(i) for i in (1, 39, 40, 99)], ["k1", "k39", "k40", "k99"])
+        self.assertEqual(d.kvr("k99"), 99)
+        self.assertEqual(len(d.keys()), 99)
+        self.assertEqual(d.keys()[0], "k1")         # keys() skips the dead slot
+
+    def test_T103_excessive_churn_on_a_pinned_store_is_refused_with_the_advice(self):
+        d = kv()
+        for i in range(10):
+            d.kvw(f"k{i}", i)
+        d.at(0)
+        cycles = 0
+        with self.assertRaises(KvPositionOverflow) as caught:
+            while cycles < 5000:
+                d.remove("k3")
+                d.kvw("k3", cycles)
+                cycles += 1
+        self.assertIn("excessive churn, dont use kv.at when frequently deleting keys",
+                      str(caught.exception))
+        self.assertGreater(cycles, 600)             # 640 dead slots of 64 bytes pass 10 x 4096
+        self.assertLess(cycles, 700)
+        self.assertEqual(len(d), 9)                 # k3 was removed and not written again
+        self.assertEqual(d.kvr("k4"), 4)
+
+    def test_T104_both_limits_must_hold(self):
+        a = kv()                                    # a high ratio but few dead slots
+        for i in range(10):
+            a.kvw(f"k{i}", i)
+        a.at(0)
+        for cycle in range(300):
+            a.remove("k3")
+            a.kvw("k3", cycle)
+        self.assertEqual(a.kvr("k3"), 299)
+        b = kv()                                    # many dead slots but a low ratio
+        for i in range(2000):
+            b.kvw(f"k{i}", i)
+        b.at(0)
+        for i in range(700):
+            b.remove(f"k{i}")
+        b.kvw("again", 1)                           # 700 dead (44.8 KB) but 2000 < 10 x 1300
+        self.assertEqual(b.kvr("again"), 1)
+
+    def test_T105_an_unpinned_store_never_raises_and_clear_unpins(self):
+        d = kv()
+        for i in range(10):
+            d.kvw(f"k{i}", i)
+        for cycle in range(2000):
+            d.remove("k3")
+            d.kvw("k3", cycle)
+        self.assertEqual(d.kvr("k3"), 1999)
+        d.at(0)
+        d.clear()
+        for i in range(10):
+            d.kvw(f"k{i}", i)
+        for cycle in range(2000):
+            d.remove("k3")
+            d.kvw("k3", cycle)
+        self.assertEqual(d.kvr("k3"), 1999)
 
 
 if __name__ == "__main__":
