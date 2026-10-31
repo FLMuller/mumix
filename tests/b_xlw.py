@@ -85,7 +85,7 @@ def partext(filename, part):
 
 class b_xlw(bench):
     BenchName = 'xlw'
-    BenchVersion = 'M1.0.4'
+    BenchVersion = 'M1.0.5'
     BenchHeader = ''
     sources = SOURCES
 
@@ -110,6 +110,14 @@ class b_xlw(bench):
         cls.scratch = xlw()
         cls.scratch.newbook(cls.path('scratch'), 'W')
         cls.scratch_sheet = cls.scratch.scratch.W
+        cls.table_10k = [[i * 0.001 + j for j in range(10)] for i in range(1000)]
+        cls.table_100k = [[i * 0.001 + j for j in range(10)] for i in range(10000)]
+        for name, table in (('speed10k', cls.table_10k), ('speed100k', cls.table_100k)):
+            whole = xlw()
+            whole.newbook(cls.path(name), 'Data')
+            whole.write(table)
+            whole.save()
+            setattr(cls, name, whole)
 
     @classmethod
     def path(cls, name):
@@ -788,3 +796,47 @@ class b_xlw(bench):
                 for i in test.count:
                     sheet.write(1.5, 'Heading1')
         return "sheet.write(1.5, 'Heading1')", 'write'
+
+    # Whole-book rows: one op is one book (10 000 or 100 000 plain numeric cells, 10
+    # columns), so the cost per cell is the mean divided by the cell count.
+    def bench_build_10k(self, timer):
+        table = self.table_10k
+        with timer as test:
+            while test.more:
+                for i in test.count:
+                    xl = xlw()
+                    xl.newbook(self.path('benchb'), 'W')
+                    xl.write(table)
+        return 'build 10 000 cells: xl.write(block)', 'whole book'
+
+    def bench_save_10k(self, timer):
+        xl = self.speed10k
+        with timer as test:
+            while test.more:
+                for i in test.count:
+                    xl.save()
+        return 'save 10 000 cells to disk', 'whole book'
+
+    def bench_open_10k(self, timer):
+        filename = self.path('speed10k') + '.xlsx'
+        with timer as test:
+            while test.more:
+                for i in test.count:
+                    xlw().open(filename)
+        return 'open 10 000 cells', 'whole book'
+
+    def bench_save_100k(self, timer):
+        xl = self.speed100k
+        with timer as test:
+            while test.more:
+                for i in test.count:
+                    xl.save()
+        return 'save 100 000 cells to disk', 'whole book'
+
+    def bench_open_100k(self, timer):
+        filename = self.path('speed100k') + '.xlsx'
+        with timer as test:
+            while test.more:
+                for i in test.count:
+                    xlw().open(filename)
+        return 'open 100 000 cells', 'whole book'
