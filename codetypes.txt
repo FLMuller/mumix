@@ -12,9 +12,13 @@
 # A path ending in / covers everything beneath it. The most specific line wins.
 # Format:  <path>  <type>   # why
 
-primary/                   application      # the micromixing model and its support modules
-primary/odeproblem.py      infrastructure   # semantic ODE problems: p, v, f -> a scipy solver
-primary/fields.py          infrastructure   # attribute-access struct used by ODEproblem
+odeproblem/                infrastructure   # semantic ODE problems: p, v, f -> a scipy solver
+odeproblem/odeproblem.py   infrastructure   # the ODEproblem class
+odeproblem/fields.py       infrastructure   # attribute-access struct used by ODEproblem
+xlw/                       application      # the Excel writer, reader and chart code
+xlw/kv.pyx                 infrastructure   # promoted kvc2: hash map for text and sparse keys
+xlw/tkv.pyx                infrastructure   # promoted tkvc2: typed tree on the same store design
+results/                   utility          # generated reports and reference workbooks; not uploaded
 tests/                     test
 demos/                     demo
 tools/                     skill            # copy of the benchtest harness
