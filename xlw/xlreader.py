@@ -22,7 +22,7 @@ Use
     xl = xlw()
     book = xl.open(r'data/results.xlsx')             # or  read_book(xl, path)
     sheet = book.Sheet1                              # a sheet, by its safe name
-    sheet[3, 2].kvr('val')                           # a cell
+    xlsheet.cell_value(sheet, 3, 2)                  # a cell
     chart = sheet.kvr('priv').kvr('charts').nodes()[0]
     book.kvr('priv').kvr('unmapped')                 # what was not read
 
@@ -42,6 +42,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 import xlchart
+import xlsheet
 import xlstyle
 from xlstyle import DEFAULTS
 
@@ -67,13 +68,6 @@ BUILTIN_CODES = {0: '', 1: '0', 2: '0.00', 3: '#,##0', 4: '#,##0.00', 9: '0%',
                  16: 'd-mmm', 17: 'mmm-yy', 18: 'h:mm AM/PM', 19: 'h:mm:ss AM/PM',
                  20: 'h:mm', 21: 'h:mm:ss', 22: 'm/d/yy h:mm', 45: 'mm:ss',
                  46: '[h]:mm:ss', 47: 'mmss.0', 48: '##0.0E+0', 49: '@'}
-
-# Top-level worksheet elements that are read, or that carry nothing the tree holds.
-SHEET_KNOWN = ('sheetPr', 'dimension', 'sheetViews', 'sheetFormatPr', 'cols', 'sheetData',
-               'pageMargins', 'pageSetup', 'headerFooter', 'drawing', 'extLst',
-               'AlternateContent', 'printOptions', 'rowBreaks', 'colBreaks',
-               'sheetProtection', 'phoneticPr', 'ignoredErrors')
-
 
 def local(tag):
     return tag.rsplit('}', 1)[-1]
@@ -297,62 +291,6 @@ def read_strings(archive):
             pieces += [t.text or '' for t in run.findall(NS_MAIN + 't')]
         strings.append(''.join(pieces))
     return strings
-
-
-# --------------------------------------------------------------------------- sheets -----
-def read_cells(archive, path, sheet, strings, deltas, report):
-    """Stream one worksheet part into the sheet node; returns the grid-lines flag. Cells
-    are read as they close; the top-level elements met on the way are checked against
-    SHEET_KNOWN so that anything not read is reported."""
-    formulas = 0
-    grid = True
-    depth = 0
-    row_re = re.compile(r'([A-Z]+)(\d+)')
-    for event, element in ET.iterparse(archive.open(path), events=('start', 'end')):
-        name = local(element.tag)
-        if event == 'start':
-            depth += 1
-            if depth == 2 and name not in SHEET_KNOWN:
-                report.add(f'worksheet element {name} was not read')
-            if name == 'sheetView' and element.get('showGridLines') in ('0', 'false'):
-                grid = False
-            continue
-        depth -= 1
-        if name == 'c':
-            reference = row_re.match(element.get('r'))
-            col = xlchart.letters2col(reference.group(1))
-            row = int(reference.group(2))
-            kind = element.get('t')
-            raw = element.find(NS_MAIN + 'v')
-            if element.find(NS_MAIN + 'f') is not None:
-                formulas += 1
-            if kind == 'inlineStr':
-                value = ''.join(t.text or '' for t in element.iter(NS_MAIN + 't'))
-            elif raw is None or raw.text is None:
-                value = None
-            elif kind == 's':
-                value = strings[int(raw.text)]
-            elif kind == 'b':
-                value = raw.text in ('1', 'true')
-            elif kind in ('str', 'e'):
-                value = raw.text
-            else:
-                value = float(raw.text)
-            style = int(element.get('s', 0))
-            delta = deltas[style] if style < len(deltas) else {}
-            if value is not None or delta:
-                cell = sheet.node(row, col)
-                cell['val'] = xlw_blank(value)
-                for prop, setting in delta.items():
-                    cell[prop] = setting
-            element.clear()
-    if formulas:
-        report.add(f'{formulas} formula cells: the cached values were read, not the formulas')
-    return grid
-
-
-def xlw_blank(value):
-    return xlwmodule.BLANK if value is None else value
 
 
 # ---------------------------------------------------------------------------- charts ----
@@ -804,13 +742,14 @@ def read_book(xl, filename, name=None):
         out_name = os.path.join(os.path.dirname(os.path.abspath(filename)),
                                 (name or base) + '_xlw')
         book = xl.newbook(out_name)
+        remap = xlsheet.fill_tables(book.kvr('priv').kvr('tables'), strings, deltas)
         chart_counter = [0]
         for sheet_el in workbook.iter(NS_MAIN + 'sheet'):
             sheet_name = sheet_el.get('name')
             target = rels[sheet_el.get(NS_REL + 'id')]
             path = target.lstrip('/') if target.startswith('/') else 'xl/' + target
             sheet = xlwmodule.fwd_newsheet(book, sheet_name)
-            grid = read_cells(archive, path, sheet, strings, deltas, report)
+            grid = xlsheet.xml_to_sheet(archive.read(path), sheet, report, remap)
             sheet.kvw('showGrid', grid)
             rels_path = os.path.dirname(path) + '/_rels/' + os.path.basename(path) + '.rels'
             if rels_path in names:

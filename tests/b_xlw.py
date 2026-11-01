@@ -36,6 +36,9 @@ from bench import bench
 
 SOURCES = ['xlw', 'xlstyle', 'xlparts']
 globals().update(load('xlw', into={}))          # xlw, XlwError, XlwNoBook, ...
+import xlsheet
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from gridcheck import Cell, at, ncells, cell_table
 BOUND = load('xlstyle', into={})                # the style helpers the tests probe
 
 NS = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
@@ -85,7 +88,7 @@ def partext(filename, part):
 
 class b_xlw(bench):
     BenchName = 'xlw'
-    BenchVersion = 'M1.0.6'
+    BenchVersion = 'M1.0.10'
     BenchHeader = ''
     sources = SOURCES
 
@@ -191,17 +194,17 @@ class b_xlw(bench):
     def test_T14_write_string(self):
         xl = self.make()
         xl.write('hello')
-        self.assertEqual(xl.data.S1[1, 1].kvr('val'), 'hello')
+        self.assertEqual(at(xl.data.S1, 1, 1).kvr('val'), 'hello')
 
     def test_T15_write_numeric(self):
         xl = self.make()
         xl.write(3.14)
-        self.assertEqual(xl.data.S1[1, 1].kvr('val'), 3.14)
+        self.assertEqual(at(xl.data.S1, 1, 1).kvr('val'), 3.14)
 
     def test_T16_write_logical(self):
         xl = self.make()
         xl.write(True)
-        self.assertIs(xl.data.S1[1, 1].kvr('val'), True)
+        self.assertIs(at(xl.data.S1, 1, 1).kvr('val'), True)
 
     def test_T17_write_advances_the_cursor(self):
         sheet = self.make().data.S1
@@ -213,8 +216,8 @@ class b_xlw(bench):
     def test_T18_write_chains(self):
         sheet = self.make().data.S1
         sheet.write('a').write('b').write('c')
-        self.assertEqual(sheet[1, 1].kvr('val'), 'a')
-        self.assertEqual(sheet[1, 3].kvr('val'), 'c')
+        self.assertEqual(at(sheet, 1, 1).kvr('val'), 'a')
+        self.assertEqual(at(sheet, 1, 3).kvr('val'), 'c')
 
     def test_T19_write_returns_the_sheet(self):
         sheet = self.make().data.S1
@@ -223,37 +226,37 @@ class b_xlw(bench):
     def test_T20_write_block_of_lists(self):
         sheet = self.make().data.S1
         sheet.write([[1, 2, 3], [4, 5, 6]])
-        self.assertEqual(sheet[1, 1].kvr('val'), 1)
-        self.assertEqual(sheet[1, 3].kvr('val'), 3)
-        self.assertEqual(sheet[2, 1].kvr('val'), 4)
-        self.assertEqual(sheet[2, 3].kvr('val'), 6)
+        self.assertEqual(at(sheet, 1, 1).kvr('val'), 1)
+        self.assertEqual(at(sheet, 1, 3).kvr('val'), 3)
+        self.assertEqual(at(sheet, 2, 1).kvr('val'), 4)
+        self.assertEqual(at(sheet, 2, 3).kvr('val'), 6)
 
     def test_T21_write_mixed_block(self):
         sheet = self.make().data.S1
         sheet.write([['alpha', 1], ['beta', 2]])
-        self.assertEqual(sheet[1, 1].kvr('val'), 'alpha')
-        self.assertEqual(sheet[2, 2].kvr('val'), 2)
+        self.assertEqual(at(sheet, 1, 1).kvr('val'), 'alpha')
+        self.assertEqual(at(sheet, 2, 2).kvr('val'), 2)
 
     def test_T22_write_flat_list_is_one_row(self):
         sheet = self.make().data.S1
         sheet.write([True, False, True])
-        self.assertIs(sheet[1, 2].kvr('val'), False)
+        self.assertIs(at(sheet, 1, 2).kvr('val'), False)
         self.assertEqual(sheet.kvr('priv').kvr('cursor'), [1, 4])
 
     def test_T23_write_numpy_array(self):
         import numpy
         sheet = self.make().data.S1
         sheet.write(numpy.array([[1.5, 2.5], [3.5, 4.5]]))
-        self.assertEqual(sheet[2, 2].kvr('val'), 4.5)
-        self.assertIsInstance(sheet[2, 2].kvr('val'), float)
+        self.assertEqual(at(sheet, 2, 2).kvr('val'), 4.5)
+        self.assertIsInstance(at(sheet, 2, 2).kvr('val'), float)
         sheet.writeln()
         sheet.write(numpy.float64(7.25))
-        self.assertEqual(sheet[2, 1].kvr('val'), 7.25)
+        self.assertEqual(at(sheet, 2, 1).kvr('val'), 7.25)
 
     def test_T24_write_none_makes_a_blank_cell(self):
         sheet = self.make().data.S1
         sheet.write(None)
-        self.assertEqual(sheet[1, 1].kvr('val'), '')
+        self.assertIsNone(at(sheet, 1, 1).kvr('val'))                # an empty text is a blank cell
 
     def test_T25_write_dict_is_refused(self):
         with self.assertRaises(XlwBadArg):
@@ -262,7 +265,7 @@ class b_xlw(bench):
     def test_T26_keyword_style_on_the_class_method(self):
         xl = self.make()
         xl.write('x', bold=True, fill='yellow')
-        cell = xl.data.S1[1, 1]
+        cell = at(xl.data.S1, 1, 1)
         self.assertTrue(cell.kvr('bold'))
         self.assertEqual(cell.kvr('fill'), 'FFFF00')
 
@@ -278,13 +281,13 @@ class b_xlw(bench):
         sheet = self.make().data.S1
         sheet.writeln('hello')
         self.assertEqual(sheet.kvr('priv').kvr('cursor'), [2, 1])
-        self.assertEqual(sheet[1, 1].kvr('val'), 'hello')
+        self.assertEqual(at(sheet, 1, 1).kvr('val'), 'hello')
 
     def test_T29_writeln_chains(self):
         sheet = self.make().data.S1
         sheet.writeln('r1').writeln('r2').writeln('r3')
-        self.assertEqual(sheet[1, 1].kvr('val'), 'r1')
-        self.assertEqual(sheet[3, 1].kvr('val'), 'r3')
+        self.assertEqual(at(sheet, 1, 1).kvr('val'), 'r1')
+        self.assertEqual(at(sheet, 3, 1).kvr('val'), 'r3')
 
     def test_T30_nl_is_a_newline(self):
         xl = self.make()
@@ -327,14 +330,14 @@ class b_xlw(bench):
     def test_T35_named_style_is_applied(self):
         xl = self.make()
         xl.data.S1.write('x', 'Heading1')
-        cell = xl.data.S1[1, 1]
+        cell = at(xl.data.S1, 1, 1)
         self.assertEqual(cell.kvr('sz'), 15)
         self.assertTrue(cell.kvr('bold'))
 
     def test_T36_override_wins_and_the_base_survives(self):
         xl = self.make()
         xl.data.S1.write('x', 'Heading1', 'sz', 20)
-        cell = xl.data.S1[1, 1]
+        cell = at(xl.data.S1, 1, 1)
         self.assertEqual(cell.kvr('sz'), 20)
         self.assertTrue(cell.kvr('bold'))
 
@@ -342,7 +345,7 @@ class b_xlw(bench):
         xl = self.make()
         xl.newstyle('myHdr', 'bold', True, 'sz', 16, 'fill', 'FF0000')
         xl.data.S1.write('x', 'myHdr')
-        cell = xl.data.S1[1, 1]
+        cell = at(xl.data.S1, 1, 1)
         self.assertEqual(cell.kvr('sz'), 16)
         self.assertTrue(cell.kvr('bold'))
         self.assertEqual(cell.kvr('fill'), 'FF0000')
@@ -350,7 +353,7 @@ class b_xlw(bench):
     def test_T38_integers_get_the_format_0(self):
         xl = self.make()
         xl.write(42).write(7)
-        self.assertEqual(xl.data.S1[1, 2].kvr('numfmt'), '0')
+        self.assertEqual(at(xl.data.S1, 1, 2).kvr('numfmt'), '0')
 
     def test_T39_auto_numfmt_ranges(self):
         auto = BOUND['auto_numfmt']
@@ -368,10 +371,10 @@ class b_xlw(bench):
         sheet.write('y', 'strikethrough', True)
         sheet.write('z', 'rotation', 45)
         sheet.write('w', 'indent', 2)
-        self.assertTrue(sheet[1, 1].kvr('underline'))
-        self.assertTrue(sheet[1, 2].kvr('strikethrough'))
-        self.assertEqual(sheet[1, 3].kvr('rotation'), 45)
-        self.assertEqual(sheet[1, 4].kvr('indent'), 2)
+        self.assertTrue(at(sheet, 1, 1).kvr('underline'))
+        self.assertTrue(at(sheet, 1, 2).kvr('strikethrough'))
+        self.assertEqual(at(sheet, 1, 3).kvr('rotation'), 45)
+        self.assertEqual(at(sheet, 1, 4).kvr('indent'), 2)
 
     def test_T41_style_properties_reach_styles_xml(self):
         xl = self.make()
@@ -389,7 +392,7 @@ class b_xlw(bench):
     def test_T42_border_string_becomes_four_edges(self):
         xl = self.make()
         xl.data.S1.write('x', 'border', 'nesw:thin')
-        border = xl.data.S1[1, 1].kvr('border')
+        border = at(xl.data.S1, 1, 1).kvr('border')
         self.assertEqual(len(border), 4)
         self.assertEqual(border[0][1], 'thin')
 
@@ -408,31 +411,31 @@ class b_xlw(bench):
     def test_T44_loaded_style_good(self):
         xl = self.make()
         xl.data.S1.write('x', 'Good')
-        cell = xl.data.S1[1, 1]
+        cell = at(xl.data.S1, 1, 1)
         self.assertEqual(cell.kvr('fill'), 'C6EFCE')
         self.assertEqual(cell.kvr('color'), '006100')
 
     def test_T45_loaded_style_with_a_border(self):
         xl = self.make()
         xl.data.S1.write('x', 'Input')
-        cell = xl.data.S1[1, 1]
+        cell = at(xl.data.S1, 1, 1)
         self.assertEqual(cell.kvr('fill'), 'FFCC99')
         self.assertEqual(len(cell.kvr('border')), 4)
 
     def test_T46_heading_alias_from_the_file(self):
         xl = self.make()
         xl.data.S1.write('x', 'Heading1')
-        self.assertEqual(xl.data.S1[1, 1].kvr('sz'), 15)
+        self.assertEqual(at(xl.data.S1, 1, 1).kvr('sz'), 15)
 
     def test_T47_colour_named(self):
         xl = self.make()
         xl.data.S1.write('x', 'color', 'red')
-        self.assertEqual(xl.data.S1[1, 1].kvr('color'), 'FF0000')
+        self.assertEqual(at(xl.data.S1, 1, 1).kvr('color'), 'FF0000')
 
     def test_T48_colour_rgb_triple(self):
         xl = self.make()
         xl.data.S1.write('x', 'fill', [255, 204, 153])
-        self.assertEqual(xl.data.S1[1, 1].kvr('fill'), 'FFCC99')
+        self.assertEqual(at(xl.data.S1, 1, 1).kvr('fill'), 'FFCC99')
 
     def test_T49_colour_forms(self):
         color2hex = BOUND['color2hex']
@@ -474,8 +477,9 @@ class b_xlw(bench):
     def test_T52_border_verb_creates_value_less_cells(self):
         sheet = self.make().data.S1
         sheet.border([(1, 1), (1, 2)], 'nesw:thin')
-        cell = sheet[1, 1]
-        self.assertEqual(cell.kvr('val'), BLANK)
+        cell = at(sheet, 1, 1)
+        self.assertEqual(sheet.kvr('cells').kvr((1, 1))[0], xlsheet.BLANK)
+        self.assertIsNone(cell.kvr('val'))
         self.assertEqual(len(cell.kvr('border')), 4)
 
     def test_T53_value_less_cell_emits_no_value_but_keeps_its_border(self):
@@ -496,43 +500,36 @@ class b_xlw(bench):
         sheet = self.make().data.S1
         sheet.write('keep')
         sheet.border([(1, 1)], 'nesw:thin')
-        self.assertEqual(sheet[1, 1].kvr('val'), 'keep')
-        self.assertEqual(len(sheet[1, 1].kvr('border')), 4)
+        self.assertEqual(at(sheet, 1, 1).kvr('val'), 'keep')
+        self.assertEqual(len(at(sheet, 1, 1).kvr('border')), 4)
 
     # ---- reads -----------------------------------------------------------------------
-    def test_T55_item_read_returns_the_cell(self):
-        cell = self.sheet[3, 4]
-        self.assertEqual(cell.type(), 'cell')
+    def test_T55_a_cell_reads_back_its_value(self):
+        cell = at(self.sheet, 3, 4)
         self.assertEqual(cell.kvr('val'), 2 * 100.0 + 3 + 0.5)
 
     def test_T56_kvr_with_a_coordinate_pair(self):
-        cell = self.sheet.kvr([5, 6])
+        cell = at(self.sheet, 5, 6)
         self.assertEqual(cell.kvr('val'), 4 * 100.0 + 5 + 0.5)
 
     def test_T57_kvr_of_an_absent_cell_is_none(self):
-        self.assertIsNone(self.sheet.kvr([99, 99]))
+        self.assertIsNone(at(self.sheet, 99, 99))
 
     def test_T58_dot_walk_resolves_the_sheet(self):
         self.assertIs(self.xl.bench.S1, self.sheet)
-
-    def test_T59_a_speculative_read_does_not_hide_a_later_write(self):
-        sheet = self.make().data.S1
-        sheet[5, 5]                                # a read of an absent cell
-        sheet.border([(5, 5)], 'nesw')
-        self.assertEqual(len(sheet.nodes()), 1)
 
     # ---- fluent dispatch ---------------------------------------------------------------
     def test_T60_node_dispatch_with_style_pairs(self):
         xl = self.make()
         xl.data.S1.write('disp', 'bold', True)
-        self.assertEqual(xl.data.S1[1, 1].kvr('val'), 'disp')
-        self.assertTrue(xl.data.S1[1, 1].kvr('bold'))
+        self.assertEqual(at(xl.data.S1, 1, 1).kvr('val'), 'disp')
+        self.assertTrue(at(xl.data.S1, 1, 1).kvr('bold'))
 
     def test_T61_chain_across_verbs(self):
         xl = self.make()
         xl.data.S1.write('a').write('b').writeln().write('c')
-        self.assertEqual(xl.data.S1[1, 1].kvr('val'), 'a')
-        self.assertEqual(xl.data.S1[2, 1].kvr('val'), 'c')
+        self.assertEqual(at(xl.data.S1, 1, 1).kvr('val'), 'a')
+        self.assertEqual(at(xl.data.S1, 2, 1).kvr('val'), 'c')
 
     # ---- activate ----------------------------------------------------------------------
     def test_T62_activate_by_name(self):
@@ -747,26 +744,27 @@ class b_xlw(bench):
 
     # ---- benchmarks ----------------------------------------------------------------------
     def bench_item_read(self, timer):
-        sheet = self.sheet
+        grid = self.sheet.kvr('cells')
         rows = self.rows
         cols = self.cols
         size = len(rows)
         with timer as test:
             while test.more:
                 for i in test.count:
-                    sheet[rows[i % size], cols[i % size]]
-        return 'sheet[r, c]', 'read'
+                    grid.kvr((rows[i % size], cols[i % size]))
+        return 'cells.kvr((r, c))', 'read'
 
-    def bench_kvr_val(self, timer):
+    def bench_cell_value(self, timer):
         sheet = self.sheet
         rows = self.rows
         cols = self.cols
         size = len(rows)
+        value = xlsheet.cell_value
         with timer as test:
             while test.more:
                 for i in test.count:
-                    sheet.kvr([rows[i % size], cols[i % size]]).kvr('val')
-        return 'kvr([r, c]).kvr(val)', 'read'
+                    value(sheet, rows[i % size], cols[i % size])
+        return 'cell_value(sheet, r, c)', 'read'
 
     def bench_write_cursor(self, timer):
         with timer as test:

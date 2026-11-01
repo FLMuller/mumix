@@ -44,6 +44,7 @@ import xlreader                                  # for its helper functions (dra
 from xlstore import KV, TKV                      # to tell a record from a node
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from chartcheck import order_errors
+from gridcheck import Cell, at, ncells, cell_table, formula_table
 
 OUTDIR = os.path.join(ROOT, 'results', 'b_xlreader')
 FIXTURES = os.path.join(ROOT, 'tests', 'fixtures')
@@ -53,22 +54,6 @@ XRD = 'Theopylline As recieved.xlsx'
 
 
 # ---------------------------------------------------------------- comparison helpers ----
-def cell_table(sheet):
-    """{(row, col): (value, ((property, repr(setting)), ...))} of a sheet node."""
-    table = {}
-    for name, cell in zip(sheet.names(), sheet.nodes()):
-        row, col = (int(part) for part in name[1:-1].split())
-        value = None
-        style = []
-        for key, setting in cell.entries():
-            if key == 'val':
-                value = setting
-            else:
-                style.append((key, repr(setting)))
-        table[(row, col)] = (value, tuple(sorted(style)))
-    return table
-
-
 def dump(thing):
     """A tkv node, a kv record, a list or a scalar as plain nested data (for comparing)."""
     if isinstance(thing, TKV):
@@ -120,7 +105,7 @@ def sha(path):
 
 class b_xlreader(bench):
     BenchName = 'xlreader'
-    BenchVersion = 'M1.0.6'
+    BenchVersion = 'M1.0.9'
     BenchHeader = ''
     sources = SOURCES
 
@@ -203,40 +188,40 @@ class b_xlreader(bench):
 
     def test_T03_value_types(self):
         data = self.book.Data
-        self.assertEqual(data[2, 1].kvr('val'), 'alpha')
-        self.assertAlmostEqual(data[2, 2].kvr('val'), 3.14159, places=12)
-        self.assertIs(data[2, 3].kvr('val'), True)
-        self.assertIs(data[3, 3].kvr('val'), False)
-        self.assertEqual(data[6, 1].kvr('val'), 'quote & <b> "q"')
-        self.assertEqual(data[6, 2].kvr('val'), '(paren)')
+        self.assertEqual(at(data, 2, 1).kvr('val'), 'alpha')
+        self.assertAlmostEqual(at(data, 2, 2).kvr('val'), 3.14159, places=12)
+        self.assertIs(at(data, 2, 3).kvr('val'), True)
+        self.assertIs(at(data, 3, 3).kvr('val'), False)
+        self.assertEqual(at(data, 6, 1).kvr('val'), 'quote & <b> "q"')
+        self.assertEqual(at(data, 6, 2).kvr('val'), '(paren)')
 
     def test_T04_style_properties(self):
-        cell = self.book.Data[4, 1]
+        cell = at(self.book.Data, 4, 1)
         self.assertTrue(cell.kvr('bold'))
         self.assertEqual(cell.kvr('fill'), 'FFFF00')
         self.assertEqual(cell.kvr('color'), 'C00000')
         self.assertEqual(cell.kvr('sz'), 14)
         self.assertEqual(cell.kvr('font'), 'Cambria')
-        self.assertEqual(self.book.Data[4, 2].kvr('numfmt'), '0.00E+00')
-        centred = self.book.Data[4, 3]
+        self.assertEqual(at(self.book.Data, 4, 2).kvr('numfmt'), '0.00E+00')
+        centred = at(self.book.Data, 4, 3)
         self.assertEqual(centred.kvr('halign'), 'center')
         self.assertTrue(centred.kvr('wrap'))
         self.assertEqual(centred.kvr('indent'), 2)
         self.assertEqual(centred.kvr('rotation'), -30)
 
     def test_T05_border_and_its_colour(self):
-        cell = self.book.Data[7, 1]
+        cell = at(self.book.Data, 7, 1)
         edges = {edge: (style, color) for edge, style, color in cell.kvr('border')}
         self.assertEqual(edges['n'], ('medium', 'FF0000'))
         self.assertEqual(edges['s'], ('double', 'FF0000'))
         self.assertEqual(cell.kvr('bcolor'), 'FF0000')
 
     def test_T06_blank_styled_cell_is_blank(self):
-        self.assertEqual(self.book.Data[7, 2].kvr('val'), BLANK)
+        self.assertEqual(at(self.book.Data, 7, 2).kvr('val'), None)
 
     def test_T07_second_sheet_and_grid_lines(self):
         sheet = self.book.My_Sheet
-        self.assertEqual(sheet[1, 1].kvr('val'), 'second sheet')
+        self.assertEqual(at(sheet, 1, 1).kvr('val'), 'second sheet')
         self.assertFalse(sheet.kvr('showGrid'))
         self.assertTrue(self.book.Data.kvr('showGrid'))
 
@@ -309,27 +294,28 @@ class b_xlreader(bench):
     def test_T15_the_matlab_written_files_read(self):
         data = xlw().open(os.path.join(FIXTURES, 'data.xlsx'))
         self.assertEqual(data.kvr('priv').kvr('sheets'), ['S1', 'Two'])
-        self.assertEqual(data.S1[1, 1].kvr('val'), 'one-A1')
-        self.assertEqual(data.Two[1, 1].kvr('val'), 'two-A1')
+        self.assertEqual(at(data.S1, 1, 1).kvr('val'), 'one-A1')
+        self.assertEqual(at(data.Two, 1, 1).kvr('val'), 'two-A1')
         grid = xlw().open(os.path.join(FIXTURES, 'bench.xlsx'))
-        self.assertEqual(len(grid.S1.nodes()), 144)
-        self.assertEqual(grid.S1[1, 1].kvr('numfmt'), '0')
+        self.assertEqual(ncells(grid.S1), 144)
+        self.assertEqual(at(grid.S1, 1, 1).kvr('numfmt'), '0')
         small = xlw().open(os.path.join(FIXTURES, 'scale_10.xlsx'))
-        self.assertEqual(len(small.S1.nodes()), 100)
+        self.assertEqual(ncells(small.S1), 100)
 
     def test_T16_an_excel_authored_workbook_reads_with_fonts_and_a_report(self):
         book = xlw().open(os.path.join(FIXTURES, 'htmltags.xlsx'))
         bpriv = book.kvr('priv')
         self.assertEqual(bpriv.kvr('sheets'), ['Sheet1', 'Sheet2'])
-        cell = book.Sheet1[1, 1]
+        cell = at(book.Sheet1, 1, 1)
         self.assertEqual(cell.kvr('font'), 'JetBrains Mono')
         self.assertEqual(cell.kvr('sz'), 10.5)
         self.assertEqual(cell.kvr('color'), '067D17')
         self.assertEqual(cell.kvr('valign'), 'center')
-        self.assertEqual(cell.kvr('val'), BLANK)                 # styled, no value
+        self.assertEqual(cell.kvr('val'), None)                 # styled, no value
         report = ' | '.join(bpriv.kvr('unmapped'))
-        self.assertIn('formula cells', report)
+        self.assertNotIn('formula', report)                     # the formulas are read now
         self.assertIn('sortState', report)
+        self.assertEqual(len(formula_table(book.Sheet1)) + len(formula_table(book.Sheet2)), 104)
 
     def test_T17_extension_noise_is_not_reported(self):
         book = xlw().open(self.excel(CRYSTAL))
@@ -338,7 +324,8 @@ class b_xlreader(bench):
                       'chartStyle', 'colors'):
             self.assertNotIn(noise, report)
         self.assertIn('pictures', report)
-        self.assertIn('formula cells', report)
+        self.assertNotIn('formula', report)
+        self.assertEqual(len(formula_table(book.kvr(book.kvr('priv').kvr('sheetkeys')[0]))), 61)
 
     def test_T18_the_excel_workbooks_have_the_expected_cells_and_charts(self):
         crystal = xlw().open(self.excel(CRYSTAL))
@@ -347,7 +334,7 @@ class b_xlreader(bench):
         xrd = xlw().open(self.excel(XRD))
         self.assertEqual(len(self.charts_of(xrd)), 1)
         sheet = xrd.Sheet1
-        self.assertEqual(len(sheet.nodes()), 9015)
+        self.assertEqual(ncells(sheet), 9015)
 
     # ---- the Excel charts, read ----------------------------------------------------------
     def crystal_chart(self, first_x):

@@ -3,24 +3,21 @@ xlw -- a pure-Python .xlsx writer on a tkv tree. No COM, no Excel, no third-part
 
 Why
     Excel output is easier to read than a console table, and a chart beside the data is
-    easier still. xlw keeps the whole document in a tkv tree, which is cheap to build
-    (about 2.4 us a cell with three leaves) and cheap to walk, and turns it into an
-    .xlsx in one pass.
+    easier still. xlw keeps the document in a tkv tree for its structure and in one kv per
+    sheet for the cells, and turns it into an .xlsx in one pass.
 
 Algorithm
-    The document is a typed tree  root > book > sheet > cell.  A cell is a sparse
-    (row, col) node of its sheet holding the leaf 'val' plus only the style leaves that
-    differ from the default, so a plain cell stays tiny. Private state sits in an
-    untyped tkv stored as the leaf 'priv' of each level: the cursor, the sheet list,
-    the file name, the named styles and the chart definitions.
+    The document is a typed tree  root > book > sheet.  A sheet's cells are not nodes: they
+    are one kv, the leaf 'cells' of the sheet, holding a tuple (kind, payload, xf) per
+    (row, col); what cells share lives once in the book (leaf 'tables' of the book's priv):
+    the text table and the style table (see xlsheet, which also writes and reads the sheet
+    XML). Private state sits in an untyped tkv stored as the leaf 'priv' of each level: the
+    cursor, the sheet list, the file name, the named styles and the chart definitions.
     The verbs (write, writeln, move, ...) are registered on the root, so a verb called
     on ANY node reaches its handler with that node, and returns the sheet so calls
     chain:  sheet.write('a').write('b').writeln().
-    Save is one walk of the tree per sheet. Each cell's style delta is charged to a kv
-    table (style key -> xf index) and each string to another (string -> shared index),
-    each index assigned at first sight and used in the same cell, so every cell is
-    finished in one pass. styles.xml and sharedStrings.xml are released afterwards from
-    the charged tables. The default style is always xf 0.
+    Save lists each sheet's grid in row order and writes its cells as strings; styles.xml and
+    sharedStrings.xml come straight from the book tables. The default style is always xf 0.
 
 Use
     import sys; sys.path.insert(0, r'<mumix>/tools')      # use.py builds kv/tkv
@@ -36,31 +33,35 @@ Use
     Node form takes the style as positional pairs:  sheet.write(v, 'bold', True).
     Style properties: font sz bold italic underline strikethrough fill color halign
     valign numfmt wrap indent shrink rotation border bcolor (see xlstyle).
-    Read a cell:  xl.data.Data[3, 4].kvr('val').      Cursor:  sheet.kvr('priv').kvr('cursor').
-    Verbs: write writeln nl blankRow move gridlines newsheet newstyle border activate
-    save chart.   Charts: see xlchart and chartdef.md.
+    Read a cell:  xlsheet.cell_value(sheet, 3, 4)  and  xlsheet.cell_style(sheet, 3, 4).
+    Cursor:  sheet.kvr('priv').kvr('cursor').
+    Verbs: write formula writeln nl blankRow move gridlines newsheet newstyle border
+    activate save chart.   Charts: see xlchart and chartdef.md.
     A sheet or book name equal to a tkv method name (count, keys, type, ...) is refused.
 
 Versions
+    M02  m02.v02  2026-11-01  formulas: the formula verb; the workbook is calculated on load
+                              when a formula has no cached value.
+         m02.v01  2026-10-31  rebuilt on the grid: cells are one kv per sheet, text and
+                              styles are book tables, the cell type of the tree is gone.
     M01  m01.v01  2026-10-31  ported from xlw.m v1.19 (tree, verbs, styles, ribosome save);
                               charts added; savehtml not ported; default style fixed at xf 0.
 """
 
-import math
 import os
+import re
 
 from xlstore import KV, TKV
 import xlparts
+import xlsheet
 import xlstyle
-from xlstyle import DEFAULTS, safe_name
+from xlsheet import BLANK, TXT, FML
+from xlstyle import safe_name
 
-__all__ = ['xlw', 'XlwError', 'XlwNoBook', 'XlwNoSheet', 'XlwBadArg', 'BLANK']
+__all__ = ['xlw', 'XlwError', 'XlwNoBook', 'XlwNoSheet', 'XlwBadArg', 'book_values']
 
-BLANK = '!empty'                 # a styled cell that carries no value
-NO_STYLE = {}                    # shared and never changed: set_cell copies before adding
-DEFAULT_KEY = 'x:'               # the style key of the default style
-MAX_COLUMN_WIDTH = 80
-MIN_COLUMN_WIDTH = 4
+NO_STYLE = {}                    # shared and never changed: copied before anything is added
+FORMULA_WITHOUT_VALUE = re.compile(r'</f></c>|<f[^>]*/></c>')   # a formula cell with no <v>
 
 
 class XlwError(Exception):
@@ -113,13 +114,10 @@ def node2book(node):
 
 
 def node2sheet(node):
-    """The sheet a node means: itself, its cell's sheet, or the active sheet of its book
-    (an 'Sheet1' is made when the book has none yet)."""
-    kind = node.type()
-    if kind == 'sheet':
+    """The sheet a node means: itself, or the active sheet of its book (a 'Sheet1' is made
+    when the book has none yet)."""
+    if node.type() == 'sheet':
         return node
-    if kind == 'cell':
-        return node.parent()
     book = node2book(node)
     sheet = book.kvr('priv').kvr('cursor')
     if sheet is None:
@@ -127,21 +125,9 @@ def node2sheet(node):
     return sheet
 
 
-def sheet_cells(sheet):
-    """(row, col, cell node) for every cell of a sheet, in row-major order. The keys of
-    a sheet's cell nodes are '(r c)'; names() and nodes() list them in one order."""
-    cells = []
-    for name, node in zip(sheet.names(), sheet.nodes()):
-        if name[:1] == '(':
-            row, col = name[1:-1].split()
-            cells.append((int(row), int(col), node))
-    cells.sort(key=lambda item: (item[0], item[1]))
-    return cells
-
-
 # ------------------------------------------------------------------ verb handlers ----
 def fwd_activate(node):
-    """Make a book, a sheet or a cell's sheet the active one (cascading upward)."""
+    """Make a book or a sheet the active one (cascading upward)."""
     kind = node.type()
     if kind == 'book':
         node.parent().kvr('priv').kvw('cursor', node)
@@ -149,8 +135,6 @@ def fwd_activate(node):
         book = node.parent()
         book.parent().kvr('priv').kvw('cursor', book)
         book.kvr('priv').kvw('cursor', node)
-    elif kind == 'cell':
-        return fwd_activate(node.parent())
     else:
         raise XlwBadArg('activate on an untyped node')
     return node
@@ -171,6 +155,7 @@ def fwd_newsheet(node, *names):
         spriv = addpriv(sheet)
         spriv.kvw('cursor', [1, 1])
         sheet.kvw('showGrid', True)
+        sheet.kvw('cells', KV())
         bpriv.kvw('sheets', list(bpriv.kvr('sheets')) + [str(name)])
         bpriv.kvw('sheetkeys', list(bpriv.kvr('sheetkeys')) + [safe_name(name)])
         if first is None:
@@ -181,9 +166,7 @@ def fwd_newsheet(node, *names):
 
 def fwd_newstyle(node, name, *pairs):
     """A named style: a node plus leaves under the owning level's priv.styles. Given a
-    sheet or cell it is stored on the book."""
-    if node.type() == 'cell':
-        node = node.parent()
+    sheet it is stored on the book."""
     if node.type() == 'sheet':
         node = node.parent()
     styles = node.kvr('priv').kvr('styles')
@@ -225,6 +208,22 @@ def fwd_write(node, *args, **keywords):
     return sheet
 
 
+def fwd_formula(node, formula, *args, **keywords):
+    """Write a formula at the cursor, then move right; `cached` (a keyword) is the value to
+    show until Excel calculates. Style as for write. Returns the sheet."""
+    sheet = node2sheet(node)
+    cached = keywords.pop('cached', None)
+    if args or keywords:
+        delta = xlstyle.style_delta(xlstyle.resolve_style(sheet, args, keywords))
+    else:
+        delta = None
+    spriv = sheet.kvr('priv')
+    row, col = spriv.kvr('cursor')
+    xlsheet.put_formula(sheet, row, col, formula, cached, delta)
+    spriv.kvw('cursor', [row, col + 1])
+    return sheet
+
+
 def fwd_writeln(node, *args, **keywords):
     """Write (if given a value) and start a new row at column 1."""
     sheet = node2sheet(node)
@@ -263,8 +262,8 @@ def fwd_move(node, direction, count=1):
         row = 1
         col = 1
     elif direction in ('btm', 'bottom'):
-        cells = sheet_cells(sheet)
-        row = max(item[0] for item in cells) + 1 if cells else 1
+        found = xlsheet.cell_list(sheet)
+        row = max(item[0] for item in found) + 1 if found else 1
         col = 1
     else:
         raise XlwBadArg(f'unknown direction "{direction}"')
@@ -274,9 +273,8 @@ def fwd_move(node, direction, count=1):
 
 def fwd_border(node, cells, sides, *pairs, **keywords):
     """Apply a border to each (row, col) of `cells` without touching values. Cells that
-    do not exist yet are made value-less (the BLANK sentinel: no <v> in the sheet XML,
-    but the border style is kept). An optional 'color' or 'bcolor' pair sets the edge
-    colour."""
+    do not exist yet are made value-less (a blank cell: no <v> in the sheet XML, but the
+    border style is kept). An optional 'color' or 'bcolor' pair sets the edge colour."""
     sheet = node2sheet(node)
     bcolor = '000000'
     options = dict(keywords)
@@ -286,14 +284,17 @@ def fwd_border(node, cells, sides, *pairs, **keywords):
         if key.lower() in ('color', 'bcolor'):
             bcolor = xlstyle.color2hex(value)
     border = xlstyle.normalise_border(sides, bcolor)
+    grid = sheet.kvr('cells')
+    tables = xlsheet.tables_of(sheet)
     for row, col in cells:
-        cell = sheet.kvr([row, col])
+        cell = grid.kvr((row, col))
         if cell is None:
-            cell = sheet.node(row, col)
-            cell['val'] = BLANK
-        cell['border'] = border
+            cell = (BLANK, None, 0)
+        delta = dict(tables.xfs[cell[2]])
+        delta['border'] = border
         if bcolor != '000000':
-            cell['bcolor'] = bcolor
+            delta['bcolor'] = bcolor
+        grid[row, col] = (cell[0], cell[1], xlsheet.style_id(tables, delta))
     return sheet
 
 
@@ -306,131 +307,31 @@ def do_write(sheet, value, args, keywords):
         delta = NO_STYLE                      # the common write: nothing to resolve
     spriv = sheet.kvr('priv')
     row0, col0 = spriv.kvr('cursor')
+    cells = sheet.kvr('cells')
+    tables = xlsheet.tables_of(sheet)
+    make = xlsheet.make_cell
     rows = to_rows(value)
-    if rows is None:
-        set_cell(sheet, row0, col0, value, delta)
-        spriv.kvw('cursor', [row0, col0 + 1])
-        return
-    width = 0
-    for i, rowvalues in enumerate(rows):
-        width = max(width, len(rowvalues))
-        for j, item in enumerate(rowvalues):
-            set_cell(sheet, row0 + i, col0 + j, item, delta)
+    fun = xlsheet.FUN
+    if fun is not None and delta is NO_STYLE:      # the Cython loop writes unstyled blocks
+        block = [[value]] if rows is None else rows
+        fun['write_rows'](cells, tables, block, row0, col0, make, xlsheet.style_id)
+    elif rows is None:
+        cells[row0, col0] = make(tables, value, delta)
+    else:
+        for i, rowvalues in enumerate(rows):
+            for j, item in enumerate(rowvalues):
+                cells[row0 + i, col0 + j] = make(tables, item, delta)
+    width = 1 if rows is None else max((len(item) for item in rows), default=0)
     spriv.kvw('cursor', [row0, col0 + width])
 
 
-def set_cell(sheet, row, col, value, delta):
-    """The sparse (row, col) cell node: 'val' plus only the non-default style leaves.
-    Writing goes through item assignment, which also confirms a node that an earlier
-    read made speculative."""
-    if type(value).__module__ == 'numpy':
-        value = value.item()
-    if value is None:
-        value = ''
-    if (isinstance(value, (int, float)) and not isinstance(value, bool)
-            and 'numfmt' not in delta):
-        code = xlstyle.auto_numfmt(float(value))
-        if code:
-            delta = dict(delta)
-            delta['numfmt'] = code
-    cell = sheet.node(row, col)               # the existing cell, or a new one
-    cell['val'] = value
-    for prop, setting in delta.items():
-        cell[prop] = setting
-
-
 # -------------------------------------------------------------------------- save -----
-def cell_xml(head, value, strings, string_index):
-    """One <c> element for a value, charging the shared-string table for text.
-    Returns (xml, width in characters)."""
-    if value is None or value == '' or value == BLANK:
-        return head + '/>', 0
-    if isinstance(value, bool):
-        return f'{head} t="b"><v>{int(value)}</v></c>', 5
-    if isinstance(value, (int, float)):
-        if not math.isfinite(value):
-            return head + '/>', 0
-        text = xlstyle.num_text(value)
-        return f'{head}><v>{text}</v></c>', len(text)
-    text = str(value)
-    key = 's' + text                          # a leading letter keeps '(' keys legal
-    index = string_index.kvr(key)
-    if index is None:
-        index = len(strings)
-        string_index.kvw(key, index)
-        strings.append(text)
-    return f'{head} t="s"><v>{index}</v></c>', len(text)
-
-
-def sheet_data(sheet, state):
-    """The <sheetData> text and <cols> text of one sheet, charging the style and string
-    tables of `state` (xf_index, styles, strings, string_index) as cells are met."""
-    cells = sheet_cells(sheet)
-    ncols = max((item[1] for item in cells), default=0)
-    letters = [''] + [xlparts.col2letter(n) for n in range(1, ncols + 1)]
-    widest = [0] * (ncols + 1)
-    fragments = ['<sheetData>']
-    current = -1
-    for row, col, cell in cells:
-        if row != current:
-            if current > 0:
-                fragments.append('</row>')
-            fragments.append(f'<row r="{row}">')
-            current = row
-        value = None
-        delta = {}
-        for key, setting in cell.entries():
-            if key == 'val':
-                value = setting
-            else:
-                delta[key] = setting
-        if delta:
-            skey = xlstyle.style_key(delta)
-            xf = state.xf_index.kvr(skey)
-            if xf is None:
-                xf = len(state.styles)
-                state.xf_index.kvw(skey, xf)
-                style = dict(DEFAULTS)
-                style.update(delta)
-                state.styles.append(style)
-        else:
-            xf = 0
-        head = f'<c r="{letters[col]}{row}" s="{xf}"'
-        xml, width = cell_xml(head, value, state.strings, state.string_index)
-        if width > widest[col]:
-            widest[col] = width
-        fragments.append(xml)
-    if current > 0:
-        fragments.append('</row>')
-    fragments.append('</sheetData>')
-    columns = ''
-    for col in range(1, ncols + 1):
-        if widest[col] > 0:
-            size = min(MAX_COLUMN_WIDTH, max(MIN_COLUMN_WIDTH, widest[col] + 2))
-            columns += (f'<col min="{col}" max="{col}" width="{size}" '
-                        'customWidth="1"/>')
-    if columns:
-        columns = '<cols>' + columns + '</cols>'
-    return ''.join(fragments), columns, ncols
-
-
-class SaveState:
-    """What the save pass charges as it walks the cells."""
-    __slots__ = ('xf_index', 'styles', 'strings', 'string_index')
-
-    def __init__(me):
-        me.xf_index = KV()
-        me.styles = [dict(DEFAULTS)]          # xf 0 is always the default style
-        me.xf_index.kvw(DEFAULT_KEY, 0)
-        me.strings = []
-        me.string_index = KV()
-
-
 def book_values(book):
     """A function ref -> list of cell values for a chart's data reference
     ("Sheet!$A$2:$A$10", row-major); None for an empty or text cell."""
     import xlchart                            # only books with charts need chart code
     bpriv = book.kvr('priv')
+    tables = bpriv.kvr('tables')
     key_of = KV()                             # sheet display name -> tree key
     for name, key in zip(bpriv.kvr('sheets'), bpriv.kvr('sheetkeys')):
         key_of.kvw('n:' + name, key)
@@ -440,30 +341,42 @@ def book_values(book):
         if parsed is None or key_of.kvr('n:' + parsed[0]) is None:
             return []
         name, row1, col1, row2, col2 = parsed
-        sheet = book.kvr(key_of.kvr('n:' + name))
+        grid = book.kvr(key_of.kvr('n:' + name)).kvr('cells')
         found = []
         for row in range(row1, row2 + 1):
             for col in range(col1, col2 + 1):
-                cell = sheet.kvr([row, col])
-                found.append(None if cell is None else cell.kvr('val'))
+                cell = grid.kvr((row, col))
+                if cell is None or cell[0] == BLANK:
+                    found.append(None)
+                elif cell[0] == TXT:
+                    found.append(xlsheet.text_at(tables, cell[1]))
+                elif cell[0] == FML:
+                    found.append(cell[1][1])
+                else:
+                    found.append(cell[1])
         return found
     return values
 
 
 def build_parts(book):
-    """All parts of one book as a kv (part name -> text, in zip order)."""
+    """All parts of one book as a list of (part name, text) in zip order."""
     bpriv = book.kvr('priv')
     keys = bpriv.kvr('sheetkeys')
     names = bpriv.kvr('sheets')
     if not keys:
         raise XlwNoSheet('nothing to save')
-    state = SaveState()
+    tables = bpriv.kvr('tables')
+    texts = xlsheet.text_list(tables)
+    formulas = xlsheet.formula_list(tables)
+    needs_calc = False
     sheet_xmls = []
     sheet_charts = []
     sheet_widths = []
     for key in keys:
         sheet = book.kvr(key)
-        data_xml, columns_xml, width = sheet_data(sheet, state)
+        data_xml, columns_xml, width = xlsheet.sheet_to_xml(sheet, texts, formulas)
+        if formulas and not needs_calc:
+            needs_calc = FORMULA_WITHOUT_VALUE.search(data_xml) is not None
         sheet_widths.append(width)
         charts = sheet.kvr('priv').kvr('charts')
         chart_nodes = [] if charts is None else charts.nodes()
@@ -481,16 +394,20 @@ def build_parts(book):
 
     n_drawings = sum(1 for charts in sheet_charts if charts)
     n_charts = sum(len(charts) for charts in sheet_charts)
-    parts = KV()
-    parts.kvw('[Content_Types].xml',
-              xlparts.content_types(len(keys), n_drawings, n_charts))
-    parts.kvw('_rels/.rels', xlparts.root_rels())
-    parts.kvw('xl/workbook.xml', xlparts.workbook_part(names))
-    parts.kvw('xl/_rels/workbook.xml.rels', xlparts.workbook_rels(len(keys)))
-    parts.kvw('xl/styles.xml', xlstyle.build_style_tables(state.styles))
-    parts.kvw('xl/sharedStrings.xml', xlparts.shared_strings(state.strings))
+    styles = []
+    for delta in tables.xfs:
+        style = dict(xlstyle.DEFAULTS)
+        style.update(delta)
+        styles.append(style)
+    parts = [('[Content_Types].xml',
+              xlparts.content_types(len(keys), n_drawings, n_charts)),
+             ('_rels/.rels', xlparts.root_rels()),
+             ('xl/workbook.xml', xlparts.workbook_part(names, needs_calc)),
+             ('xl/_rels/workbook.xml.rels', xlparts.workbook_rels(len(keys))),
+             ('xl/styles.xml', xlstyle.build_style_tables(styles)),
+             ('xl/sharedStrings.xml', xlparts.shared_strings(texts))]
     for n, sheet_xml in enumerate(sheet_xmls, start=1):
-        parts.kvw(f'xl/worksheets/sheet{n}.xml', sheet_xml)
+        parts.append((f'xl/worksheets/sheet{n}.xml', sheet_xml))
 
     if n_charts:
         import xlchart
@@ -508,14 +425,14 @@ def build_parts(book):
                 numbers.append(chart_number)
                 frames.append((f'Chart {chart_number}',
                                xlchart.anchor_of(chart, sheet_widths[n - 1], index)))
-                parts.kvw(f'xl/charts/chart{chart_number}.xml',
-                          xlchart.chart_part(chart, values))
-            parts.kvw(f'xl/worksheets/_rels/sheet{n}.xml.rels',
-                      xlparts.sheet_rels(drawing_number))
-            parts.kvw(f'xl/drawings/drawing{drawing_number}.xml',
-                      xlparts.drawing_part(frames))
-            parts.kvw(f'xl/drawings/_rels/drawing{drawing_number}.xml.rels',
-                      xlparts.drawing_rels(numbers))
+                parts.append((f'xl/charts/chart{chart_number}.xml',
+                              xlchart.chart_part(chart, values)))
+            parts.append((f'xl/worksheets/_rels/sheet{n}.xml.rels',
+                          xlparts.sheet_rels(drawing_number)))
+            parts.append((f'xl/drawings/drawing{drawing_number}.xml',
+                          xlparts.drawing_part(frames)))
+            parts.append((f'xl/drawings/_rels/drawing{drawing_number}.xml.rels',
+                          xlparts.drawing_rels(numbers)))
     return parts
 
 
@@ -540,8 +457,9 @@ class xlw:
 
     def __init__(me):
         me.priv = Priv()
-        me.priv.root = TKV(['root', 'book', 'sheet', 'cell'],
-                           write=fwd_write, writeln=fwd_writeln, nl=fwd_writeln,
+        me.priv.root = TKV(['root', 'book', 'sheet'],
+                           write=fwd_write, formula=fwd_formula, writeln=fwd_writeln,
+                           nl=fwd_writeln,
                            blankRow=fwd_writeln, move=fwd_move, gridlines=fwd_gridlines,
                            newsheet=fwd_newsheet, newstyle=fwd_newstyle,
                            border=fwd_border, activate=fwd_activate, save=fwd_save,
@@ -574,6 +492,7 @@ class xlw:
         bpriv.kvw('fname', os.path.join(folder, base + '.xlsx'))
         bpriv.kvw('sheets', [])
         bpriv.kvw('sheetkeys', [])
+        bpriv.kvw('tables', xlsheet.new_tables())
         me.priv.rootpriv.kvw('cursor', book)
         if sheets:
             fwd_newsheet(book, *sheets)
@@ -599,6 +518,11 @@ class xlw:
 
     def write(me, value, *args, **keywords):
         fwd_write(me.priv.root, value, *args, **keywords)
+        return me
+
+    def formula(me, formula, *args, **keywords):
+        """A formula at the cursor, e.g. xl.formula('=SUM(B2:B9)', cached=3.5)."""
+        fwd_formula(me.priv.root, formula, *args, **keywords)
         return me
 
     def writeln(me, *args, **keywords):

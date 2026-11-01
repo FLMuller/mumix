@@ -56,7 +56,7 @@ def grow(v, p, ddt):
 
 class b_odeproblem(bench):
     BenchName = 'odeproblem'
-    BenchVersion = 'M1.0.2'
+    BenchVersion = 'M1.0.3'
     BenchHeader = ''
     sources = SOURCES
 

@@ -53,7 +53,7 @@ globals().update(load('kv', into={}))  # kv, kvr, kvw, KvError, KvSparseDimMisma
 class b_kv(bench):
     # -- identity and tuning ------------------------------------------------
     BenchName    = "kv"                   # runbench overwrites from the class name
-    BenchVersion = "M1.0.8"               # set ONCE; runbench auto-ticks the 3rd field
+    BenchVersion = "M1.0.11"               # set ONCE; runbench auto-ticks the 3rd field
     BenchHeader  = ""                     # runbench fills this from the CLI message
     sources      = SOURCES
     NKeys        = 100                    # leaf keys and sparse keys in each bench store
@@ -1101,6 +1101,45 @@ class b_kv(bench):
             d.remove("k3")
             d.kvw("k3", cycle)
         self.assertEqual(d.kvr("k3"), 1999)
+
+    # ---- byte keys -------------------------------------------------------------------------
+    def test_T106_a_bytes_key_and_the_same_str_key_are_one_key(self):
+        d = kv()
+        d.kvw(b"abc", 1)
+        self.assertEqual(d.kvr("abc"), 1)
+        d.kvw("abc", 2)
+        self.assertEqual(d.kvr(b"abc"), 2)
+        self.assertEqual(len(d.keys()), 1)
+
+    def test_T107_a_bytes_key_comes_back_as_a_str(self):
+        d = kv()
+        d.kvw("café".encode("utf-8"), 7)
+        self.assertEqual(d.keys(), ["café"])
+        self.assertEqual(d.at(0), "café")
+        self.assertIs(type(d.at(0)), str)
+        self.assertEqual(d.kvr("café"), 7)
+
+    def test_T108_iskey_remove_and_kind_take_bytes(self):
+        d = kv()
+        d.kvw(b"k", 1)
+        self.assertTrue(d.iskey(b"k"))
+        self.assertEqual(d.kind(b"k"), d.kind("k"))
+        d.remove(b"k")
+        self.assertFalse(d.iskey("k"))
+
+    def test_T109_a_bytes_key_is_never_sparse_and_a_new_bracket_one_is_refused(self):
+        d = kv()
+        d.kvw(b"x", 1)
+        d.kvw([2, 3], 9)                            # the sparse dimension is still free
+        self.assertEqual(d.indici(), ["[2 3]"])
+        with self.assertRaises(KvReservedBracket):
+            d.kvw(b"[5 3]", 1)
+        self.assertEqual(d.kvr(b"[2 3]"), 9)        # an existing sparse key is addressed
+
+    def test_T110_the_empty_bytes_key_is_the_empty_str_key(self):
+        d = kv()
+        d.kvw(b"", 4)
+        self.assertEqual(d.kvr(""), 4)
 
 
 if __name__ == "__main__":

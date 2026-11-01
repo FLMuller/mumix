@@ -39,6 +39,7 @@ from chartcheck import order_errors, package_errors
 
 SOURCES = ['mumix']
 import mumix
+import xlsheet
 from xlstore import TKV
 
 OUTDIR = os.path.join(ROOT, 'results', 'b_mumix')
@@ -47,7 +48,7 @@ NS = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
 
 class b_mumix(bench):
     BenchName = 'mumix'
-    BenchVersion = 'M1.0.6'
+    BenchVersion = 'M1.0.8'
     BenchHeader = ''
     sources = SOURCES
 
@@ -317,18 +318,18 @@ class b_mumix(bench):
         xl, book = mumix.build_workbook(self.result, os.path.join(OUTDIR, 'built.xlsx'))
         headers, units, rows = mumix.result_table(self.result)
         sheet = book.Results
-        self.assertEqual([sheet[1, c + 1].kvr('val') for c in range(len(headers))], headers)
-        self.assertEqual([sheet[2, c + 1].kvr('val') for c in range(len(units))], units)
-        self.assertEqual(len(sheet.nodes()), (len(rows) + 2) * len(headers))
-        self.assertEqual(sheet[3, 1].kvr('val'), 0.0)
-        self.assertAlmostEqual(sheet[2 + len(rows), 1].kvr('val'), self.p.tf)
+        self.assertEqual([xlsheet.cell_value(sheet, 1, c + 1) for c in range(len(headers))], headers)
+        self.assertEqual([xlsheet.cell_value(sheet, 2, c + 1) for c in range(len(units))], units)
+        self.assertEqual(sheet.kvr('cells').icount(), (len(rows) + 2) * len(headers))
+        self.assertEqual(xlsheet.cell_value(sheet, 3, 1), 0.0)
+        self.assertAlmostEqual(xlsheet.cell_value(sheet, 2 + len(rows), 1), self.p.tf)
 
     def test_T32_cell_values_match_the_result(self):
         xl, book = mumix.build_workbook(self.result, os.path.join(OUTDIR, 'built.xlsx'))
         headers, units, rows = mumix.result_table(self.result)
         column = headers.index('[A] in A') + 1
         for i in (0, 60, 120, len(rows) - 1):
-            self.assertAlmostEqual(book.Results[3 + i, column].kvr('val'),
+            self.assertAlmostEqual(xlsheet.cell_value(book.Results, 3 + i, column),
                                    float(self.result.derived.cAA[i]), places=12)
 
     def test_T33_parameters_sheet_lists_every_parameter_with_its_source(self):
@@ -336,11 +337,11 @@ class b_mumix(bench):
         sheet = book.Parameters
         names = {}
         for row in range(2, 2 + len(mumix.PARAMETERS)):
-            names[sheet[row, 1].kvr('val')] = (sheet[row, 2].kvr('val'), sheet[row, 5].kvr('val'))
+            names[xlsheet.cell_value(sheet, row, 1)] = (xlsheet.cell_value(sheet, row, 2), xlsheet.cell_value(sheet, row, 5))
         self.assertEqual(set(names), set(mumix.PARAMETERS))
         self.assertEqual(names['Bo'], (1000.0, 'document'))
         self.assertEqual(names['kAB'][1], 'assumed')
-        derived_rows = [sheet[row, 5].kvr('val') for row in range(1, 40)]
+        derived_rows = [xlsheet.cell_value(sheet, row, 5) for row in range(1, 40)]
         self.assertIn('derived', derived_rows)
 
     def test_T34_the_workbook_reads_back_with_nothing_unmapped(self):

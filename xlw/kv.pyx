@@ -29,13 +29,21 @@ Algorithm
     a new entry is refused with KvPositionOverflow when BOTH hold: more than 10 slots per
     live entry, and the dead slots hold more than 10 x 4096 bytes (counted as 64 bytes
     each). clear() unpins. Do not use at() on a store that deletes keys often.
+    Byte keys. A key given as bytes is used as it is, with no decode and no encode: text
+    that is already bytes (a slice of a file) goes in as it came. It is the caller's job that
+    the bytes are valid UTF-8, because every key is handed back as a str (keys(), indici(),
+    at()). A bytes key is a text key (never sparse), and a NEW one that starts with "[" is
+    refused, as a str key is.
 
 Use
     from kv import kv, kvr, kvw
     d = kv(); d.x = 5; d[2, 3] = 99; d.kvr('x'); d.indici()      # ['[2 3]']
     d.at(0)                                                       # 'x'
+    d.kvw(b'abc', 1); d.kvr('abc')                                # 1: bytes and str are one key
 
 Versions
+    M04  m04.v01  2026-11-01  byte keys: kvr, kvw, iskey, remove and kind take a bytes key as
+                              it is; the caller ensures it is valid UTF-8.
     M03  m03.v01  2026-10-31  at(idx): the key at a position, which pins the store against
                               compaction; KvPositionOverflow on excessive churn.
     M02  m02.v01  2026-10-31  the sparse key is written [r c] in place of (r c), and
@@ -82,6 +90,8 @@ cdef tuple _key2idx(key):
     # (the store/hash/memcmp are all bytes — no str round-trip).
     cdef list comps, parts
     cdef bytes bc
+    if type(key) is bytes:
+        return <bytes>key, 0                          # already bytes: used as given
     if isinstance(key, str):
         return (<str>key).encode("utf-8"), 0          # user str -> bytes (unavoidable)
     if isinstance(key, bool):

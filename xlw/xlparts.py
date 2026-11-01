@@ -84,11 +84,14 @@ def root_rels():
             'Target="xl/workbook.xml"/></Relationships>')
 
 
-def workbook_part(sheet_names):
+def workbook_part(sheet_names, full_calc=False):
+    """workbook.xml; full_calc asks Excel to calculate every formula when it opens the file
+    (for formulas written without a cached value)."""
+    calc = '<calcPr calcId="191029" fullCalcOnLoad="1"/>' if full_calc else ''
     sheets = ''.join(f'<sheet name="{xml_escape(name)}" sheetId="{n}" r:id="rId{n}"/>'
                      for n, name in enumerate(sheet_names, start=1))
     return (XML_HEAD + f'<workbook xmlns="{NS_MAIN}" xmlns:r="{NS_REL}">'
-            f'<sheets>{sheets}</sheets></workbook>')
+            f'<sheets>{sheets}</sheets>{calc}</workbook>')
 
 
 def workbook_rels(n_sheets):
@@ -155,10 +158,10 @@ def drawing_rels(chart_numbers):
 
 
 def write_zip(filename, parts):
-    """Write the parts (a kv: part name -> text, in zip order) to an .xlsx file.
+    """Write the parts (a list of (part name, text) in zip order) to an .xlsx file.
     UTF-8 bytes, deflate at the default level, no temporary files."""
     folder = os.path.dirname(os.path.abspath(filename))
     os.makedirs(folder, exist_ok=True)
     with zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED) as archive:
-        for name in parts.keys():
-            archive.writestr(name, parts.kvr(name).encode('utf-8'))
+        for name, text in parts:
+            archive.writestr(name, text.encode('utf-8'))
