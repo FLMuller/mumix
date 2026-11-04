@@ -19,7 +19,8 @@ with an empty text. The box only shows who the comment is from: the user id is t
 of Claude's (tag cld) or of another user is changed under its own tag. The row under the text is the
 user id and what the box is doing (saving, saved, a refusal) on the left, and Save and Remove on the right.
 
-VERSION  M1 m01.v06 (2026-11-04): the text has no border, no focus outline and an orange caret; data-keepsel keeps the code's chosen line (the insertion caret) while it is clicked.
+VERSION  M1 m01.v07 (2026-11-04): says the server's note after a save (a comment written inside a string).
+         M1 m01.v06 (2026-11-04): the text has no border, no focus outline and an orange caret; data-keepsel keeps the code's chosen line (the insertion caret) while it is clicked.
          M1 m01.v05 (2026-11-04): showcode in (forgets the comment of a file that goes), no where.
          M1 m01.v04 (2026-11-04): its size is returned by write(): no module constant.
          M1 m01.v03 (2026-11-04): the user id is shown, not typed (the settings menu owns it); Save and

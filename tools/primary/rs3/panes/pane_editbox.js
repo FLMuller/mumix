@@ -40,7 +40,7 @@ RS.pane('editbox', function(ctx){
           remove.disabled = false; target.textContent = label(mine);
         }
       }
-      say(r.removed ? 'removed' : 'saved');
+      say(r.removed ? 'removed' : (r.note || 'saved'));
       ctx.emit('saved', {path: mine.path});
       if (dirty && job === mine){ dirty = false; send(false); } else dirty = false;
     }).catch(function(e){ flying = false; dirty = false; say(e.message, true); });

@@ -616,23 +616,45 @@ class b_rs3(bench):
             with open(self.sample, 'wb') as f:
                 f.write(before)
 
-    def test_T14a_a_comment_inside_a_docstring_is_refused_with_its_reason_and_nothing_is_written(self):
+    def test_T14a_a_comment_may_go_inside_a_docstring_or_a_string_and_is_a_line_of_its_text_with_a_note(self):
         path = os.path.join(self.folder, 'doc.py')
+        original = '"""head\nmore text\n"""\n\n\ndef f():\n    x = """a\n    b"""\n    return x\n'
         with open(path, 'w', encoding='utf-8', newline='') as f:
-            f.write('"""head\nmore text\n"""\n\n\ndef f():\n    return 1\n')
+            f.write(original)
         rel = rel_of(path)
         page = FakePage(rs3.contactRS('view', rel, False)['path'])
         try:
             base = page.ask({'do': 'open', 'hash': page.hash, 'path': rel})['base']
             got = page.ask({'do': 'insert', 'hash': page.hash, 'filename': rel, 'line': 2,
-                            'base': base, 'tag': 'tst', 'text': 'inside'})
-            self.assertFalse(got['ok'], got)
-            self.assertRegex(got['error'], r'string|more than comments')
-            with open(path, 'rb') as f:
-                self.assertNotIn(b'###', f.read())
+                            'base': base, 'tag': 'tst', 'text': 'inside the docstring'})
+            self.assertTrue(got['ok'] is not False and 'error' not in got, got)
+            self.assertIn('note', got)                                         # it says the comment is a line of the string
+            with open(path, encoding='utf-8') as f:
+                self.assertEqual(f.read().split('\n')[:4], ['"""head', '###tst inside the docstring', 'more text', '"""'])
+            data = page.ask({'do': 'insert', 'hash': page.hash, 'filename': rel, 'line': 9,
+                             'base': got['base'], 'tag': 'tst', 'text': 'inside data'})
+            self.assertNotIn('error', data)                                    # a string that is data: the user's say
+            self.assertIn('note', data)
+            shown = page.ask({'do': 'open', 'hash': page.hash, 'path': rel})
+            self.assertEqual(len(re.findall(r'class="cm[ "]', shown['html'])), 2)              # both are comment threads in the page
             ok = page.ask({'do': 'insert', 'hash': page.hash, 'filename': rel, 'line': 6,
-                           'base': base, 'tag': 'tst', 'text': 'above the function'})
-            self.assertTrue(ok['ok'], ok)                      # a comment between the code is fine
+                           'base': data['base'], 'tag': 'tst', 'text': 'above the function'})
+            self.assertNotIn('note', ok)                                       # between the code: no note
+            self.assertNotIn('error', ok)
+            for first in (11, 8, 2):                                           # take them out again, last first
+                with open(path, encoding='utf-8') as f:
+                    lines = f.read().split('\n')
+                at = next(i + 1 for i, line in enumerate(lines) if line.lstrip().startswith('###tst') and i + 1 <= first + 2 and i + 1 >= first - 2)
+                base = page.ask({'do': 'open', 'hash': page.hash, 'path': rel})['base']
+                gone = page.ask({'do': 'update', 'hash': page.hash, 'filename': rel, 'first': at, 'last': at, 'base': base, 'tag': 'tst', 'text': ''})
+                self.assertTrue(gone.get('removed'), gone)
+            with open(path, encoding='utf-8') as f:
+                self.assertEqual(f.read(), original)                           # nothing else ever changed
+            with open(path, 'wb') as f:
+                f.write(b'x = 1\n')
+            stale = page.ask({'do': 'insert', 'hash': page.hash, 'filename': rel, 'line': 1,
+                              'base': 'stale', 'tag': 'tst', 'text': 'x'})
+            self.assertIn('error', stale)
         finally:
             page.close()
 

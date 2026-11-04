@@ -14,7 +14,7 @@
 .mg{flex:none;width:18px;text-align:center;cursor:pointer}
 .ln .mg{cursor:default}
 .ln.flash,.cm.flash{background:#fff3c4}
-.ln.sel{background:#fdebd0}                       /* the line that was clicked: the soft orange of the number's hover (blue is for comments) */
+.clines .ln.sel{background:#fdebd0}                       /* the line that was clicked: the soft orange of the number's hover (blue is for comments) */
 .cm{display:flex;background:#f4f9ff;border-left:3px solid #2f6fe0;font-family:Verdana,Arial,sans-serif;font-size:11px;cursor:pointer}
 .cm[data-who="user"]{background:#fff8f2;border-left-color:var(--usercolor,#e8650f)}
 .cm .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2f6fe0;margin-top:4px}

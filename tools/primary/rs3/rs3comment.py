@@ -40,12 +40,14 @@ reason it is acceptable) is amber. A method goes with its class. The suites of a
 tests/b_STEM.py or test/b_STEM.py of the page's root.
 
 An edit is written only if the file's sha1 is `base`, the text is under 30000 characters and does not
-hold what closes the comment, the lines it changes are comment lines (for Python the syntax tree is the
-same afterwards, for the rest the lines that are not comments), and it does not fall inside a block
-comment or a back-quote string. Nothing else is ever written. The marker is the file's language's,
+hold what closes the comment, and the lines it changes are comment lines (for Python the syntax tree is the
+same once the comment lines are taken out, for the rest the lines that are not comments). A comment may go on a line
+inside a docstring, a string or a block comment: it is a line of that text then, which is what the user asked for (a
+string that is data changes, the code may break, and the reply says so: `note`). Nothing else is ever written. The marker is the file's language's,
 whatever the page sends. The file is written to a temporary name and renamed over the original.
 
-VERSION  M3 m01.v04 (2026-11-04): the file is a Source of rs3lex; located is here (pathof); markdown and escape are here; exports only VERBS.
+VERSION  M3 m01.v05 (2026-11-04): a comment may go inside a docstring or any string (the reply has a note); the syntax tree is compared with the comment lines taken out.
+         M3 m01.v04 (2026-11-04): the file is a Source of rs3lex; located is here (pathof); markdown and escape are here; exports only VERBS.
          M3 m01.v03 (2026-11-04): a Markdown file opens as md2htm's page of it, in numbered blocks, its code blocks and the numbers of its text coloured, the columns of numbers centred; YAML front matter plain.
          M3 m01.v02 (2026-11-04): rs3lex is the language, the lexer and the comment marker: no vclang.
          M3 m01.v01 (2026-11-03): rebuilt from rs3vcomment: the work of vcserver.py (edits), vcode.py (the
@@ -463,14 +465,16 @@ def methods(msg, S):
 
 # ---- the edits ----------------------------------------------------------------------------------
 def skeleton(text, lang, is_comment):
-    """What must not change when comments change: for Python the syntax tree (comments are not in it,
-    a comment line pushed into a string is); for the rest the lines that are not comments."""
+    """What must not change when comments change: for Python the syntax tree of the text without its comment lines (one
+    that is a line of a string goes out of the string too, so a comment may be written in a docstring); for the rest the
+    lines that are not comments."""
+    kept = [x.rstrip() for x in text.split('\n') if not is_comment(x)]
     if lang.name == 'python':
         try:
-            return ast.dump(ast.parse(text))
+            return ast.dump(ast.parse('\n'.join(kept)))
         except (SyntaxError, ValueError):
             pass
-    return [x.rstrip() for x in text.split('\n') if not is_comment(x)]
+    return kept
 
 
 def check(msg, S):
@@ -520,8 +524,6 @@ def edit(msg, S, kind):
             last = first - 1                                # nothing is replaced: it goes in before
     except (KeyError, TypeError, ValueError):
         return refuse('edit: the lines are not numbers')
-    if src.inside(first):
-        return refuse('edit: that line is inside a block comment or a string')
     new = mark.write(indent, tag, text) if text.strip() else []
     after = lines[:first - 1] + new + lines[last:]
     if skeleton('\n'.join(after), lang, mark.match) != skeleton(old, lang, mark.match):
@@ -532,8 +534,11 @@ def edit(msg, S, kind):
         f.write(data)
     os.replace(temp, real)
     S['say'](f'edit: {real} lines {first}-{last} now {len(new)} lines')
-    return {'base': hashlib.sha1(data).hexdigest(), 'first': first, 'last': first + len(new) - 1,
-            'delta': len(new) - (last - first + 1), 'html': markdown(text), 'removed': not new}
+    got = {'base': hashlib.sha1(data).hexdigest(), 'first': first, 'last': first + len(new) - 1,
+           'delta': len(new) - (last - first + 1), 'html': markdown(text), 'removed': not new}
+    if new and src.inside(first):
+        got['note'] = 'saved inside a string or a block comment: the comment is a line of its text'
+    return got
 
 
 def update(msg, S):
