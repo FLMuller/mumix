@@ -1,10 +1,9 @@
 // pane_ftv.js -- the file tree (see pane_ftv.py for its signals).
 RS.pane('ftv', function(ctx){
   var tree = ctx.el.querySelector('.ftree'), sendBox = ctx.el.querySelector('.fsend'), files = [], want = '',
-      marks = {}, sendto = 0, key = 'ftvdirs:' + ctx.page.hash;
+      marks = {}, sendto = '', key = 'ftvdirs:' + ctx.page.hash;       // marks[path]: the panes that show it; sendto: '' = the manager chooses
   RS.doors(ctx.el.querySelector('.doors'), ['ftv']);      // its own door: to hide it; the code and options bars open it again
-  var targets = ctx.page.panes.filter(function(p){ return (p.block === 'code' || p.block === 'toptabs') && !p.host; });
-  if (targets.length) sendto = targets[0].where;      // with no pane to take a file it goes to a new browser tab (0)
+  var targets = ctx.page.panes.filter(function(p){ return p.takes && !p.hosted; });      // the blocks that say they take files
   try { files = JSON.parse(tree.dataset.files || '[]'); } catch (e) {}
   function limit(more){ if (more) ctx.emit('notice', {text: 'max files exceeded: the tree lists the first ' + files.length, bad: true}); }
   ctx.whenLinked(function(){ limit(tree.dataset.truncated === '1'); });
@@ -61,15 +60,16 @@ RS.pane('ftv', function(ctx){
     var a = e.target.closest('a.ff');
     if (!a) return;
     e.preventDefault();
-    var path = a.dataset.p, where = a.dataset.k === 'html' ? 0 : sendto;
-    if (marks[path] && marks[path].has(where)) ctx.emit('closefile', {path: path, where: where});
-    else ctx.emit('openfile', {path: path, where: where});
+    var path = a.dataset.p, want = a.dataset.k === 'html' ? 'tab' : sendto, at = marks[path];
+    var shown = !!(at && at.size && (!want || at.has(want)));       // a click on a file that is shown closes it
+    ctx.emit('mngshowfile', {path: path, show: !shown, to: want === 'tab' ? 'tab' : want ? [want] : undefined});
   });
   // the send-to toggle: only when more than one pane takes files
   if (targets.length > 1){
-    sendBox.innerHTML = 'send to <select>' + targets.map(function(p){ return '<option value="' + p.where + '">' + p.loc + '</option>'; }).join('') +
-      '<option value="0">new tab</option></select>';
-    sendBox.querySelector('select').onchange = function(){ sendto = +this.value; };
+    sendBox.innerHTML = 'send to <select><option value="">auto</option>' +
+      targets.map(function(p){ return '<option value="' + p.loc + '">' + p.loc + '</option>'; }).join('') +
+      '<option value="tab">new tab</option></select>';
+    sendBox.querySelector('select').onchange = function(){ sendto = this.value; };
   }
   var filter = ctx.el.querySelector('.ffilter');
   filter.addEventListener('input', function(){ want = filter.value.trim().toLowerCase(); draw(); });
@@ -86,15 +86,13 @@ RS.pane('ftv', function(ctx){
   }
   draw();
   return {
-    onOpenfile: function(d){
-      (marks[d.path] = marks[d.path] || new Set()).add(d.where);
+    onShowcode: function(d){               // a file is in front in some pane (or no longer): its mark
+      var set = marks[d.path] = marks[d.path] || new Set();
+      if (d.on) set.add(d.loc); else set.delete(d.loc);
+      if (!set.size) delete marks[d.path];
       if (want && files.every(function(f){ return f[0] !== d.path; })) return;
       draw();
-      if (targets.length < 2 || d.where === sendto || d.where === 0) reveal(d.path);
-    },
-    onClosefile: function(d){
-      if (marks[d.path]){ marks[d.path].delete(d.where); if (!marks[d.path].size) delete marks[d.path]; }
-      draw();
+      if (d.on) reveal(d.path);
     },
     onSearchtext: function(d){ if (d.mode === 'files'){ want = (d.text || '').trim().toLowerCase(); filter.value = d.text || ''; draw(); } }
   };

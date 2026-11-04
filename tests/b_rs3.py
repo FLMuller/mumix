@@ -39,6 +39,8 @@ from bench import bench
 
 SOURCES = ['rs3']
 import rs3                          # starts the server if nothing answers
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'primary', 'rs3'))
+import rs3layout
 
 PORT = rs3.PORT
 CLAUDE = os.path.dirname(ROOT)      # the folder that holds .claude and mumix
@@ -120,7 +122,7 @@ class FakePage:
 
 class b_rs3(bench):
     BenchName = 'rs3'
-    BenchVersion = 'M1.0.0'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.1'          # runbench adds 1 to the last number on every run
     BenchHeader = 'the third report server: pages of blocks, through contactRS, HTTP and a page'
     sources = SOURCES
 
@@ -161,7 +163,9 @@ class b_rs3(bench):
     def test_T4_load_refuses_a_bad_layout_and_a_block_that_does_not_exist(self):
         for layout, blocks, word in (('[doc wxh', {}, 'layout'), ('[doc wxh ; doc wxh]', {}, 'twice'),
                                      ('[nosuch wxh]', {}, 'no block'),
-                                     ('[doc wxh, doc2 wxh ; doc3 wxh]', {}, 'both')):
+                                     ('[doc wxh, doc.2 wxh ; doc.3 wxh]', {}, 'both'),
+                                     ('[doc wxh, cd3 wxh]', {}, 'define it'),            # cd3 is no kind: it needs {cd3=code}
+                                     ('[doc wxh, cd3 wxh]{cd4=code}', {}, 'definition')):
             got = rs3.contactRS('load', layout, blocks, 't', False)
             self.assertFalse(got['ok'], layout)
             self.assertIn(word, got['error'])
@@ -181,7 +185,7 @@ class b_rs3(bench):
     def test_T5b_a_page_of_paths_has_an_address_that_makes_it_again_with_nothing_kept(self):
         layout = '[ftv wdxh, [toptabs ; [methods wdxh, [code ; edit wxhd]]]]'
         blocks = {'ftv': ['ftv'], 'toptabs': ['toptabs', './mumix/tools/primary/rs3.py', './mumix/tests/b_rs3.py'],
-                  'methods': ['methods'], 'code': ['code'], 'edit': ['editbox']}
+                  'methods': ['methods'], 'code': ['code'], 'edit': ['editbox']}            # (edit is an editbox by this page's say)
         got = rs3.contactRS('load', layout, blocks, '', False)
         self.assertTrue(got['ok'], got)
         self.assertTrue(got['path'].startswith('/?layout='), got['path'])
@@ -198,12 +202,13 @@ class b_rs3(bench):
                       '&quot;./mumix/tools/primary/rs3files.py&quot;, &quot;./mumix/tests/b_rs3.py&quot;]"', again)   # the paths as they were
         odd = rs3.contactRS('load', '[toptabs wxh]', {'toptabs': ['toptabs', './mumix/a,b.py', './mumix/c.py']}, '', False)
         self.assertTrue(odd['path'].startswith('/page/'), odd['path'])               # a path with a comma has no address form
-        self.assertIn('block.edit=editbox', got['path'])                              # a block not named like its locator
+        self.assertNotIn('block.', got['path'])                                      # one editbox: written with its block's name
+        self.assertIn('[ftv,[toptabs;[methods,[code;editbox]]]]', got['path'])
         status, head, text = web('GET', got['path'])
         self.assertEqual(status, 200)
-        self.assertEqual(re.findall(r'data-loc="(\w+)"', text), ['ftv', 'toptabs', 'methods', 'code', 'edit', 'statusbar'])
+        self.assertEqual(re.findall(r'data-loc="([\w.]+)"', text), ['ftv', 'toptabs', 'methods', 'code', 'editbox', 'statusbar'])
         self.assertIn('data-open="[&quot;./mumix/tools/primary/rs3.py&quot;', text)    # its data arrived
-        self.assertIn('<title>ftv + toptabs + methods + code + edit - rs3.py</title>', text)   # a title from the address
+        self.assertIn('<title>ftv + toptabs + methods + code + editbox - rs3.py</title>', text)   # a title from the address
         self.assertEqual(web('GET', '/?layout=%5Bdoc')[0], 500)                    # a layout that does not parse
         self.assertEqual(web('GET', '/?title=x')[0], 500)                               # no layout
         self.assertTrue(rs3.contactRS('load', '[doc wxh', {}, '', False)['ok'] is False)
@@ -241,7 +246,7 @@ class b_rs3(bench):
 
     def test_T11b_a_block_says_what_it_can_search_and_the_status_bar_offers_that(self):
         text = web('GET', '/reportserver')[2]
-        found = {m.group(1): m.group(2) for m in re.finditer(r'"block": "(\w+)", "where": \d+, "host": \w+, "search": (null|"\w+")', text)}
+        found = {m.group(1): m.group(2) for m in re.finditer(r'"block": "(\w+)", "at": \[[\d, ]*\], "to": \[[^\]]*\], "takes": \w+, "holds": [^,]+, "hosted": \w+, "search": (null|"\w+")', text)}
         self.assertEqual(found.get('ftv'), '"files"')
         self.assertEqual(found.get('log'), '"log"')
         self.assertEqual(found.get('serverstatus'), 'null')
@@ -250,15 +255,15 @@ class b_rs3(bench):
         self.assertIn('class="findstep shome"', text)                     # the star
 
     def test_T7_two_blocks_of_one_kind_carry_their_css_and_script_once(self):
-        got = rs3.contactRS('load', '[methods 40xh, methods2 wxh]', {}, 'two', False)
+        got = rs3.contactRS('load', '[methods 40xh, methods.2 wxh]', {}, 'two', False)
         self.assertTrue(got['ok'], got)
         text = web('GET', got['path'])[2]
         self.assertEqual(text.count('/* block:methods */'), 2)    # one in the css, one in the js
         self.assertEqual(text.count("RS.pane('methods'"), 1)
-        self.assertEqual(len(re.findall(r'data-loc="methods2?"', text)), 2)
+        self.assertEqual(re.findall(r'data-loc="(mt(?:\.2)?)"', text), ['mt', 'mt.2'])        # several of a kind: the short name
 
     def test_T8_the_layout_sizes_and_draggable_edges_are_in_the_page(self):
-        got = rs3.contactRS('load', '[doc 40dxh, doc2 wx25]', {}, 'sizes', False)
+        got = rs3.contactRS('load', '[doc 40dxh, doc.2 wx25]', {}, 'sizes', False)
         text = web('GET', got['path'])[2]
         self.assertIn('flex:0 0 40mm', text)
         self.assertIn('class="drag v"', text)
@@ -267,10 +272,10 @@ class b_rs3(bench):
     def test_T8b_a_draggable_bar_is_between_two_panes_even_for_the_last_one(self):
         def order(layout):
             got = rs3.contactRS('load', layout, {}, 'bars', False)
-            return re.findall(r'class="(drag [vh](?: before)?)"|data-loc="(\w+)"', web('GET', got['path'])[2])
+            return re.findall(r'class="(drag [vh](?: before)?)"|data-loc="([\w.]+)"', web('GET', got['path'])[2])
         flat = lambda found: [a or b for a, b in found]
-        self.assertEqual(flat(order('[doc wxh ; doc2 wxhd]'))[:3], ['doc', 'drag h before', 'doc2'])   # the last: bar before it
-        self.assertEqual(flat(order('[doc wdxh, doc2 wxh]'))[:3], ['doc', 'drag v', 'doc2'])           # not last: bar after it
+        self.assertEqual(flat(order('[doc wxh ; doc.2 wxhd]'))[:3], ['doc', 'drag h before', 'doc.2'])   # the last: bar before it
+        self.assertEqual(flat(order('[doc wdxh, doc.2 wxh]'))[:3], ['doc', 'drag v', 'doc.2'])           # not last: bar after it
 
     def test_T8a_a_pane_with_no_width_number_takes_its_blocks_width(self):
         def cells(layout):
@@ -342,7 +347,7 @@ class b_rs3(bench):
         text = web('GET', got['path'])[2]
         again = web('GET', rs3.contactRS('load', '[ftv, [toptabs ; [methods, [code ; editbox]]]]', {'toptabs': ['toptabs', './mumix/tools/primary/rs3.py'], 'editbox': ['editbox']}, '', False)['path'])[2]
         self.assertEqual(re.findall(r'class="drag[^"]*"|flex:[^;"]*;', text), re.findall(r'class="drag[^"]*"|flex:[^;"]*;', again))
-        sized = rs3.contactRS('load', '[ftv 70dxh, [doc wxh ; doc2 wx30d]]', {'doc': ['doc', '', '', '<p>a</p>']}, '', False)
+        sized = rs3.contactRS('load', '[ftv 70dxh, [doc wxh ; doc.2 wx30d]]', {'doc': ['doc', '', '', '<p>a</p>']}, '', False)
         self.assertTrue(sized['ok'], sized)                                              # (html data: a hash page, nothing to shorten)
         kept = rs3.contactRS('load', '[ftv 70dxh, [code ; editbox wx30d]]', {}, '', False)['url']
         self.assertIn('ftv_70dxh', kept)                                                # a size that is not the default stays
@@ -647,7 +652,7 @@ class b_rs3(bench):
         rs3dir = os.path.join(ROOT, 'tools', 'primary', 'rs3')
         want = {'rs3util.py': {'asset', 'done', 'split_package', 'pathof', 'address'}, 'rs3core.py': {'VERBS'},
                 'rs3pages.py': {'VERBS', 'ROUTES', 'register_url'}, 'rs3comment.py': {'VERBS'}, 'rs3table.py': {'Pages'},
-                'rs3jsguard.py': {'check', 'this_as'}, 'rs3layout.py': {'parse', 'names', 'block_of', 'render', 'plain', 'LayoutError'}}
+                'rs3jsguard.py': {'check', 'this_as'}, 'rs3layout.py': {'parse', 'names', 'places', 'receivers', 'blocks', 'normal', 'render', 'plain', 'LayoutError'}}
         for name in os.listdir(os.path.join(rs3dir, 'panes')):
             if name.endswith('.py'):
                 want[os.path.join('panes', name)] = {'write'}
@@ -702,19 +707,161 @@ class b_rs3(bench):
             if 'RS.doors(' in text:
                 sent.add('showpane')
             if block == 'toptabs':
-                sent = set()                          # its code panes emit, with its number
+                sent = set()                          # its code panes emit, as this block
             if handled != declared_in[block]:
                 problems.append((block, 'IN', sorted(handled ^ declared_in[block])))
             if block != 'toptabs' and sent != declared_out[block]:
                 problems.append((block, 'OUT', sorted(sent ^ declared_out[block])))
-        manager_in = {'closemaintab', 'showpane', 'openfile', 'closefile', 'withlineno', 'withwrap', 'withconfig'}
-        manager_out = {'status', 'log', 'newtabopened', 'closingmaintab', 'busy'}
+        manager_in = {'closemaintab', 'showpane', 'mngshowfile', 'withlineno', 'withwrap', 'withconfig'}
+        manager_out = {'status', 'log', 'newtabopened', 'closingmaintab', 'busy', 'showfile', 'showcode'}
+        self.assertEqual([n for names in declared_in.values() for n in names if n.startswith('mng')], [])   # no block listens to one
         every_in = set().union(*declared_in.values()) | manager_in
         every_out = set().union(*declared_out.values()) | manager_out
         gaps = {'newtabopened', 'closingmaintab', 'closemaintab'}     # SIGNALS.md: no receiver yet, no sender yet
         problems += [('no receiver', sorted(every_out - every_in - gaps)),
                      ('no sender', sorted(every_in - every_out - gaps))]
         self.assertEqual([p for p in problems if p[-1]], [])
+
+
+    # ---- who gets a signal: the layout lists, the nearest block, the files (html/manager.js, run under node) ----
+    def route(self, cases):
+        node = 'C:/flmapps/nodejs/node.exe'
+        if not os.path.isfile(node):
+            self.skipTest('no node here')
+        harness = os.path.join(ROOT, 'tests', 'rs3route.js')
+        manager = os.path.join(ROOT, 'tools', 'primary', 'rs3', 'html', 'manager.js')
+        spec = os.path.join(self.folder, 'route.json')
+        with open(spec, 'w', encoding='utf-8') as f:
+            json.dump(cases, f)
+        done = subprocess.run([node, harness, manager, spec], capture_output=True, text=True, timeout=30)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return json.loads(done.stdout)
+
+    @staticmethod
+    def panes(layout, kinds=None, to=None, **flags):
+        """The panes of a layout the way build writes them: {loc, block, at, to, ...}; kinds {loc: block}, to {loc: [locs]}."""
+        tree = rs3layout.parse(layout)
+        at = rs3layout.places(tree)
+        return [{'loc': loc, 'block': (kinds or {}).get(loc, loc), 'at': at[loc], 'to': (to or {}).get(loc, []),
+                 'takes': False, 'holds': None, 'hosted': False, **flags.get(loc, {})} for loc in rs3layout.names(tree)]
+
+    def test_T20_a_layout_lists_who_receives_and_says_where_each_block_sits(self):
+        tree = rs3layout.parse('[cd0,ed{cd2},cd1,cd2]')
+        self.assertEqual(rs3layout.receivers(tree), {'ed': ['cd2']})
+        self.assertEqual(rs3layout.places(rs3layout.parse('[ftv,[toptabs;[methods,[code;editbox]]]]')),
+                         {'ftv': [0], 'toptabs': [1, 0], 'methods': [1, 1, 0], 'code': [1, 1, 1, 0], 'editbox': [1, 1, 1, 1]})
+        self.assertEqual(rs3layout.plain(rs3layout.parse('[a,b{a,c} 30xh,c]'), lambda loc, way: False), '[a,b{a,c} 30xh,c]')
+        self.assertEqual(rs3layout.receivers(rs3layout.parse('[a{b,c} , b , c]')), {'a': ['b', 'c']})
+        self.assertEqual(rs3layout.names(rs3layout.parse('[ftv.py,[cd.1,cd3,eb.notes w50dxh]]{cd3=code}')), ['ftv.py', 'cd.1', 'cd3', 'eb.notes'])
+        self.assertEqual(rs3layout.blocks(rs3layout.parse('[ftv.py,[cd.1,cd3,eb.notes]]{cd3=code}')),
+                         {'ftv.py': 'ftv', 'cd.1': 'code', 'cd3': 'code', 'eb.notes': 'editbox'})
+        tree, new = rs3layout.normal(rs3layout.parse('[mt,mt.2,[code.x,cd.y],eb]'))                # several: short; one: the name
+        self.assertEqual(rs3layout.plain(tree, lambda loc, way: False), '[mt,mt.2,[cd.x,cd.y],editbox]')
+        self.assertEqual(new['eb'], 'editbox')
+        for bad in ('[a,b{c}]', '[a{a},b]', '[a{b,},b]', '[a{b][b]', '[a{B},b]', '[a w50d.h]', '[a]{b=code}', '[a]{a=}'):
+            with self.assertRaises(rs3layout.LayoutError, msg=bad):
+                rs3layout.parse(bad)
+
+    def test_T20a_a_page_says_where_its_blocks_sit_and_what_they_take_and_hold(self):
+        got = rs3.contactRS('load', '[ftv,[toptabs;[methods,[code;editbox{toptabs}]]]]', {}, 'routes', False)
+        self.assertTrue(got['ok'], got)
+        text = web('GET', got['path'])[2]
+        info = json.loads(re.search(r'var PAGE = (\{.*?\});\n', text, re.S).group(1)) if 'var PAGE = ' in text else None
+        panes = {p['loc']: p for p in info['panes']}
+        self.assertEqual(panes['editbox']['to'], ['toptabs'])
+        self.assertEqual(panes['code']['hosted'], True)               # the tabs hold it
+        self.assertEqual((panes['toptabs']['takes'], panes['toptabs']['holds']), (True, 'code'))
+        self.assertEqual(panes['ftv']['takes'], False)
+        self.assertEqual(panes['editbox']['at'], [0, 1, 1, 1, 1])      # the status bar's row is the outer group
+        self.assertEqual(info['routed'], ['commentline', 'commentselect', 'saved'])
+        for layout in ('[ftv{methods},code]', '[ftv,editbox{log},log]', '[code{ftv},ftv]'):      # a list must name blocks that take what is sent
+            self.assertFalse(rs3.contactRS('load', layout, {}, 'bad', False)['ok'], layout)
+
+    def test_T21_a_signal_for_one_block_goes_to_the_nearest_of_each_kind_by_the_groups_they_share(self):
+        def case(layout, kinds, listens, sender, to=None):
+            return {'panes': self.panes(layout, kinds, to), 'listens': listens,
+                    'steps': [{'from': sender, 'name': 'commentline', 'data': {'path': 'p'}}]}
+        same = {'cd0': 'cd', 'cd1': 'cd', 'cd2': 'cd', 'cd3': 'cd'}
+        listen = {loc: ['commentline'] for loc in same}
+        got = self.route([
+            case('[cd1,[cd2,eb]]', same, listen, 'eb'),                                  # the group [cd2,eb] is the nearest
+            case('[[eb,cd1,cd2],cd3]', same, listen, 'eb'),                              # one group: the first after eb
+            case('[[cd0,eb,cd1,cd2],cd3]', same, listen, 'eb'),                          # the same: cd1, not cd0
+            case('[cd0,eb]', same, listen, 'eb'),                                        # none after: round the end
+            case('[[cd0,eb,cd1,cd2],cd3]', same, listen, 'eb', {'eb': ['cd2']}),         # a list in the layout string
+            case('[[cd0,eb,cd1,cd2],cd3]', same, listen, 'eb', {'eb': ['cd0', 'cd2']}),  # ... of two
+        ])
+        self.assertEqual([[row[0] for row in one['log']] for one in got],
+                         [['cd2'], ['cd1'], ['cd1'], ['cd0'], ['cd2'], ['cd0', 'cd2']])
+
+    def test_T21a_of_each_kind_of_block_that_listens_the_nearest_gets_it_and_a_to_in_the_data_wins(self):
+        kinds = {'cd1': 'code', 'cd2': 'code', 'ml1': 'methods', 'ml2': 'methods', 'eb': 'editbox'}
+        listens = {'cd1': ['saved'], 'cd2': ['saved'], 'ml1': ['saved'], 'ml2': ['saved'], 'selectfunk': []}
+        layout = '[ml1,[cd1;[ml2,cd2,eb]]]'
+        got = self.route([
+            {'panes': self.panes(layout, kinds), 'listens': listens, 'steps': [{'from': 'eb', 'name': 'saved', 'data': {'path': 'p'}}]},
+            {'panes': self.panes(layout, kinds), 'listens': {'cd1': ['selectfunk'], 'cd2': ['selectfunk']},
+             'steps': [{'from': 'ml2', 'name': 'selectfunk', 'data': {'lineno': 3, 'to': ['cd1']}}]},
+            {'panes': self.panes(layout, kinds), 'listens': {'cd1': ['selectfunk'], 'cd2': ['selectfunk']},
+             'steps': [{'from': 'ml2', 'name': 'selectfunk', 'data': {'lineno': 3}}]},
+        ])
+        self.assertEqual(sorted(row[0] for row in got[0]['log']), ['cd2', 'ml2'])         # one code, one methods: those nearest eb
+        self.assertEqual([row[0] for row in got[1]['log']], ['cd1'])                      # addressed
+        self.assertEqual(sorted(row[0] for row in got[2]['log']), ['cd1', 'cd2'])         # not routed, not addressed: everyone
+
+    def test_T22_a_file_goes_to_the_container_before_a_lone_block_else_to_a_new_tab_and_closes_where_it_is_shown(self):
+        take = {'takes': True}
+        both = self.panes('[ftv,[tt;cd]]', {'ftv': 'ftv', 'tt': 'toptabs', 'cd': 'code'},
+                          tt={'takes': True, 'holds': 'code'}, cd={'takes': True, 'hosted': True})
+        lone = self.panes('[ftv,[cd1;cd2]]', {'cd1': 'code', 'cd2': 'code'}, cd1=take, cd2=take)
+        bare = self.panes('[ftv,log]')
+        listens = {'tt': ['showfile'], 'cd1': ['showfile'], 'cd2': ['showfile']}
+        got = self.route([
+            {'panes': both, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}]},
+            {'panes': lone, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}]},
+            {'panes': lone, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True, 'to': ['cd2']}}]},
+            {'panes': bare, 'listens': {}, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}]},
+            {'panes': both, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './r.html', 'show': True, 'to': 'tab'}}]},
+            {'panes': both, 'listens': listens,
+             'steps': [{'from': 'tt', 'name': 'showcode', 'data': {'path': './a.py', 'loc': 'tt', 'on': True}},
+                       {'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': False}}]},
+            {'panes': lone, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}],
+             'note': 'the layout list of the sender'},
+        ])
+        self.assertEqual(got[0]['log'], [['tt', 'showfile', {'path': './a.py', 'show': True, 'to': ['tt']}]])     # the container, not the code
+        self.assertEqual([row[0] for row in got[1]['log']], ['cd1'])                                              # the first lone block
+        self.assertEqual([row[0] for row in got[2]['log']], ['cd2'])                                              # addressed
+        self.assertEqual((got[3]['log'], len(got[3]['tabs'])), ([], 1))                                           # nothing takes it: a tab
+        self.assertEqual((got[4]['log'], got[4]['tabs']), ([], ['/?layout=[doc]&doc=r.html']))                    # html: a tab
+        self.assertEqual(got[5]['log'], [['tt', 'showfile', {'path': './a.py', 'show': False, 'to': ['tt']}]])    # closed where it is shown
+        listed = self.route([{'panes': self.panes('[ftv{cd2},[cd1;cd2]]', {'cd1': 'code', 'cd2': 'code'}, to={'ftv': ['cd2']}, cd1=take, cd2=take),
+                              'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}]}])
+        self.assertEqual([row[0] for row in listed[0]['log']], ['cd2'])                                           # ftv{cd2}
+
+    def test_T22a_a_name_that_starts_with_mng_is_for_the_manager_only(self):
+        folder = os.path.join(ROOT, 'tools', 'primary', 'rs3', 'panes')
+        for name in sorted(os.listdir(folder)):
+            if name.startswith('pane_') and name.endswith('.js'):
+                with open(os.path.join(folder, name), encoding='utf-8') as f:
+                    self.assertEqual(re.findall(r'\bonMng\w*', f.read()), [], name)       # no block listens to one
+        got = self.route([{'panes': self.panes('[a,b]'), 'listens': {'a': ['mngshowfile'], 'b': ['mngshowfile']},
+                           'steps': [{'from': 'a', 'name': 'mngshowfile', 'data': {'path': './x.py', 'show': True}}]}])
+        self.assertEqual(len(got[0]['tabs']), 1)                      # the manager took it (no block takes files)
+
+    def test_T5i_a_report_that_does_not_keep_the_rules_of_the_box_is_its_own_page_with_no_rs3_around_it(self):
+        path = os.path.join(self.folder, 'old.html')
+        with open(path, 'w', encoding='utf-8', newline='') as f:
+            f.write('<html><head><title>old</title></head><body><p>old report</p>'
+                    '<script>var s = new WebSocket("ws://127.0.0.1:1/"); document.body.parentNode;</script></body></html>')
+        status, head, text = web('GET', '/?layout=[doc]&doc=' + rel_of(path)[2:])
+        self.assertEqual(status, 200)
+        self.assertIn('new WebSocket', text)                          # the file as it is
+        self.assertNotIn('data-loc=', text)                           # no layout, no manager, no status bar
+        self.assertNotIn('this page cannot be shown', text)
+        inside = web('GET', '/?layout=[doc]&doc=' + rel_of(path)[2:] + '&title=x')
+        self.assertEqual(inside[0], 200)
+        mixed = rs3.contactRS('load', '[doc,log]', {'doc': ['doc', './' + rel_of(path)[2:]]}, 'mixed', False)
+        self.assertIn('this page cannot be shown', web('GET', mixed['path'])[2])     # in a page of blocks it is still refused there
 
     def test_T16_pulse_gives_the_status_and_the_log_lines_after_a_row(self):
         page = FakePage('/reportserver')

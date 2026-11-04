@@ -2,8 +2,11 @@ r"""rs3util.py -- what the blocks and the server share: five names.
 
     asset(file, ext) -> str       the text of a file that sits beside a block: asset(__file__, 'js')
                                   reads pane_code.js for pane_code.py ('' if there is none)
-    done(label, css, js, html, width=, height=, search=) -> dict
-                                  what a block's write() returns: {label, css, js, html, width, height, search}.
+    done(label, css, js, html, width=, height=, search=, takes=, holds=) -> dict
+                                  what a block's write() returns: {label, css, js, html, width, height, search,
+                                  takes, holds}. takes: the block shows files, so a file can be sent to it (code,
+                                  toptabs); holds: the name of a block it takes over (toptabs holds code: a code
+                                  block on its page is only the place its tabs show their file).
                                   width and height are the block's own size in mm where a layout gives none (a
                                   bare `ftv` is 75 mm wide); search is what the block can find for the status bar
                                   ('files', 'text', 'names', 'log')
@@ -46,12 +49,16 @@ ADDRESS. A page whose blocks take './' paths (or nothing) is written as an addre
                        {locator: [block, *data]}; sizes {locator: (width, height)} is what the blocks said they are
                        (done): a size that is a block's own is left out, so `ftv wdxh` is written `ftv`. Spaces are
                        written _ , the paths start at the root (no ./), the paths of a block are one value in shell
-                       braces, a locator that is not its block's name says so (&block.edit=editbox).
+                       braces. The locators are written the short way when a page has several blocks of a kind and
+                       the block's name when it has one (rs3layout.normal); one that does not say its block is
+                       defined at the end of the layout, {cd3=code}.
     address('/?layout=...')  -> (layout, specs, title, selftest): the page, specs {locator: [block, *data]} with the
                        data as written (patterns still patterns: the page builder opens them with pathof).
                        ValueError says what is wrong.
 
-VERSION  M2 m01.v01 (2026-11-04): five names: pathof (the path rules of rs3files, the wildcard walk, the ignore rules,
+VERSION  M2 m02.v01 (2026-11-04): locators written by rs3layout.normal, locators written by rs3layout.normal (eb.1), no &block.X=.
+         M2 m01.v02 (2026-11-04): done() says what a block takes (files) and holds.
+         M2 m01.v01 (2026-11-04): five names: pathof (the path rules of rs3files, the wildcard walk, the ignore rules,
          HOME) and address (rs3pages' page_url and query_page) join asset, done and split_package.
          M1 m01.v01 (2026-11-03): first version.
 """
@@ -92,9 +99,10 @@ def asset(file, ext):
         return ''
 
 
-def done(label, css='', js='', html='', width=None, height=None, search=None):
+def done(label, css='', js='', html='', width=None, height=None, search=None, takes=False, holds=None):
     """What write() returns."""
-    return {'label': label, 'css': css, 'js': js, 'html': html, 'width': width, 'height': height, 'search': search}
+    return {'label': label, 'css': css, 'js': js, 'html': html, 'width': width, 'height': height, 'search': search,
+            'takes': takes, 'holds': holds}
 
 
 def split_package(html):
@@ -494,19 +502,20 @@ def _compact(data):
     return root + '/' + (items[0] if len(items) == 1 else '{' + ','.join(items) + '}')
 
 
-def _plain(layout, blocks, sizes):
-    """The layout without the sizes that the blocks' own sizes make needless (rs3layout.plain); as given if it is not one."""
-    def has_default(loc, direction):
-        width, height = (sizes or {}).get(loc, (None, None))
-        return bool(width if direction == 'row' else height)
-    try:
-        return rs3layout.plain(rs3layout.parse(layout), has_default)
-    except ValueError:
-        return layout
-
-
 def _write(layout, blocks, title, selftest, sizes):
-    items = [('layout', _plain(layout, blocks, sizes).replace(' ', '_'))]        # a space is written _ (not %20)
+    try:
+        tree = rs3layout.parse(layout)
+    except ValueError:
+        return None
+    given = {loc: (spec if isinstance(spec, str) else spec[0]) for loc, spec in blocks.items()
+             if isinstance(spec, str) or (spec and isinstance(spec[0], str))}
+    tree, new = rs3layout.normal(tree, given)
+    old = {name: loc for loc, name in new.items()}
+
+    def has_default(loc, direction):
+        width, height = (sizes or {}).get(old.get(loc, loc), (None, None))
+        return bool(width if direction == 'row' else height)
+    items = [('layout', rs3layout.plain(tree, has_default).replace(' ', '_'))]        # a space is written _ (not %20)
     if title:
         items.append(('title', title.replace(' ', '_')))
     if selftest:
@@ -521,12 +530,10 @@ def _write(layout, blocks, title, selftest, sizes):
         data = [path for d in data for path in _expand(d)]
         if any(c in path for path in data for c in '{},'):
             return None
-        if block != rs3layout.block_of(loc):
-            items.append(('block.' + loc, block))
         if data:
             value = _compact(data)
-            items.append((loc, (value[2:] if value.startswith('./') else value).replace(',./', ',')))
-    url = '/?' + urlencode(items, quote_via=quote, safe='/[];,(){}*')
+            items.append((new.get(loc, loc), (value[2:] if value.startswith('./') else value).replace(',./', ',')))
+    url = '/?' + urlencode(items, quote_via=quote, safe='/[];,(){}*=')
     return url if len(url) <= ADDRESS_MAX else None
 
 
@@ -535,12 +542,13 @@ def _read(query):
     layout = q.get('layout', [''])[0].replace('_', ' ')                # (so a locator has no _ in it)
     if not layout:
         raise ValueError('a page address needs a layout: /?layout=[ftv,[toptabs;code]]&toptabs=a/b.py')
-    names = rs3layout.names(rs3layout.parse(layout))
+    tree = rs3layout.parse(layout)
+    names = rs3layout.names(tree)
     data = {}
     for loc in names:
         items = [item for value in q.get(loc, []) for item in _split_top(value) if item]
         data[loc] = [(item if item.startswith('./') else './' + item)[:MAX_PATH] for item in items[:500]]
-    specs = {loc: [q.get('block.' + loc, [rs3layout.block_of(loc)])[0], *data[loc]] for loc in names}
+    specs = {loc: [block, *data[loc]] for loc, block in rs3layout.blocks(tree).items()}
     first = next((d for loc in names for d in data[loc]), '')
     named = _expand(first)[0].rsplit('/', 1)[-1] if first else ''
     title = q.get('title', [''])[0].replace('_', ' ') or (' + '.join(names) + (' - ' + named if named else ''))

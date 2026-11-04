@@ -1,7 +1,8 @@
 // pane_toptabs.js -- the tab strip (see pane_toptabs.py for its signals).
 RS.pane('toptabs', function(ctx){
   var bar = ctx.el.querySelector('.ttbar'), body = ctx.el.querySelector('.ttbody'), tabs = [], active = null;
-  var host = ctx.page.panes.filter(function(p){ return p.block === 'code' && p.host; })[0];
+  var mine = ctx.page.panes.filter(function(p){ return p.loc === ctx.loc; })[0];
+  var host = ctx.page.panes.filter(function(p){ return p.hosted && p.block === mine.holds; })[0];   // the block this one holds
   var hostEl = host && document.querySelector('.cell[data-loc="' + host.loc + '"]');
   if (hostEl){                          // the page has a code block: the files show there, this is only the strip
     hostEl.innerHTML = ''; body.remove(); body = hostEl;
@@ -48,6 +49,7 @@ RS.pane('toptabs', function(ctx){
     b[0].onmouseleave = function(){ holdEnd(); };
   });
   function show(tab){
+    if (active && active !== tab && active.code) active.code.hidden();      // the one that was in front says it is behind
     active = tab;
     tabs.forEach(function(t){
       t.pane.style.display = t === tab ? '' : 'none';
@@ -57,9 +59,9 @@ RS.pane('toptabs', function(ctx){
   }
   function lastShown(){ return tabs.filter(function(t){ return !t.hidden; }).pop() || null; }
   function find(path){ return tabs.filter(function(t){ return !t.section && t.path === path; })[0]; }
-  function drop(tab, announce){         // a file's tab goes: the code pane announces closefile for its file
+  function drop(tab){                   // a file's tab goes: the code pane announces showcode off for its file
     tabs.splice(tabs.indexOf(tab), 1);
-    if (announce) tab.code.remove();
+    tab.code.remove();
     tab.pane.remove(); tab.button.remove();
     if (active === tab) show(lastShown());
     rebuild();
@@ -73,12 +75,12 @@ RS.pane('toptabs', function(ctx){
     var pane = document.createElement('div'), button = document.createElement('span');
     pane.className = 'ttpane'; pane.innerHTML = RS.codeSkeleton; body.appendChild(pane);
     var tab = {path: path, pane: pane, button: button};
-    tab.code = ctx.make('code', pane, {where: ctx.where, config: ctx.config});
+    tab.code = ctx.make('code', pane, {loc: ctx.loc, config: ctx.config});      // it speaks as this block
     button.className = 'ttab'; button.title = path;
     button.innerHTML = '<span class="ttn"></span><button class="ttx" title="close this tab">&times;</button>';
     button.querySelector('.ttn').textContent = base(path);
     button.querySelector('.ttn').onclick = function(){ show(tab); };
-    button.querySelector('.ttx').onclick = function(){ drop(tab, true); };
+    button.querySelector('.ttx').onclick = function(){ drop(tab); };
     bar.appendChild(button); tabs.push(tab);
     rebuild();
     show(tab);
@@ -99,11 +101,11 @@ RS.pane('toptabs', function(ctx){
   }
   function active_(name){ return function(d){ var h = active && active.code && active.code[name]; if (h) h.call(active.code, d); }; }
   var h = {
-    onOpenfile: function(d){
+    onShowfile: function(d){
       var tab = find(d.path);
+      if (d.show === false){ if (tab) drop(tab); return; }
       if (tab) { if (active !== tab) show(tab); } else add(d.path);
-    },
-    onClosefile: function(d){ var tab = find(d.path); if (tab) drop(tab, false); }
+    }
   };
   ['onSelectfunk', 'onSaved', 'onSearchtext', 'onSearchnext', 'onSearchprev']
     .forEach(function(n){ h[n] = active_(n); });
@@ -117,7 +119,7 @@ RS.pane('toptabs', function(ctx){
   try { first = JSON.parse(ctx.el.querySelector('.tt').dataset.open || '[]'); } catch (e) {}
   if (first.length) ctx.whenLinked(function(){        // files the page was made with: ask for them as ftv would
     window.setTimeout(function(){
-      first.forEach(function(p){ ctx.emit('openfile', {path: p, where: ctx.where}); });
+      first.forEach(function(p){ ctx.emit('mngshowfile', {path: p, show: true, to: [ctx.loc]}); });
     }, 500);
   });
   return h;

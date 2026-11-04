@@ -7,12 +7,13 @@ code), names (the list of methods), log. The box has a selector for the mode, so
 the whole page; the block that matches the mode responds and the others ignore the signal.
 
 Signals
-    emits     searchtext {text, mode, where}   as the user types (empty clears)
-              searchnext {mode, where}, searchprev {mode, where}   step through the hits
-    receives  onSearchcount {index, total, where}   "3 / 17" from the code pane after a text search
+    emits     searchtext {text, mode}   as the user types (empty clears)
+              searchnext {mode}, searchprev {mode}   step through the hits
+    receives  onSearchcount {index, total}   "3 / 17" from the code pane after a text search
 IN and OUT below are these names.
 
-VERSION  M1 m01.v01 (2026-11-03): first version.
+VERSION  M1 m01.v02 (2026-11-04): no where in its signals.
+         M1 m01.v01 (2026-11-03): first version.
 """
 import html as htmllib
 

@@ -2,8 +2,8 @@ r"""rs3pages.py -- pages made of blocks: the layout, the collation, the page, an
 
 A page is a layout string (rs3layout.py) and, for each locator in it, a block with its data. A
 block is rs3/panes/pane_NAME.py with write(*data, S=, page=, loc=) -> done(label, css, js, html, ...) (rs3util); the
-locator `code2` takes its block from the name without the digits (code), unless the page says
-otherwise. The server runs each block's write, takes the html of each into its place in the
+locator `cd.2` is the block `code` (the part before the . is its kind, a short name or a block's name: rs3layout), unless the layout
+defines it, `{cd3=code}`. The server runs each block's write, takes the html of each into its place in the
 layout, collates the css and the js into ONE <style> and ONE <script> (a label seen before is
 not written again; so are two identical texts), and fills rs3/html/page.html with them and with the
 manager (html/manager.js), which routes the signals between the blocks. The result is a complete
@@ -30,7 +30,9 @@ Routes (HTTP GET)
 The page table is S['pages'] (rs3table). A page that is an address is put in it when it is served and when it says
 hello (register_url), so a page whose server restarted finds its place again.
 
-VERSION  M2 m01.v01 (2026-11-04): the address code is rs3util's, the page table rs3table's, the path rules pathof's;
+VERSION  M2 m01.v03 (2026-11-04): the block of a locator comes from rs3layout.blocks (kind.suffix, definitions at the end); the status bar is a row added by parse(below=).
+         M2 m01.v02 (2026-11-04): the panes of a page say where they sit, their blk{} list, what they take and hold (no where/TARGETS); a blk{} list is checked; a report that breaks the doc rules is served as its own page.
+         M2 m01.v01 (2026-11-04): the address code is rs3util's, the page table rs3table's, the path rules pathof's;
          no file pages (a report is a doc block: /?layout=[doc]&doc=...); a block's sizes come from its write().
          M1 m01.v01 (2026-11-03): first version.
 """
@@ -57,11 +59,11 @@ if PANES not in sys.path:                   # the blocks are modules of that fol
     sys.path.insert(0, PANES)
 KEEP = 50                                   # built pages kept in memory, and specifications kept on disk
 PAGES = os.path.join(HERE, 'pages')         # what load was given, for each page: a page survives a restart
-TARGETS = ('code', 'toptabs')               # the blocks a file can be sent to
 MONITOR = ('[ftv, [serverstatus ; log]]', {})
 VIEWER = '[methods 50dxh, [code ; editbox wx35d]]'
 ICON = 'data:image/svg+xml,' + quote(asset(os.path.join(PAGE, 'favicon.svg'), 'svg').strip(), safe='/:=,')   # the seven-dot ring, the tab icon of every page
 MAX_TABS = 500                              # the files one block's data may name, patterns opened
+ROUTED = ('commentline', 'commentselect', 'saved')   # the signals that go to one block, the nearest (manager.js), or the list of blk{a,b}
 STATUSBAR = 'statusbar wx7'                 # added as the last row of every page that does not name its own
 BLOCK = re.compile(r'^[a-z]{1,20}$')
 TOKEN = re.compile(r'@@(\w+)@@')
@@ -107,34 +109,55 @@ def opened(data):
     return out
 
 
+def listed(loc, to, specs_of, gave):
+    """The `blk{a,b}` list of a block must name blocks that take what it sends: a file (mngshowfile, to blocks that
+    take files) or a routed signal (to blocks that listen to it). ValueError says which does not."""
+    sent = module_of(specs_of[loc][0]).OUT
+    for target in to:
+        heard = module_of(specs_of[target][0]).IN
+        files = 'mngshowfile' in sent and gave[target]['takes']
+        routed = any(name in sent and name in heard for name in ROUTED)
+        if not (files or routed):
+            raise ValueError(f'{loc}{{{",".join(to)}}}: {target} takes nothing that {loc} sends to one block')
+
+
 def build(S, page, layout, specs, title, selftest=False):
     """The html of a page: see the module header. ValueError says what is wrong with the layout
     or a block. The sizes the blocks gave are left in page['sizes'] ({locator: (width, height)})."""
     tree = rs3layout.parse(layout)
     if 'statusbar' not in rs3layout.names(tree):          # every page has the status bar: the layout cannot lose it
-        tree = rs3layout.parse(f'[{layout.strip()} ; {STATUSBAR}]')
-    html_of, parts, panes, counts, sizes = {}, [], [], {}, {}
+        tree = rs3layout.parse(layout, below=STATUSBAR)
+    html_of, parts, panes, sizes = {}, [], [], {}
     locs = rs3layout.names(tree)
-    specs_of = {loc: specs.get(loc) or [rs3layout.block_of(loc)] for loc in locs}
+    block_of = rs3layout.blocks(tree)
+    specs_of = {loc: specs.get(loc) or [block_of[loc]] for loc in locs}
     specs_of = {loc: [spec] if isinstance(spec, str) else list(spec) for loc, spec in specs_of.items()}
     specs_of = {loc: spec[:1] + opened(spec[1:]) for loc, spec in specs_of.items()}
-    tabbed = any(spec[0] == 'toptabs' for spec in specs_of.values())
+    places, wanted = rs3layout.places(tree), rs3layout.receivers(tree)
+    gave = {}
     for loc in locs:
         block, data = specs_of[loc][0], specs_of[loc][1:]
-        got = module_of(block).write(*data, S=S, page=page, loc=loc)
+        try:
+            module = module_of(block)
+        except ValueError as error:
+            raise ValueError(f'{loc!r}: {error}' + (f' (define it at the end of the layout, like {{{loc}=code}})' if block == loc else ''))
+        gave[loc] = module.write(*data, S=S, page=page, loc=loc)
+    held = {got['holds'] for got in gave.values() if got['holds']}      # blocks that another takes over: only a place to show
+    for loc, to in wanted.items():
+        listed(loc, to, specs_of, gave)
+    for loc in locs:
+        block, got = specs_of[loc][0], gave[loc]
         if got['width'] or got['height']:                # its own size, where the layout gives none
             sizes[loc] = (got['width'], got['height'])
         html_of[loc] = got['html']
         parts.append((got['label'] or block, got['css'], got['js']))
         parts.extend(got.get('also', []))        # blocks this one makes inside itself (toptabs: code)
-        host = tabbed and block == 'code'        # with tabs, a code block is where the tabs show their file
-        kind = 'target' if block in TARGETS and not host else block
-        counts[kind] = counts.get(kind, 0) + 1
-        panes.append({'loc': loc, 'block': block, 'where': counts[kind], 'host': host, 'search': got['search']})
+        panes.append({'loc': loc, 'block': block, 'at': places[loc], 'to': wanted.get(loc, []), 'takes': got['takes'],
+                      'holds': got['holds'], 'hosted': block in held, 'search': got['search']})
     page['sizes'] = sizes
     css, js = collate(parts)
     info = {'hash': page['hash'], 'address': page['path'], 'title': title, 'port': S['port'],
-            'admin': bool(page.get('admin')), 'panes': panes,
+            'admin': bool(page.get('admin')), 'panes': panes, 'routed': list(ROUTED),
             'config': S['verbs']['config']({}, S)['config']}
     fill = {'title': title.replace('<', '&lt;'), 'icon': ICON, 'pagecss': asset(os.path.join(PAGE, 'page.css'), 'css'),
             'css': css, 'body': rs3layout.render(tree, html_of, defaults=sizes),
@@ -272,6 +295,19 @@ def view(msg, S):
     return {'hash': page['hash'], 'url': url, 'path': path}
 
 
+def alone(layout, specs):
+    """The bytes of a report file when the page is only a doc of it and its script does not keep the rules of the
+    doc box (pane_doc.prepare): such a file is served as it is, its own page with no rs3 around it (it may still call
+    the server the way the old reports do). None for any other page."""
+    data = specs.get('doc', [])[1:]
+    if layout.strip() != '[doc]' or len(data) != 1 or not data[0].startswith('./'):
+        return None
+    if not module_of('doc').prepare(*data)[4]:
+        return None
+    with open(pathof(data[0], kinds=('html',)), 'rb') as f:
+        return f.read()
+
+
 def page_reply(html):
     return 200, html.encode('utf-8'), 'text/html; charset=utf-8'
 
@@ -286,6 +322,9 @@ def get(req, S):
             return page_reply(build(S, page, layout, {**specs}, 'rs3 monitor', 'selftest=1' in req['query']))
         if path == '/' and req['query']:                         # a page that its address makes: see rs3util.address
             layout, specs, title, selftest = address('/?' + req['query'])
+            own = alone(layout, specs)
+            if own:                                              # a report that keeps no rules of the box: its own page
+                return 200, own, 'text/html; charset=utf-8'
             page = S['pages'].view('/?' + req['query'])
             return page_reply(build(S, page, layout, specs, title, selftest))
         if path.startswith('/code/'):

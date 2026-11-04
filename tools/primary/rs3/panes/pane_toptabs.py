@@ -1,6 +1,6 @@
 r"""pane_toptabs.py -- a strip of tabs, each holding a code pane. It takes files in priority to a
-bare code pane when the page has it as the target (it is pane number n of the page's panes that
-take files).
+bare code pane (write() says it takes files and holds code: a code block on its page is only the place its
+tabs show their file).
 
     write(*items) -> {label, css, js, html}
         items   a ./ path (str): a file the page opens in a tab at the start; or [title, html] or [title, html, bad]: a
@@ -13,21 +13,22 @@ take files).
 The tab strip only makes and destroys code panes (pane_code) and their content: on a file it
 has no tab for, it makes a tab with a new, empty code pane and hands the file to it; on a file it
 has, it switches to that tab. It never talks to ftv: when a tab's close button is pressed the code
-pane of that tab is removed and the code pane announces closefile for its file. A switch of tab
-makes the pane that is now visible announce openfile for its file, so methods and ftv follow.
+pane of that tab is removed and the code pane announces showcode off for its file. A switch of tab
+makes the pane that goes behind announce showcode off and the one now in front showcode on, so methods and ftv follow.
 
 Signals
-    receives  onOpenfile {path, where}    switch to the tab of that file, or make one
-              onClosefile {path, where}   remove the tab of that file (it was asked by ftv)
+    receives  onShowfile {path, show}     switch to the tab of that file, or make one; show false: remove the tab
               onSelectfunk, onSaved, onSearchtext, onSearchnext,
               onSearchprev: handed on to the code pane of the tab that is shown
-    emits     nothing of its own (the code panes inside emit with this pane's number)
+    emits     mngshowfile {path, show, to}   for the files the page was made with; and what the code panes inside emit
+              (showcode, linenoClicked, commentline, commentselect, searchcount): they speak as this block
 IN and OUT below are these names.
 
 The css and js of the code block ride along (the `also` of the dict write returns), so a
 page with tabs and no code block of its own still works.
 
-VERSION  M1 m01.v03 (2026-11-04): what it can find is returned by write().
+VERSION  M1 m01.v04 (2026-11-04): showfile in, showcode out (no more openfile/closefile, no where); takes and holds are declared.
+         M1 m01.v03 (2026-11-04): what it can find is returned by write().
          M1 m01.v02 (2026-11-05): sections of a static page as tabs (the report page), put away and brought back.
          M1 m01.v01 (2026-11-03): first version.
 """
@@ -39,9 +40,9 @@ from rs3util import asset, done, split_package
 
 __all__ = ['write']
 
-IN = ['openfile', 'closefile', 'selectfunk', 'saved', 'searchtext',
+IN = ['showfile', 'selectfunk', 'saved', 'searchtext',
       'searchnext', 'searchprev']
-OUT = []
+OUT = ['mngshowfile', 'showcode', 'linenoClicked', 'commentline', 'commentselect', 'searchcount']
 
 
 def write(*items, S=None, page=None, loc=None):
@@ -58,6 +59,7 @@ def write(*items, S=None, page=None, loc=None):
                f'<div class="tt" data-open="{first}"><div class="ttop"><select class="ttcombo" title="the open tabs">'
                '<option value="">tabs&hellip;</option></select>'
                '<button class="scrollbtn ttl" title="earlier">&#9664;</button><div class="ttbar"></div>'
-               '<button class="scrollbtn ttr" title="later">&#9654;</button></div><div class="ttbody"></div>' + ''.join(sections) + '</div>', search='text')
+               '<button class="scrollbtn ttr" title="later">&#9654;</button></div><div class="ttbody"></div>' + ''.join(sections) + '</div>', search='text',
+               takes=True, holds='code')
     got['also'] = [(inner['label'], inner['css'], inner['js'])]
     return got

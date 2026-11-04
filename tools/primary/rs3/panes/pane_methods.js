@@ -1,7 +1,7 @@
 // pane_methods.js -- the methods block (see pane_methods.py for its signals).
 RS.pane('methods', function(ctx){
   RS.doors(ctx.el.querySelector('.doors'), ['methods']);   // its own door, as the ftv has: shut this pane
-  var box = ctx.el.querySelector('.methods'), list = box.querySelector('.mlist'), cur = '', rows = [], want = '';
+  var box = ctx.el.querySelector('.methods'), list = box.querySelector('.mlist'), cur = '', rows = [], want = '', from = '';    // from: the pane that shows cur
   function esc(t){ return t.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
   function draw(){
     if (!rows.length){ list.innerHTML = '<p class="mute">' + (cur ? 'no methods' : 'no file') + '</p>'; return; }
@@ -22,11 +22,13 @@ RS.pane('methods', function(ctx){
   }
   list.addEventListener('click', function(e){
     var row = e.target.closest('.mrow');
-    if (row) ctx.emit('selectfunk', {lineno: rows[+row.dataset.i].line, where: ctx.where});
+    if (row) ctx.emit('selectfunk', {lineno: rows[+row.dataset.i].line, to: from ? [from] : undefined});
   });
   var h = {
-    onOpenfile: function(d){ if (d.path !== cur) load(d.path); },
-    onClosefile: function(d){ if (d.path === cur){ cur = ''; rows = []; draw(); } },
+    onShowcode: function(d){              // the file of the pane that was last in front; one that is put behind blanks the list only if it is ours
+      if (d.on){ from = d.loc === 'tab' ? '' : d.loc; if (d.path !== cur) load(d.path); }
+      else if (d.path === cur && d.loc === (from || 'tab')){ cur = ''; from = ''; rows = []; draw(); }
+    },
     onLinenoClicked: function(d){
       var best = -1;
       rows.forEach(function(m, i){ if (m.line <= d.lineno && (best < 0 || m.line >= rows[best].line)) best = i; });

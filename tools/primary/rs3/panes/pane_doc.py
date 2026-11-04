@@ -26,7 +26,8 @@ Signals
     emits     searchcount {index, total}   the count of the marks, for the status bar
 IN and OUT below are these names.
 
-VERSION  M2 m01.v01 (2026-11-04): rebuilt: the script runs as aDOM in a box (checked first), the css is scoped to the box, a
+VERSION  M2 m01.v02 (2026-11-04): prepare() gives the parts and the problems of a doc's data (the server uses it to serve a report that breaks the rules as its own page).
+         M2 m01.v01 (2026-11-04): rebuilt: the script runs as aDOM in a box (checked first), the css is scoped to the box, a
          file is a source like any other, and the box answers the status bar's search. Replaces the doc that took a file's
          script as the page's own.
          M1 m01.v02: a file given by its ./ path. M1 m01.v01 (2026-11-03): first version.
@@ -133,9 +134,10 @@ def refused(label, loc, reasons):
                 'its script says more than a doc may (rs3jsguard)</b><ul>' + items + '</ul></div>', search='text')
 
 
-def write(*data, S=None, page=None, loc=None):
-    whole = len(data) == 1 and data[0].startswith('./')
-    if whole:
+def prepare(*data):
+    """(js, css, markup, handlers, problems) of the data of a doc: what write() makes its box of, and why the page may
+    not be shown ([] when it may). A page that has problems is a page that does not keep the rules of the box."""
+    if len(data) == 1 and data[0].startswith('./'):
         js, css, markup = '', '', file_text(data[0])
     else:
         js, css, markup = (list(data) + ['', '', ''])[:3]
@@ -146,13 +148,18 @@ def write(*data, S=None, page=None, loc=None):
     body = BODY.search(markup)
     if body:                                              # a whole page: the inside of its body
         markup = body.group(1)
-    label = 'doc:' + hashlib.sha1((loc + '\0' + css + '\0' + js + '\0' + markup).encode('utf-8')).hexdigest()[:10]
     if JAVASCRIPT_URL.search(markup):
-        return refused(label, loc, ['a javascript: link or source is not allowed'])
+        return js, css, markup, [], ['a javascript: link or source is not allowed']
     markup, handlers = take_handlers(markup)
     problems = check(js, [code for _, code in handlers]) if (js.strip() or handlers) else []
+    return js, css, markup, handlers, problems[:20]
+
+
+def write(*data, S=None, page=None, loc=None):
+    js, css, markup, handlers, problems = prepare(*data)
+    label = 'doc:' + hashlib.sha1((loc + '\0' + css + '\0' + js + '\0' + markup).encode('utf-8')).hexdigest()[:10]
     if problems:
-        return refused(label, loc, problems[:20])
+        return refused(label, loc, problems)
     scope = f'[data-doc="{loc}"]'
     wrapped = ''
     if js.strip() or handlers:

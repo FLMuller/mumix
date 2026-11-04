@@ -193,12 +193,20 @@ class b_rs3util(bench):
         self.assertEqual(address(url)[0], '[ftv 100dxh,[code;editbox wx30d]]')
         self.assertEqual(address(url)[2], 'my page')
 
-    def test_T14_a_locator_that_is_not_its_blocks_name_says_which_block(self):
-        url = address('[a,methods2]', {'a': ['code', './x.py'], 'methods2': ['methods']})
-        self.assertIn('block.a=code', url)
-        self.assertNotIn('block.methods2', url)                               # methods2 is a methods block by its name's letters
-        self.assertEqual(address(url)[1]['a'], ['code', './x.py'])
-        self.assertEqual(address(url)[1]['methods2'], ['methods'])
+    def test_T14_a_page_is_written_with_the_blocks_name_when_it_has_one_of_a_kind_and_the_short_name_when_several(self):
+        url = address('[a,methods.2]', {'a': ['code', './x.py'], 'methods.2': ['methods']})
+        self.assertEqual(url, '/?layout=[code,methods]&code=x.py')            # one of each: the blocks' names, and the data follows
+        self.assertEqual(address(url)[1], {'code': ['code', './x.py'], 'methods': ['methods']})
+        url = address('[code.1,cd.2,eb]', {'code.1': ['code', './a.py'], 'cd.2': ['code', './b.py'], 'eb': ['editbox']})
+        self.assertEqual(url, '/?layout=[cd.1,cd.2,editbox]&cd.1=a.py&cd.2=b.py')       # two codes: short; one editbox: long
+        self.assertEqual(address(url)[1], {'cd.1': ['code', './a.py'], 'cd.2': ['code', './b.py'], 'editbox': ['editbox']})
+
+    def test_T14a_a_locator_that_names_no_kind_is_defined_at_the_end_of_the_layout(self):
+        url = address('[cd3,cd4]', {'cd3': ['code', './a.py'], 'cd4': ['code', './b.py']})
+        self.assertEqual(url, '/?layout=[cd3,cd4]{cd3=code,cd4=code}&cd3=a.py&cd4=b.py')
+        layout, specs, _, _ = address(url)
+        self.assertEqual((layout, specs['cd3'], specs['cd4']), ('[cd3,cd4]{cd3=code,cd4=code}', ['code', './a.py'], ['code', './b.py']))
+        self.assertTrue(address('[ftv,cd3]{cd3=code}', {}).startswith('/?layout=[ftv,code]'))        # one of its kind: the name, no definition
 
     def test_T15_a_page_that_cannot_be_an_address_is_none(self):
         self.assertIsNone(address('[doc]', {'doc': ['doc', '', '', '<p>x</p>']}))             # html

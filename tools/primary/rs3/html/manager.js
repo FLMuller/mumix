@@ -1,67 +1,112 @@
 // manager.js -- the hidden manager of every rs3 page: it makes the blocks, routes their signals, owns the
 // link to the server, and opens and closes the browser tabs of files.
 //
-// A block is registered by its script:  RS.pane('code', function(ctx){ ...; return {onOpenfile: fn, ...}; })
-// ctx = {loc, block, where, el, page, config,
+// A block is registered by its script:  RS.pane('code', function(ctx){ ...; return {onShowfile: fn, ...}; })
+// ctx = {loc, block, el, page, config,
 //        emit(name, data)         announce a signal: every block with an  on<Name>  handler gets it
 //        verb(name, fields)       ask the server; a Promise of its reply (fields get the page's hash)
 //        whenLinked(fn)           run fn when the link to the server is up (now, if it is)
 //        linked()                 is the link up?}
-// A signal is  name  and  data  (an object). The emitter writes  openfile , a receiver defines
-// onOpenfile . A handler may respond but cannot avoid, change or hold a signal: its return value is
+// A signal is  name  and  data  (an object). The emitter writes  showfile , a receiver defines
+// onShowfile . A handler may respond but cannot avoid, change or hold a signal: its return value is
 // ignored, and a handler that throws is reported to the console and the others still get the signal.
 // Signals sent while another is being delivered wait their turn, so every block sees them in order.
-// A signal's data may hold  where : the number of the pane it is for (the nth code/toptabs pane, the nth
-// methods pane ...). A block with a number acts only on a signal for its number (or for none);
-// ftv, serverstatus and log take them all. where 0 is a new browser tab.
+// Who gets a signal. Three ways (SIGNALS.md says which a signal uses):
+//   to           the data holds  to: [locators]  : only those blocks (a selectfunk goes back to the code that was shown)
+//   nearest      the names in PAGE.routed (commentline, commentselect, saved): of each kind of block that listens, the
+//                one nearest the sender in the layout: the most groups [...] shared with it; of those the first after
+//                the sender, round the end; or the blocks of the sender's  blk{a,b}  list in the layout string
+//   everyone     all the others: every block with the handler
+// A name that starts with mng goes only to this manager: it decides who gets what, and no block listens to it.
+//
+// Files.  ftv emits  mngshowfile {path, show, to?}  ; the manager sends  showfile {path, show}  to the blocks that take
+// files (PAGE.panes[].takes): those the layout list (or  to ) names, else a container (a block that holds another: toptabs
+// holds code) before a lone block, else a new browser tab. show false closes. A block that shows or stops showing
+// a file says so with  showcode {path, loc, on} , to everyone (the manager does it for a browser tab: loc 'tab').
 //
 // The manager's own signals:   newtabopened {path}  after this page has loaded (and after a tab was opened)
 //                              closingmaintab {path}  just before a tab closes
+//                              showcode {path, loc: 'tab', on}  a browser tab of a file opened or closed
 //                              status {...} / log {rows|reset}  what the server says (pulse, once a second)
 //   it listens to              closemaintab           (a button): closing, then the window closes
-//                              openfile / closefile   when no pane takes a file: a new tab
+//                              mngshowfile            ftv: who gets the file
 // Server commands to the page (snap, trigger) are answered here.
 var RS = (function(){
-  var panes = {}, inst = [], queue = [], draining = false, tabs = {}, started = false;
+  var panes = {}, inst = [], queue = [], draining = false, tabs = {}, started = false, shownAt = {};    // shownAt[path]: {loc: true}
   var link = {ws: null, up: false, waiting: [], hello: false, row: 0, bye: '', pulsing: false, ever: false};
-  var NOWHERE = {ftv: 1, serverstatus: 1, log: 1, doc: 1};
   var cap = function(s){ return s.charAt(0).toUpperCase() + s.slice(1); };
 
   // ---- signals ----
-  function wanted(it, name, data){
-    var h = it.h && it.h['on' + cap(name)];
-    if (typeof h !== 'function') return null;
-    if (NOWHERE[it.block] || data.where == null) return h;
-    return it.where === data.where ? h : null;
+  function paneOf(loc){ return PAGE.panes.filter(function(p){ return p.loc === loc; })[0]; }
+  function listeners(name){
+    return inst.filter(function(it){ return it.h && typeof it.h['on' + cap(name)] === 'function'; });
   }
-  function deliver(name, data){
-    inst.forEach(function(it){
-      var h = wanted(it, name, data);
-      if (!h) return;
-      try { h.call(it.h, data); } catch (e) { console.error('rs3: ' + it.loc + ' on' + cap(name) + ':', e); }
+  function nearest(list, from){         // of each kind of block: the listener sharing most groups with the sender; a tie: the first after it, round the end
+    var me = paneOf(from), order = PAGE.panes.map(function(p){ return p.loc; }), here = order.indexOf(from), by = {};
+    list.forEach(function(it){
+      if (it.loc === from) return;
+      var p = paneOf(it.loc), n = 0, away = (order.indexOf(it.loc) - here + order.length) % order.length;
+      while (me && n < me.at.length && n < p.at.length && me.at[n] === p.at[n]) n++;
+      var best = by[it.block];
+      if (!best || n > best.n || (n === best.n && away < best.away)) by[it.block] = {it: it, n: n, away: away};
+    });
+    return Object.keys(by).map(function(block){ return by[block].it; });
+  }
+  function receivers(name, data, from){
+    var list = listeners(name), to = data.to, own = paneOf(from);
+    if (!to && (PAGE.routed || []).indexOf(name) >= 0){
+      if (!own || !own.to.length) return nearest(list, from);
+      to = own.to;                      // the sender's  blk{a,b}  in the layout string
+    }
+    return to ? list.filter(function(it){ return to.indexOf(it.loc) >= 0; }) : list;
+  }
+  function deliver(name, data, from){
+    receivers(name, data, from).forEach(function(it){
+      try { it.h['on' + cap(name)].call(it.h, data); } catch (e) { console.error('rs3: ' + it.loc + ' on' + cap(name) + ':', e); }
     });
   }
-  function emit(name, data){
-    queue.push({name: name, data: data || {}});
+  function emit(name, data, from){
+    queue.push({name: name, data: data || {}, from: from});
     if (draining) return;
     draining = true;
     try {
       while (queue.length){
         var s = queue.shift();
-        manage(s.name, s.data);
-        deliver(s.name, s.data);
+        manage(s.name, s.data, s.from);
+        deliver(s.name, s.data, s.from);
       }
     } finally { draining = false; }
   }
-  function takers(data){                // the panes that take a file: code/toptabs with onOpenfile, for this number
-    return inst.filter(function(it){
-      return (it.block === 'code' || it.block === 'toptabs') && it.h && it.h.onOpenfile &&
-             (data.where == null || it.where === data.where);
-    });
+  function showFile(d, from){           // mngshowfile: who gets the file, or who is to stop showing it
+    var path = d.path, show = d.show !== false, own = paneOf(from), to = d.to;
+    if (!path) return;
+    if (!to && own && own.to.length) to = own.to;
+    var takes = listeners('showfile').map(function(it){ return it.loc; });
+    function send(locs){ locs.forEach(function(loc){ deliver('showfile', {path: path, show: show, to: [loc]}, null); }); }
+    if (!show){                         // where it is shown now (and the lists, when given)
+      Object.keys(shownAt[path] || {}).forEach(function(loc){
+        if (to === 'tab' ? loc !== 'tab' : to && to.indexOf(loc) < 0) return;
+        if (loc === 'tab') closeTab(path); else send([loc]);
+      });
+      return;
+    }
+    if (to === 'tab'){ openTab(path); return; }
+    var panes = PAGE.panes.filter(function(p){ return p.takes && !p.hosted && takes.indexOf(p.loc) >= 0; });
+    if (to) panes = panes.filter(function(p){ return to.indexOf(p.loc) >= 0; });
+    else {
+      var boxes = panes.filter(function(p){ return p.holds; });          // a container before a lone block
+      panes = (boxes.length ? boxes : panes).slice(0, 1);
+    }
+    if (panes.length) send(panes.map(function(p){ return p.loc; }));
+    else if (!to) openTab(path);
+    else console.warn('rs3: no block of ' + to.join(',') + ' takes files');
   }
-  function manage(name, data){          // what the manager itself does with a signal, before the blocks get it
-    if (name === 'openfile' && (data.where === 0 || !takers(data).length)) openTab(data.path, data.where);
-    else if (name === 'closefile' && tabs[data.path]) closeTab(data.path);
+  function manage(name, data, from){    // what the manager itself does with a signal, before the blocks get it
+    if (name === 'mngshowfile') showFile(data, from);
+    else if (name === 'showcode'){
+      var at = shownAt[data.path] || (shownAt[data.path] = {});
+      if (data.on) at[data.loc] = true; else delete at[data.loc];
+    }
     else if (name === 'closemaintab') closeMain();
     else if (name === 'showpane') showPane(data.block, data.on);
     else if (name === 'withlineno') document.documentElement.classList.toggle('nolinenos', !data.on);
@@ -123,17 +168,17 @@ var RS = (function(){
     var rel = path.slice(2).split('/').map(encodeURIComponent).join('/');
     return /\.(html|result)$/i.test(path) ? '/?layout=[doc]&doc=' + rel : '/code/' + encodeURI(path.slice(2));
   }
-  function openTab(path, where){        // tabs[path] = {win, where}: the closefile that follows says the same where
+  function openTab(path){               // tabs[path] = {win}; a blocked tab is no file shown: nothing is announced
     if (!path) return;
     var old = tabs[path];
     if (old && !old.win.closed){ old.win.focus(); return; }
     var win = window.open(tabUrl(path), 'rs3:' + path);
-    if (!win){                          // no tab, so the file is not open: ftv takes its mark off again
+    if (!win){
       console.warn('rs3: the browser blocked the new tab for ' + path);
-      emit('closefile', {path: path, where: where == null ? 0 : where});
       return;
     }
-    tabs[path] = {win: win, where: where == null ? 0 : where};
+    tabs[path] = {win: win};
+    emit('showcode', {path: path, loc: 'tab', on: true});
     emit('newtabopened', {path: path});
   }
   function closeTab(path){
@@ -141,6 +186,7 @@ var RS = (function(){
     delete tabs[path];
     if (!tab) return;
     emit('closingmaintab', {path: path});
+    emit('showcode', {path: path, loc: 'tab', on: false});
     try { tab.win.close(); } catch (e) {}
   }
   function closeMain(){                 // a button asked: tell the blocks, then the window goes
@@ -153,10 +199,9 @@ var RS = (function(){
   function watchTabs(){                 // a tab closed by hand: the file is closed
     Object.keys(tabs).forEach(function(path){
       if (tabs[path].win.closed){
-        var where = tabs[path].where;
         delete tabs[path];
         emit('closingmaintab', {path: path});
-        emit('closefile', {path: path, where: where});
+        emit('showcode', {path: path, loc: 'tab', on: false});
       }
     });
   }
@@ -285,12 +330,13 @@ var RS = (function(){
   function start(){
     var host = function(loc){ return document.querySelector('.cell[data-loc="' + loc + '"]'); };
     PAGE.panes.forEach(function(p){
-      var ctor = panes[p.block], el = host(p.loc), it = {loc: p.loc, block: p.block, where: p.where, el: el, h: {}};
+      var ctor = panes[p.block], el = host(p.loc), it = {loc: p.loc, block: p.block, el: el, h: {}};
       inst.push(it);
-      if (p.host) return;               // a code block on a page with tabs is only the place the tabs show their file
+      if (p.hosted) return;             // a code block on a page with tabs is only the place the tabs show their file
       if (!ctor || !el){ console.warn('rs3: no script for block ' + p.block); return; }
-      var ctx = {loc: p.loc, block: p.block, where: p.where, el: el, page: PAGE, config: PAGE.config,
-                 emit: emit, verb: verb, whenLinked: whenLinked, linked: function(){ return link.up; }, make: make};
+      var ctx = {loc: p.loc, block: p.block, el: el, page: PAGE, config: PAGE.config,
+                 emit: function(name, data){ emit(name, data, p.loc); },
+                 verb: verb, whenLinked: whenLinked, linked: function(){ return link.up; }, make: make};
       it.h = ctor(ctx) || {};
     });
     started = true;
@@ -311,10 +357,12 @@ var RS = (function(){
   }
   function make(block, el, extra){      // a pane inside a pane (toptabs makes code panes)
     var ctor = panes[block];
-    var ctx = Object.assign({loc: block, block: block, where: 0, el: el, page: PAGE, config: PAGE.config,
-                             emit: emit, verb: verb, whenLinked: whenLinked, linked: function(){ return link.up; },
+    var ctx = Object.assign({loc: block, block: block, el: el, page: PAGE, config: PAGE.config,
+                             verb: verb, whenLinked: whenLinked, linked: function(){ return link.up; },
                              make: make}, extra || {});
+    ctx.emit = function(name, data){ emit(name, data, ctx.loc); };       // a pane inside a pane speaks as the pane that made it
     return ctor ? (ctor(ctx) || {}) : {};
   }
-  return {pane: function(name, ctor){ panes[name] = ctor; }, start: start, emit: emit, cap: cap, doors: doors};
+  return {pane: function(name, ctor){ panes[name] = ctor; }, start: start, emit: function(name, data){ emit(name, data, null); },
+          cap: cap, doors: doors};
 })();

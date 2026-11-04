@@ -21,19 +21,19 @@ RS.selftest = function(){
     check('code shows lines', await until(function(){ return qa('.clines .ln').length > 0; }));
     check('methods listed', await until(function(){ return qa('.mrow').length > 0; }));
     var rows = qa('.mrow'), lastLine = rows.length ? +rows[rows.length - 1].querySelector('.mline').textContent : 1;
-    RS.emit('linenoClicked', {lineno: lastLine + 1, where: 1});
+    RS.emit('linenoClicked', {lineno: lastLine + 1});
     check('methods marks a method', await until(function(){ return q('.mrow.cur'); }));
-    RS.emit('selectfunk', {lineno: lastLine, where: 1});
+    RS.emit('selectfunk', {lineno: lastLine});
     await sleep(100);
     check('code scrolled', q('.clines').scrollTop > 0 || lastLine < 30);
-    RS.emit('searchtext', {text: 'def', mode: 'text', where: 1});
+    RS.emit('searchtext', {text: 'def', mode: 'text'});
     check('search counts', await until(function(){ return /\d+ \/ \d+/.test(q('.sinfo').textContent); }));
-    RS.emit('commentline', {path: PAGE.panes.length ? q('.codeview .cpath').title : '', base: 'x', line: 3, where: 1});
+    RS.emit('commentline', {path: PAGE.panes.length ? q('.codeview .cpath').title : '', base: 'x', line: 3});
     check('editbox ready', await until(function(){ return /new comment above line 3/.test(q('.etarget').textContent); }));
     RS.emit('withlineno', {on: false});
     check('line numbers off', document.documentElement.classList.contains('nolinenos'));
-    RS.emit('closefile', {path: q('.codeview .cpath').title, where: 1});
-    check('wiped on closefile', await until(function(){ return qa('.clines .ln').length === 0; }));
+    RS.emit('mngshowfile', {path: q('.codeview .cpath').title, show: false});
+    check('wiped on showfile off', await until(function(){ return qa('.clines .ln').length === 0; }));
   }
   async function monitor(){
     await bar();
@@ -41,11 +41,11 @@ RS.selftest = function(){
     check('log has lines', await until(function(){ return qa('.lrow').length > 0; }));
     check('tree has files', await until(function(){ return qa('.ftree a.ff').length > 0; }));
     var before = qa('.ftree a.ff').length;
-    RS.emit('searchtext', {text: 'rs3', mode: 'files', where: 1});
+    RS.emit('searchtext', {text: 'rs3', mode: 'files'});
     await sleep(100);
     check('tree filtered', qa('.ftree a.ff').length < before && qa('.ftree a.ff').length > 0);
-    RS.emit('searchtext', {text: '', mode: 'files', where: 1});
-    RS.emit('searchtext', {text: 'started', mode: 'log', where: 1});
+    RS.emit('searchtext', {text: '', mode: 'files'});
+    RS.emit('searchtext', {text: 'started', mode: 'log'});
     await sleep(100);
     check('log filtered', qa('.lrow:not([hidden])').length > 0 && qa('.lrow:not([hidden])').length <= qa('.lrow').length);
   }
@@ -53,18 +53,18 @@ RS.selftest = function(){
     await bar();
     check('tree has files', await until(function(){ return qa('.ftree a.ff.code').length > 1; }));
     var a = qa('.ftree a.ff.code'), p0 = a[0].dataset.p, p1 = a[1].dataset.p;
-    RS.emit('openfile', {path: p0, where: 1});
+    RS.emit('mngshowfile', {path: p0, show: true});
     check('first tab opens', await until(function(){ return qa('.ttab').length === 1 && qa('.clines .ln').length > 0; }));
-    RS.emit('openfile', {path: p1, where: 1});
+    RS.emit('mngshowfile', {path: p1, show: true});
     check('second tab opens', await until(function(){ return qa('.ttab').length === 2; }));
     check('tabs combo lists both', qa('.ttcombo option').length === 3);          // the heading and the two
-    check('tree marks both', await until(function(){ return qa('.ftree a.ff.on').length === 2; }));
-    RS.emit('openfile', {path: p0, where: 1});
-    check('switch back to the first', await until(function(){ return q('.ttab.on').title === p0; }));
+    check('tree marks the one in front', await until(function(){ return qa('.ftree a.ff.on').length === 1 && q('.ftree a.ff.on').dataset.p === p1; }));
+    RS.emit('mngshowfile', {path: p0, show: true});
+    check('switch back to the first', await until(function(){ return q('.ttab.on').title === p0 && q('.ftree a.ff.on').dataset.p === p0; }));
     check('methods follow the tab', await until(function(){ return qa('.mrow').length > 0; }));
-    RS.emit('closefile', {path: p0, where: 1});
+    RS.emit('mngshowfile', {path: p0, show: false});
     check('tab removed', await until(function(){ return qa('.ttab').length === 1; }));
-    check('tree unmarks it', await until(function(){ return qa('.ftree a.ff.on').length === 1; }));
+    check('tree marks the one left in front', await until(function(){ return qa('.ftree a.ff.on').length === 1 && q('.ftree a.ff.on').dataset.p === p1; }));
     q('.ttx').click();
     check('close button removes the last tab', await until(function(){ return qa('.ttab').length === 0; }));
     check('tree has no marks left', await until(function(){ return qa('.ftree a.ff.on').length === 0; }));

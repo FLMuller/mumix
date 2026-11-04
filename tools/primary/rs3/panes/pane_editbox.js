@@ -41,7 +41,7 @@ RS.pane('editbox', function(ctx){
         }
       }
       say(r.removed ? 'removed' : 'saved');
-      ctx.emit('saved', {path: mine.path, where: ctx.where});
+      ctx.emit('saved', {path: mine.path});
       if (dirty && job === mine){ dirty = false; send(false); } else dirty = false;
     }).catch(function(e){ flying = false; dirty = false; say(e.message, true); });
   }
@@ -58,8 +58,8 @@ RS.pane('editbox', function(ctx){
     onCommentline: function(d){ begin({mode: 'insert', path: d.path, base: d.base, line: d.line}, '', ''); },
     onCommentselect: function(d){ begin({mode: 'update', path: d.path, base: d.base, first: d.first, last: d.last}, d.text, d.tag); },
     onWithconfig: function(){ if (job && job.own) job.tag = initials(); shown(); },      // the user id was changed in the menu
-    onClosefile: function(d){
-      if (job && job.path === d.path){ flush(); idle(); target.textContent = 'no comment selected'; text.value = ''; }
+    onShowcode: function(d){
+      if (!d.on && job && job.path === d.path){ flush(); idle(); target.textContent = 'no comment selected'; text.value = ''; }
     }
   };
 });

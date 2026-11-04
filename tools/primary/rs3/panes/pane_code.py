@@ -6,25 +6,27 @@ The block shows the file it is sent. With a ./ path as data it opens that file w
 link is up (the viewer page does so); without, it waits for a signal.
 
 Signals
-    receives  onOpenfile {path, where}   show that file (a file already shown: nothing; another:
-                                         the one shown is dropped, announcing closefile for it)
-              onClosefile {path, where}  wipe, if that file is the one shown (no announcement)
-              onSelectfunk {lineno, where}  scroll to that line and flash it
-              onSaved {path, where}      the file's comments changed: read it again
-              onSearchtext {text, mode, where}   mode 'text': mark every hit, scroll to the first
-              onSearchnext / onSearchprev {mode, where}   step through the hits
-    emits     closefile {path, where}    its content is wiped or the pane is removed
-              openfile {path, where}     the pane became visible with a file in it (a tab switch)
-              linenoClicked {lineno, where}   the user clicked a line's number
-              commentline {path, base, line, where}   ... and wants a comment above that line
-              commentselect {path, base, first, last, tag, text, where}   clicked a comment
-              searchcount {index, total, where}   after a search
+    receives  onShowfile {path, show}    show that file (a file already shown: nothing; another: the one shown
+                                         is dropped, announcing showcode off for it); show false: wipe, if that
+                                         file is the one shown, and say so
+              onSelectfunk {lineno}      scroll to that line and flash it
+              onSaved {path}             the file's comments changed: read it again
+              onSearchtext {text, mode}  mode 'text': mark every hit, scroll to the first
+              onSearchnext / onSearchprev {mode}   step through the hits
+    emits     showcode {path, loc, on}   a file is shown in this pane, or no longer (a tab switch too)
+              linenoClicked {lineno}     the user clicked a line (the whole line is marked, until a scroll or a click elsewhere)
+              commentline {path, base, line}   ... on its number: a comment above that line (to the nearest editbox)
+              commentselect {path, base, first, last, tag, text}   clicked a comment (the same)
+              searchcount {index, total}   after a search
 IN = [...] and OUT = [...] below are these names; a test checks every OUT has a receiver.
 
 The lines come from the open verb (rs3comment): a row for each line and a thread for each comment, the
 format is in rs3comment's header.
 
-VERSION  M1 m01.v02 (2026-11-04): what it can find is returned by write().
+VERSION  M1 m01.v05 (2026-11-04): a click anywhere on a line marks it (the soft orange of the number's hover); only the number asks for a comment; it stays marked while the comment box (data-keepsel) is clicked.
+         M1 m01.v04 (2026-11-04): a click on a line number marks the whole line until a scroll or a click elsewhere.
+         M1 m01.v03 (2026-11-04): showfile in, showcode out (no more openfile/closefile, no where); write() says it takes files.
+         M1 m01.v02 (2026-11-04): what it can find is returned by write().
          M1 m01.v01 (2026-11-03): first version.
 """
 import html as htmllib
@@ -36,9 +38,9 @@ load('rs3lex')           # rs3lex.pyx: css() gives the colour of every role
 
 __all__ = ['write']
 
-IN = ['openfile', 'closefile', 'selectfunk', 'saved', 'searchtext',
+IN = ['showfile', 'selectfunk', 'saved', 'searchtext',
       'searchnext', 'searchprev']
-OUT = ['closefile', 'openfile', 'linenoClicked', 'commentline', 'commentselect', 'searchcount']
+OUT = ['showcode', 'linenoClicked', 'commentline', 'commentselect', 'searchcount']
 
 SKELETON = ('<div class="codeview"{path}><div class="cbar"><span class="cpath">no file</span>'
             '<button class="cprev" title="previous comment">&#8592;</button>'
@@ -49,4 +51,4 @@ SKELETON = ('<div class="codeview"{path}><div class="cbar"><span class="cpath">n
 def write(path=None, S=None, page=None, loc=None):
     attr = f' data-path="{htmllib.escape(path)}"' if path else ''
     return done('code', css() + asset(__file__, 'css'), asset(__file__, 'js'),
-                SKELETON.format(path=attr), search='text')
+                SKELETON.format(path=attr), search='text', takes=True)

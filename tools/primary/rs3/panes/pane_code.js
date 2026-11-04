@@ -8,11 +8,23 @@ RS.pane('code', function(ctx){
   var cfg = ctx.config || {};
   var place = '<p class="mute">no file open</p>';
 
-  function wipe(){ lines.innerHTML = place; cpath.textContent = 'no file'; cur = {path: '', base: ''}; hits = []; }
+  var chosen = null;                    // the line that was clicked: the whole row is marked until a scroll or a click elsewhere
+  function away(e){      // not a line of this pane, and not a block that keeps it (data-keepsel: the comment box is for that line)
+    if (!(lines.contains(e.target) && e.target.closest('.ln')) && !e.target.closest('[data-keepsel]')) choose(null);
+  }
+  function choose(row){
+    if (chosen) chosen.classList.remove('sel');
+    chosen = row;
+    if (row) row.classList.add('sel');
+    document[row ? 'addEventListener' : 'removeEventListener']('click', away);       // (only while a line is chosen: every tab has a code pane)
+  }
+  lines.addEventListener('scroll', function(){ if (chosen) choose(null); });
+  function wipe(){ choose(null); lines.innerHTML = place; cpath.textContent = 'no file'; cur = {path: '', base: ''}; hits = []; }
   function load(path, keep){
     var top = lines.scrollTop;
     return ctx.verb('open', {path: path}).then(function(r){
       if (!r.ok){ lines.innerHTML = '<p class="mute">' + (r.error || 'the server would not open it') + '</p>'; return; }
+      choose(null);
       lines.innerHTML = r.html;
       cur = {path: path, base: r.base};
       cpath.textContent = path.replace(/^\.\//, '');      // direction:rtl would move a leading ./ to the end
@@ -28,14 +40,16 @@ RS.pane('code', function(ctx){
     var cm = e.target.closest('.cm');
     if (cm && cur.path){
       ctx.emit('commentselect', {path: cur.path, base: cur.base, first: +cm.dataset.first, last: +cm.dataset.last,
-        tag: cm.dataset.who === 'claude' ? 'cld' : (cm.dataset.initials || cfg.initials || 'user'), text: cm.dataset.md || '', where: ctx.where});
+        tag: cm.dataset.who === 'claude' ? 'cld' : (cm.dataset.initials || cfg.initials || 'user'), text: cm.dataset.md || ''});
       return;
     }
     var ln = e.target.closest('.ln');
-    if (!ln || !(e.target.classList.contains('no') || e.target.classList.contains('mg'))) return;
+    if (!ln || !ln.dataset.n) return;
     var n = +ln.dataset.n;
-    ctx.emit('linenoClicked', {lineno: n, where: ctx.where});
-    if (cur.path) ctx.emit('commentline', {path: cur.path, base: cur.base, line: n, where: ctx.where});
+    choose(ln);                         // a click anywhere on the line marks it, and methods follows it ...
+    ctx.emit('linenoClicked', {lineno: n});
+    if (cur.path && (e.target.classList.contains('no') || e.target.classList.contains('mg')))
+      ctx.emit('commentline', {path: cur.path, base: cur.base, line: n});          // ... the number is the click that asks for a comment
   });
   function step(dir){                   // the arrows of the bar: from comment to comment
     var all = lines.querySelectorAll('.cm');
@@ -70,32 +84,35 @@ RS.pane('code', function(ctx){
     at = (at + dir + hits.length) % hits.length;
     var el = hits[at].startContainer.parentElement;
     if (el) el.scrollIntoView({block: 'center'});
-    ctx.emit('searchcount', {index: at + 1, total: hits.length, where: ctx.where});
+    ctx.emit('searchcount', {index: at + 1, total: hits.length});
   }
+  function say(on){ if (cur.path) ctx.emit('showcode', {path: cur.path, loc: ctx.loc, on: on}); }    // this file is shown, or no longer
 
   var h = {
-    onOpenfile: function(d){
-      if (d.path === cur.path) return;
-      if (cur.path) ctx.emit('closefile', {path: cur.path, where: ctx.where});    // the old file goes: we say so
+    onShowfile: function(d){
+      if (d.show === false){ if (d.path === cur.path){ say(false); wipe(); } return; }
+      if (d.path === cur.path){ say(true); return; }
+      say(false);                                         // the old file goes: we say so
       cur = {path: d.path, base: ''};
       load(d.path);
+      say(true);
     },
-    onClosefile: function(d){ if (d.path === cur.path) wipe(); },
     onSelectfunk: function(d){ var el = lineOf(d.lineno); if (el){ el.scrollIntoView({block: 'start'}); flash(el); } },
     onSaved: function(d){ if (d.path === cur.path) load(cur.path, true); },
     onSearchtext: function(d){
       if (d.mode !== 'text') return;
       var n = mark(d.text);
-      if (n) go(1); else ctx.emit('searchcount', {index: 0, total: 0, where: ctx.where});
+      if (n) go(1); else ctx.emit('searchcount', {index: 0, total: 0});
     },
     onSearchnext: function(d){ if (d.mode === 'text') go(1); },
     onSearchprev: function(d){ if (d.mode === 'text') go(-1); },
-    shown: function(){ if (cur.path) ctx.emit('openfile', {path: cur.path, where: ctx.where}); },   // a tab switch
-    remove: function(){ if (cur.path) ctx.emit('closefile', {path: cur.path, where: ctx.where}); cur = {path: '', base: ''}; },
+    shown: function(){ say(true); },                      // a tab switch: this one is in front
+    hidden: function(){ say(false); },                    // ... and this one is behind
+    remove: function(){ say(false); cur = {path: '', base: ''}; },
     path: function(){ return cur.path; },
-    open: function(path){ cur = {path: path, base: ''}; return load(path); }
+    open: function(path){ cur = {path: path, base: ''}; say(true); return load(path); }
   };
   var first = view.dataset.path;
-  if (first) ctx.whenLinked(function(){ cur = {path: first, base: ''}; load(first); });
+  if (first) ctx.whenLinked(function(){ cur = {path: first, base: ''}; load(first); say(true); });
   return h;
 });
