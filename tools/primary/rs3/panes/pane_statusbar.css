@@ -18,7 +18,7 @@
 .cfgmenu input[type=text]{width:84px}
 .sstate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .sstate.bad{color:#c0392b}
-.slive{width:5.5mm;height:5.5mm;flex:none;overflow:visible;--tint:#e67e22}       /* the orange of the open file in the tree */
+.slive{cursor:pointer;width:5.5mm;height:5.5mm;flex:none;overflow:visible;--tint:#e67e22}       /* the orange of the open file in the tree */
 .slive .lring,.slive .ldisc{display:none}
 .slive[data-live="spin"] .lring,.slive[data-live="pulse"] .lring{display:block;transform-origin:11px 11px}
 .slive[data-live="spin"] .lring{animation:turn 1s linear infinite}                      /* busy: a request is out */

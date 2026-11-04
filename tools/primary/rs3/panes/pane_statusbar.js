@@ -46,6 +46,14 @@ RS.pane('statusbar', function(ctx){
   q('cfgsrv').onclick = function(e){       // a report server page with a live socket is already open: nothing is opened
     if (monitors){ e.preventDefault(); menu.hidden = true; say('the report server is already open'); }
   };
+  var OPEN = 'the report server is already open';
+  live.onclick = function(){               // the circle opens the report server in a new tab, unless one is open
+    if (monitors) say(OPEN);
+    else window.open('/reportserver', '_blank');
+  };
+  document.addEventListener('click', function(e){      // that message goes at the next click anywhere else
+    if (state.textContent === OPEN && !e.target.closest('.slive')) say('');
+  });
   function changed(){
     var change = {font: q('cfgfont').value, size: +q('cfgsize').value, initials: q('cfginitials').value.trim(),
                   tabwidth: +q('cfgtab').value, linenos: q('cfglines').checked, wrap: q('cfgwrap').checked,

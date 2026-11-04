@@ -17,7 +17,8 @@ Verbs (websocket)
     view   {do: 'view', path, show?}   -> {ok, hash, url, path}
            open one file, by its ./ path, as a commentable page (/code/...): methods, code, comment box.
 Routes (HTTP GET)
-    /reportserver        (or /?reportserver and any text, which is ignored) the monitor page of the server: file tree, status, log, stop, restart
+    /reportserver        (or any path that starts with reportserver, or /?reportserver; the rest is ignored) the monitor page of the
+                         server: file tree, status, log, stop, restart
     /code/mumix/x.py     the viewer of one file (a ./ path without the ./)
     /page/KEY.html       a page made by load (the last 50 are kept, in memory and as specifications in rs3/pages/:
                          a restarted server builds the page again from its specification)
@@ -364,9 +365,10 @@ def query_page(query):
 
 
 def is_monitor(path, query=''):
-    """Is this address the report server page? /reportserver is, and so is /?reportserver followed by any text
-    (/?reportserver=1, /?reportserver&x): the text is ignored, and both are the same page."""
-    return path == '/reportserver' or (path == '/' and query.startswith('reportserver'))
+    """Is this address the report server page? Any path that starts with reportserver is (/reportserver, /reportserver%20?layout=..,
+    /reportserver/x), and so is /?reportserver followed by any text (/?reportserver=1): the rest is ignored, and all are
+    the same page."""
+    return path.lstrip('/').startswith('reportserver') or (path == '/' and query.startswith('reportserver'))
 
 
 def register_url(S, url):

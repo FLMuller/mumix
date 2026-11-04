@@ -111,7 +111,7 @@ All of a block's paths go in **one value**, so many files stay short: the common
 - A path that has a comma, a brace, `&`, `=`, `#` or `%` in a name, a block whose data is html (`doc`), or an address
   over 6000 characters cannot be written this way: the page is then kept by the server (`/page/KEY.html`, the last 50, as
   specifications in `rs3/pages/`) and a restart builds it again from there.
-- `/?reportserver` (any text after it is ignored) is the report server page, the same as
+- `/?reportserver`, or any path that starts with `reportserver` (`/reportserver%20?x`, `/reportserver/y`), with any text after it ignored, is the report server page, the same as
   `/reportserver`.
 
 ## 7. From a program

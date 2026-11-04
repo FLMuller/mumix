@@ -16,7 +16,8 @@ On the bar, from the left
     the state           the last message of a block (editbox: saving, saved, a refusal), in red when bad
     the server          rs3 and its port; "stopped" or "no link" when it is not answering
     the pulse           a circle that pulses while the server answers, turns while a request is out
-                        (a file loading), and is a red disc when there is no link
+                        (a file loading), and is a red disc when there is no link. A click on it opens the report
+                        server in a new tab, unless a report server page is already open (the hover says so).
 
 Signals
     receives  onSearchcount {index, total}   the count of the hits of the search that was run
@@ -62,7 +63,7 @@ HTML = ('<div class="sbar">'
         '<button class="findstep snext" title="next">&#9660;</button>'
         '<span class="sinfo"></span><span class="sstate"></span><span class="gap"></span><span class="ssrv"></span>'
         '<svg class="slive" viewBox="0 0 22 22" data-live="disc"><title>pulsing: the server answers (turning while it '
-        'loads a file); red: it does not</title><g class="lring"><g class="lpulse">' + DOTS +
+        'loads a file); red: it does not&#10;click: open the report server in a new tab (nothing is opened when one is already open)</title><g class="lring"><g class="lpulse">' + DOTS +
         '</g></g><circle class="ldisc" cx="11" cy="11" r="4"/></svg></div>')
 
 

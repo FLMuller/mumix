@@ -272,11 +272,12 @@ class b_rs3(bench):
         self.assertEqual(found, ['ftv', 'serverstatus', 'log', 'statusbar'])
         self.assertEqual((text.count('<style'), text.count('<script')), (1, 1))
 
-    def test_T10a_page_reportserver_with_any_text_is_the_same_monitor_page(self):
-        want = web('GET', '/reportserver')[2]
-        for tail in ('/?reportserver', '/?reportserver=1', '/?reportserver&anything=at_all'):
-            status, head, text = web('GET', tail)
+    def test_T10a_a_path_that_starts_with_reportserver_is_the_monitor_page(self):
+        for tail in ('/reportserver', '/?reportserver', '/?reportserver=1', '/?reportserver&anything=at_all',
+                     '/reportserver%20?layout=[ftv]', '/reportserver/anything', '/reportserverX'):
+            status, head, text = web('GET', tail)                          # one load, the page itself: no redirect
             self.assertEqual(status, 200, tail)
+            self.assertNotIn('Location', head)
             self.assertEqual(re.findall(r'data-loc="(\w+)"', text), ['ftv', 'serverstatus', 'log', 'statusbar'], tail)
             self.assertIn('"address": "/reportserver"', text.replace('":"', '": "'), tail)     # the same page, the same address
         before = rs3.contactRS('status')['status']['monitors']
@@ -285,6 +286,21 @@ class b_rs3(bench):
             self.assertEqual(rs3.contactRS('status')['status']['monitors'], before + 1)     # and it is the admin page
         finally:
             page.close()
+
+    def test_T5h_a_report_file_is_a_doc_block_in_a_layout_of_its_own_with_the_status_bar(self):
+        path = os.path.join(self.folder, 'rep.html')
+        with open(path, 'w', encoding='utf-8', newline='') as f:
+            f.write('<html><head><title>t</title><style>.k{color:red}</style></head><body><p class="k">hello report</p>'
+                    '<script>var z = 1;</script></body></html>')
+        status, head, text = web('GET', '/?layout=[doc]&doc=' + rel_of(path)[2:])
+        self.assertEqual(status, 200)
+        self.assertEqual(re.findall(r'data-loc="(\w+)"', text), ['doc', 'statusbar'])    # the status bar the raw file had not
+        self.assertIn('hello report', text)
+        self.assertIn('.k{color:red}', text)
+        self.assertEqual(text.count('<style'), 1)                                          # its style is collated with the page's
+        self.assertNotIn('<title>t</title>', text)
+        self.assertEqual(web('GET', '/?layout=[doc]&doc=' + self.rel[2:])[0], 500)          # not a page: a source file
+        self.assertEqual(web('GET', '/?layout=[doc]&doc=../x.html')[0], 500)
 
     def test_T5c_an_address_leaves_out_the_sizes_the_blocks_have_of_their_own(self):
         full = '[ftv wdxh, [toptabs ; [methods wdxh, [code ; editbox wxhd]]]]'

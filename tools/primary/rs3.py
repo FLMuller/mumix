@@ -65,6 +65,9 @@ import traceback
 __all__ = ['contactRS']
 
 PORT = 47653
+if os.name != 'nt':                 # the server binds exclusively (SO_EXCLUSIVEADDRUSE), ctypes.windll sets its priority
+    raise OSError('rs3 is written for Windows: the exclusive socket and the process priority need the Windows api. '
+                  'Port bind() and the priority call before running it on another system.')
 HOST = '127.0.0.1'
 HERE = os.path.dirname(os.path.abspath(__file__))
 FOLDER = os.path.join(HERE, 'rs3')                  # the handlers, and the server's own files
@@ -664,8 +667,7 @@ def bind(port):
     """The listening socket on 127.0.0.1:port, exclusively; None if it is taken."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        if hasattr(socket, 'SO_EXCLUSIVEADDRUSE'):
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
         sock.bind((HOST, port))
         sock.listen(8)
         return sock

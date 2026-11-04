@@ -119,8 +119,9 @@ var RS = (function(){
   }
 
   // ---- browser tabs of files ----
-  function tabUrl(path){
-    return /\.(html|result)$/i.test(path) ? encodeURI(path.slice(1)) : '/code/' + encodeURI(path.slice(2));
+  function tabUrl(path){                // a report page is a doc block in a layout of its own, so it has the status bar
+    var rel = path.slice(2).split('/').map(encodeURIComponent).join('/');
+    return /\.(html|result)$/i.test(path) ? '/?layout=[doc]&doc=' + rel : '/code/' + encodeURI(path.slice(2));
   }
   function openTab(path, where){        // tabs[path] = {win, where}: the closefile that follows says the same where
     if (!path) return;
