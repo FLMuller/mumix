@@ -48,8 +48,9 @@ RS.pane('code', function(ctx){
     var n = +ln.dataset.n;
     choose(ln);                         // a click anywhere on the line marks it, and methods follows it ...
     ctx.emit('linenoClicked', {lineno: n});
-    if (cur.path && (e.target.classList.contains('no') || e.target.classList.contains('mg')))
-      ctx.emit('commentline', {path: cur.path, base: cur.base, line: n});          // ... the number is the click that asks for a comment
+    var numbered = e.target.classList.contains('no') || e.target.classList.contains('mg');
+    if (cur.path && (numbered || !String(window.getSelection()).length))           // ... and asks for a comment (not after text was selected: the comment box would take the focus from a copy)
+      ctx.emit('commentline', {path: cur.path, base: cur.base, line: n});
   });
   function step(dir){                   // the arrows of the bar: from comment to comment
     var all = lines.querySelectorAll('.cm');

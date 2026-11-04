@@ -15,7 +15,7 @@ Signals
               onSearchnext / onSearchprev {mode}   step through the hits
     emits     showcode {path, loc, on}   a file is shown in this pane, or no longer (a tab switch too)
               linenoClicked {lineno}     the user clicked a line (the whole line is marked, until a scroll or a click elsewhere)
-              commentline {path, base, line}   ... on its number: a comment above that line (to the nearest editbox)
+              commentline {path, base, line}   ... and a comment above that line (to the nearest editbox); a click that ends a text selection does not
               commentselect {path, base, first, last, tag, text}   clicked a comment (the same)
               searchcount {index, total}   after a search
 IN = [...] and OUT = [...] below are these names; a test checks every OUT has a receiver.
@@ -23,7 +23,8 @@ IN = [...] and OUT = [...] below are these names; a test checks every OUT has a 
 The lines come from the open verb (rs3comment): a row for each line and a thread for each comment, the
 format is in rs3comment's header.
 
-VERSION  M1 m01.v05 (2026-11-04): the mark outranks the row colours of docstrings and comments; a click anywhere on a line marks it (the soft orange of the number's hover); only the number asks for a comment; it stays marked while the comment box (data-keepsel) is clicked.
+VERSION  M1 m01.v06 (2026-11-04): a click anywhere on a line also asks for a comment, unless text was selected.
+         M1 m01.v05 (2026-11-04): the mark outranks the row colours of docstrings and comments; a click anywhere on a line marks it (the soft orange of the number's hover); only the number asks for a comment; it stays marked while the comment box (data-keepsel) is clicked.
          M1 m01.v04 (2026-11-04): a click on a line number marks the whole line until a scroll or a click elsewhere.
          M1 m01.v03 (2026-11-04): showfile in, showcode out (no more openfile/closefile, no where); write() says it takes files.
          M1 m01.v02 (2026-11-04): what it can find is returned by write().

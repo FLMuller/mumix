@@ -55,7 +55,8 @@ long (a string's prefix, a number, a Cython cast). It is a .pyx: plain Python th
 2026-11-04 on a 350-line Python file: codelex 8.5 ms, this as Python 5.7 ms, compiled 4.0 ms (JavaScript against
 vclang 1.4x, Markdown 2.5x faster). tests/b_rs3lex.py has the timings and the proof that the pieces are the same.
 
-VERSION  M2 m01.v01 (2026-11-04): Source (the file read once, its tokens, comment runs and functions) is in here, from
+VERSION  M2 m01.v02 (2026-11-04): css(): the text of a row that has the colour of its role has none of its own.
+         M2 m01.v01 (2026-11-04): Source (the file read once, its tokens, comment runs and functions) is in here, from
          rs3source.py, which is gone: the language and the file are one unit; exports are Source and css.
          M1 m01.v02 (2026-11-04): a .pyx, loaded with use.load.
          M1 m01.v01 (2026-11-04): first version: codelex.py and vclang.py as one lexer (and one place for the
@@ -306,6 +307,7 @@ def css():
             out.append(f'.r-{r["id"]}{{{style}}}')
             if r['id'] in BANDS and r['bg']:
                 out.append(f'div.ln.b-{r["id"]}{{background:{r["bg"]}}}')
+                out.append(f'div.ln.b-{r["id"]} .r-{r["id"]}{{background:none}}')      # the row has the colour: the text on it needs none
     return '\n'.join(out) + '\n'
 
 
