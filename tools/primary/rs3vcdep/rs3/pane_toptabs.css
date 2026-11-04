@@ -1,0 +1,8 @@
+/* pane_toptabs.css */
+.tt{height:100%;display:flex;flex-direction:column;min-height:0}
+.ttbar{display:flex;gap:2px;flex:none;overflow-x:auto;border-bottom:2px solid #d35400;background:#fff;padding-top:2px}
+.ttab{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:11px;padding:3px 6px 3px 12px;border:1px solid #e0a878;border-bottom:none;border-radius:10px 10px 0 0;background:#fdebd0;color:#8a4500;font-weight:bold;white-space:nowrap;cursor:pointer}
+.ttab.on{background:#e67e22;border-color:#b34700;color:#fff}
+.ttx{border:none;background:none;color:inherit;padding:0 3px;cursor:pointer;font-size:13px;line-height:1}
+.ttbody{flex:1;min-height:0;position:relative}
+.ttpane{height:100%}

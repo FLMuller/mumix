@@ -1,0 +1,26 @@
+/* pane_code.css -- the lines of the code block, as the report pages show them (runbench.css). */
+.codeview{display:flex;flex-direction:column;height:100%;min-height:0;background:var(--paper)}
+.cbar{display:flex;align-items:center;gap:6px;padding:2px 6px;background:#fdebd0;border-bottom:1px solid #e0a878;font-size:11px;color:#6b3a00}
+.cbar button{border:1px solid #e0a878;border-radius:3px;background:#fff;color:#8a4500;cursor:pointer;padding:0 6px}
+.cpath{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
+@property --pagew{syntax:'<length>';inherits:true;initial-value:0px}
+.clines{flex:1;min-height:0;position:relative;overflow:auto;font-family:var(--cfont,Consolas,monospace);font-size:var(--csize,12px);line-height:1.35;tab-size:var(--ctab,4);background:var(--paper);padding:8px 0;--pagew:calc(142ch + 5ch + 8px + 18px)}
+.clines>.ln,.clines>.cm{box-sizing:border-box;width:var(--pagew);max-width:100%;margin-left:auto;margin-right:auto}
+.clines>.mute{padding:8px 12px;font-family:Verdana,Arial,sans-serif}
+.ln{display:flex;white-space:pre}
+.ln code{background:none;padding:0;flex:1;min-width:0;white-space:pre-wrap;word-break:break-all;font:inherit;tab-size:var(--ctab,4)}
+.ln .no{flex:none;width:5ch;text-align:right;color:#999;padding-right:8px;user-select:none;cursor:pointer}
+.ln .no:hover{background:#fdebd0;color:#8a4500}
+.mg{flex:none;width:18px;text-align:center;cursor:pointer}
+.ln .mg{cursor:default}
+.ln.flash,.cm.flash{background:#fff3c4}
+.cm{display:flex;background:#f4f9ff;border-left:3px solid #2f6fe0;font-family:Verdana,Arial,sans-serif;font-size:11px;cursor:pointer}
+.cm[data-who="user"]{background:#fff8f2;border-left-color:var(--usercolor,#e8650f)}
+.cm .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2f6fe0;margin-top:4px}
+.cm[data-who="user"] .dot{background:var(--usercolor,#e8650f)}
+.cmt{padding:2px 8px;min-width:0}
+.cmt p{margin:2px 0}
+.cmt .reply{float:right;margin-left:8px;font-size:10px;color:#8a4500;text-decoration:none;opacity:.6}
+.cm+.cm{border-top:1px dotted #c8b8a8}
+.ln.sep code{border-bottom:1px solid #b9b9b9;height:.7em;margin-bottom:.35em}
+::highlight(rs-find){background:#ffe066;color:#000}

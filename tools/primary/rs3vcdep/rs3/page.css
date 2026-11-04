@@ -1,0 +1,23 @@
+/* page.css -- the frame of every rs3 page: the layout cells and their draggable edges. */
+:root{--line:#e0a878;--ink:#3a2a1c;--accent:#e67e22;--paper:#fffaf5;--bar:#fdebd0}
+html,body{height:100%;margin:0}
+body{font:13px Verdana,Arial,sans-serif;color:var(--ink);background:#fff}
+#root{height:100vh;display:flex;flex-direction:column}
+#root>.group,#root>.cell{flex:1 1 0;min-height:0}
+.group{display:flex;min-width:0;min-height:0;box-sizing:border-box}
+.group.row{flex-direction:row}
+.group.col{flex-direction:column}
+.cell{min-width:0;min-height:0;box-sizing:border-box;overflow:auto;position:relative}
+/* the draggable edge: a 1 mm line, with a wider (invisible) hit area for a pen or a finger */
+.drag{flex:none;background:var(--line);position:relative;touch-action:none;z-index:2}
+.drag.v{width:1mm;cursor:col-resize}
+.drag.h{height:1mm;cursor:row-resize}
+.drag::after{content:"";position:absolute}
+.drag.v::after{left:-2mm;right:-2mm;top:0;bottom:0}
+.drag.h::after{top:-2mm;bottom:-2mm;left:0;right:0}
+.drag:hover,.drag.on{background:var(--accent)}
+.mute{color:#999}
+button,input,select,textarea{font:inherit}
+button{border:1px solid var(--line);border-radius:3px;background:#fff;color:#8a4500;cursor:pointer;padding:1px 8px}
+button:hover{background:var(--bar)}
+.bar{display:flex;align-items:center;gap:8px;padding:2px 8px;background:var(--bar);border-bottom:1px solid var(--line);font-size:12px;color:#6b3a00}

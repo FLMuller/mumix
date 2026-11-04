@@ -1,0 +1,12 @@
+/* pane_ftv.css */
+.ftv{height:100%;display:flex;flex-direction:column;min-height:0;background:#fffaf5}
+.fhead{display:flex;align-items:center;gap:6px;padding:2px 6px;background:#fdebd0;border-bottom:1px solid #e0a878;font-size:11px;color:#6b3a00}
+.fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:bold}
+.fsend select{font:inherit}
+.ftree{flex:1;min-height:0;overflow:auto;padding:2px 4px;font-size:12px}
+.ftree details{margin-left:10px}
+.ftree summary{cursor:pointer;padding:0 2px;color:#6b3a00}
+.ftree a.ff{display:block;margin-left:12px;padding:0 4px;color:#3a2a1c;text-decoration:none;white-space:nowrap;border-radius:2px}
+.ftree a.ff:hover{background:#fdebd0}
+.ftree a.ff.on{background:#e67e22;color:#fff}
+.ftree a.ff.html{font-style:italic}

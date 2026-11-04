@@ -1,0 +1,7 @@
+/* pane_log.css */
+.log{min-height:100%;background:#1e1e1e;color:#ddd;font:11px Consolas,monospace}
+.lbar{position:sticky;top:0;display:flex;gap:12px;padding:2px 8px;background:#333;color:#ccc;font:11px Verdana,Arial,sans-serif}
+.llines{padding:2px 8px}
+.lrow{white-space:pre-wrap;word-break:break-all}
+.lrow[hidden]{display:none}
+.lt{color:#7a8;margin-right:8px}

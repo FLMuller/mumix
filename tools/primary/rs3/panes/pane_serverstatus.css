@@ -1,0 +1,8 @@
+/* pane_serverstatus.css */
+.srv{padding:6px 10px;font-size:12px;background:var(--paper);min-height:100%;box-sizing:border-box}
+.srv table{border-collapse:collapse}
+.srv th{text-align:left;padding:1px 14px 1px 0;color:#8a4500;font-weight:normal;white-space:nowrap}
+.srv td{padding:1px 0;word-break:break-all}
+.srvbtn{margin:8px 0;display:flex;gap:8px}
+.srvmsg{color:#1a7f37}
+.srvmsg.bad{color:#c0392b;font-weight:bold}

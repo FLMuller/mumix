@@ -1,0 +1,28 @@
+/* pane_statusbar.css -- the status bar block: settings, find, the state, the server and its pulse */
+.sbar{height:100%;display:flex;align-items:center;gap:8px;box-sizing:border-box;padding:3px 10px;background:#fdebd0;border-top:2px solid #d35400;color:#6b3a00;font-size:11px;overflow:hidden}
+.sbar input,.sbar select{font:inherit;border:1px solid #e0a878;border-radius:3px;background:#fdebd0;color:#6b3a00;padding:1px 4px;height:20px;box-sizing:border-box}
+.sbar input.sfind{width:200px}
+.sbar button{font:inherit;padding:1px 8px;border:1px solid #e0a878;border-radius:3px;background:#fff;color:#8a4500;cursor:pointer}
+.sbar button:hover{background:#f5cba7}
+.sbar .gap{flex:1;min-width:8px}
+.sbar .findstep{padding:0 5px;height:20px;font-size:9px;line-height:1}
+.sbar .cfgbtn{flex:none;width:20px;height:20px;padding:0;display:flex;align-items:center;justify-content:center;border:none;border-radius:0;background:none;color:#b34700}
+.sbar .cfgbtn:hover{background:none;color:#e67e22}
+.cfgbtn svg{width:16px;height:12px;display:block;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.cfgmenu{position:fixed;left:8px;bottom:34px;z-index:8;background:#fff;border:1px solid #e0a878;border-radius:5px;padding:8px 12px;box-shadow:0 3px 10px rgba(0,0,0,.35);font-size:11px;color:#3a2a1c}
+.cfgmenu[hidden]{display:none}
+.cfgmenu label{display:flex;justify-content:space-between;gap:12px;margin:3px 0;align-items:center}
+.cfgmenu input[type=number]{width:56px}
+.cfgmenu input[type=text]{width:84px}
+.sstate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sstate.bad{color:#c0392b}
+.slive{width:5.5mm;height:5.5mm;flex:none;overflow:visible;--tint:#e67e22}       /* the orange of the open file in the tree */
+.slive .lring,.slive .ldisc{display:none}
+.slive[data-live="spin"] .lring,.slive[data-live="pulse"] .lring{display:block;transform-origin:11px 11px}
+.slive[data-live="spin"] .lring{animation:turn 1s linear infinite}                      /* busy: a request is out */
+.slive[data-live="pulse"] .lpulse{transform-origin:11px 11px;animation:breathe 1.5s ease-in-out infinite}   /* up: 40 a minute */
+.slive[data-live="pulse"] .lring circle{opacity:.75}
+.slive .lring circle{fill:var(--tint)}
+.slive[data-live="disc"] .ldisc{display:block;fill:#cc2222}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(.5)}}
+@keyframes turn{to{transform:rotate(360deg)}}

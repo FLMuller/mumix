@@ -1,0 +1,13 @@
+/* pane_methods.css */
+.methods{height:100%;display:flex;flex-direction:column;min-height:0;background:var(--paper,#fffaf5)}
+.mhead{display:flex;align-items:center;gap:6px;padding:2px 8px;background:#fdebd0;border-bottom:1px solid #e0a878;font-size:11px;color:#6b3a00}
+.mlist{flex:1;min-height:0;overflow:auto}
+.mrow{display:flex;justify-content:space-between;gap:8px;padding:1px 8px;border-bottom:1px solid #eedcd0;cursor:pointer;font-size:12px}
+.mrow:hover{background:#fdebd0}
+.mrow.cur{background:#ffe9c9;outline:1px solid #e67e22}
+.mrow[hidden]{display:none}
+.mname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mline{color:#999;font-size:11px}
+.mrow.green .mname{color:#1a7f37;font-weight:bold}
+.mrow.red .mname{color:#c0392b}
+.mrow.amber .mname{color:#d98200;font-weight:bold}

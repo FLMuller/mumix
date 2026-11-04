@@ -1,0 +1,7 @@
+/* pane_editbox.css */
+.editbox{height:100%;display:flex;flex-direction:column;box-sizing:border-box;padding:4px;background:#fffaf5;border-top:1px solid #e0a878}
+.etarget{font-size:11px;color:#8a4500;padding:0 2px 2px}
+.etext{flex:1;min-height:30px;resize:none;box-sizing:border-box;width:100%;font:12px Verdana,Arial,sans-serif;border:1px solid #e0a878;background:#fff}
+.ebtn{display:flex;align-items:center;gap:8px;padding-top:3px;font-size:11px;color:#8a4500}
+.etag{font:inherit;border:1px solid #e0a878;border-radius:3px}
+.estate{margin-left:auto}
