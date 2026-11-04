@@ -12,13 +12,13 @@ Stop and Restart are verbs (rs3core); the server accepts them from this page onl
 is the monitor (/reportserver). After a stop the page says so, and how to open the server again.
 IN and OUT below are these names.
 
-VERSION  M1 m01.v01 (2026-11-03): first version.
+VERSION  M1 m01.v02 (2026-11-04): its size is returned by write(): no module constant.
+         M1 m01.v01 (2026-11-03): first version.
 """
 from rs3util import asset, done
 
 __all__ = ['write']
 
-HEIGHT = 62                         # mm: its height in a column when the layout gives none: all its rows and its buttons, with no scroll bar
 IN = ['status']
 OUT = []
 
@@ -31,4 +31,4 @@ def write(S=None, page=None, loc=None):
     return done('serverstatus', asset(__file__, 'css'), asset(__file__, 'js'),
                 f'<div class="srv"><table>{rows}</table><div class="srvbtn">'
                 '<button class="restart">Restart</button><button class="stop">Stop</button></div>'
-                '<div class="srvmsg">connecting...</div></div>')
+                '<div class="srvmsg">connecting...</div></div>', height=62)

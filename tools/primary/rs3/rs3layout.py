@@ -23,12 +23,13 @@ draggable (the page script, manager.js, does the dragging). The bar is always be
 the item that has the d, or, when it is the last of its group (`edit wxhd` under the code), before it, and
 then the bar resizes that item the other way (dragging up makes it taller).
 
-VERSION  M1 m01.v01 (2026-11-03): first version.
+VERSION  M1 m01.v02 (2026-11-04): block_of, and plain: the layout without the sizes the blocks' own sizes make needless.
+         M1 m01.v01 (2026-11-03): first version.
 """
 import html
 import re
 
-__all__ = ['parse', 'names', 'render', 'plain', 'LayoutError']
+__all__ = ['parse', 'names', 'block_of', 'render', 'plain', 'LayoutError']
 
 TOKEN = re.compile(r'\s*(\[|\]|,|;|[^\s\[\],;]+)')
 LOC = re.compile(r'^[a-z][a-z]*[0-9]*$')
@@ -133,6 +134,11 @@ def parse(text):
     if peek() is not None:
         raise LayoutError(f'unexpected {peek()!r} after the layout')
     return tree
+
+
+def block_of(loc):
+    """The block of a locator: its name without the digits that tell two of a kind apart (code2 is a code block)."""
+    return re.sub(r'\d+$', '', loc)
 
 
 def names(tree):

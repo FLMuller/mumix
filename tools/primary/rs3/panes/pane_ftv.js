@@ -6,6 +6,8 @@ RS.pane('ftv', function(ctx){
   var targets = ctx.page.panes.filter(function(p){ return (p.block === 'code' || p.block === 'toptabs') && !p.host; });
   if (targets.length) sendto = targets[0].where;      // with no pane to take a file it goes to a new browser tab (0)
   try { files = JSON.parse(tree.dataset.files || '[]'); } catch (e) {}
+  function limit(more){ if (more) ctx.emit('notice', {text: 'max files exceeded: the tree lists the first ' + files.length, bad: true}); }
+  ctx.whenLinked(function(){ limit(tree.dataset.truncated === '1'); });
   function kept(){ try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch (e) { return new Set(); } }
   function keep(set){ try { localStorage.setItem(key, JSON.stringify(Array.from(set))); } catch (e) {} }
   function nest(){                       // the flat list as folders
@@ -73,7 +75,7 @@ RS.pane('ftv', function(ctx){
   filter.addEventListener('input', function(){ want = filter.value.trim().toLowerCase(); draw(); });
   ctx.el.querySelector('.freload').onclick = function(){
     ctx.verb('tree', {}).then(function(r){
-      if (r.ok && r.files){ files = r.files.map(function(f){ return [f.p, f.k]; }); draw(); }
+      if (r.ok && r.files){ files = r.files.map(function(f){ return [f.p, f.k]; }); draw(); limit(r.truncated); }
     });
   };
   function reveal(path){

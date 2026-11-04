@@ -8,8 +8,10 @@ is on the path. A test that compares compares the pieces of every line with adja
 Run from the project root:
     python tools/runbench.py b_rs3lex
 """
+import atexit
 import importlib.util
 import os
+import shutil
 import sys
 import time
 
@@ -31,10 +33,10 @@ SOURCES = ['rs3lex']          # (the .pyx)
 RS3 = os.path.join(ROOT, 'tools', 'primary', 'rs3')
 REF = os.path.join(ROOT, 'tools', 'primary', 'rs3twolex', 'rs3')
 sys.path.insert(0, RS3)
-from types import SimpleNamespace
 from use import load
 
-rs3lex = SimpleNamespace(**load('rs3lex', into={}))      # rs3lex.pyx, built into rs3/pyxfiles when need be
+load('rs3lex', into={})                                  # rs3lex.pyx, built into rs3/pyxfiles when need be
+rs3lex = sys.modules['rs3lex']                           # its own functions, which its __all__ (Source, css) does not export: this suite tests them
 
 CLAUDE = os.path.dirname(ROOT)
 
@@ -234,6 +236,51 @@ class b_rs3lex(bench):
         self.assertEqual(names, ['K', 'K.f', 'g'])
 
     # ---- speed -----------------------------------------------------------------------------------------
+    # ---- Source: the file read once, with its tokens, comment runs and functions -------------------------------
+    def sample(self, name, text):
+        folder = os.path.join(ROOT, 'tests', 'z_sandbox', 'rs3lextmp')
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+            atexit.register(shutil.rmtree, folder, True)
+        path = os.path.join(folder, name)
+        with open(path, 'w', encoding='utf-8', newline='') as f:
+            f.write(text)
+        self.addCleanup(lambda: os.path.exists(path) and os.remove(path))
+        return path
+
+    def test_T20_source_reads_a_file_once_and_keeps_it_while_it_is_unchanged(self):
+        path = self.sample('a.py', 'x = 1\n')
+        first = rs3lex.Source.read(path)
+        self.assertIs(rs3lex.Source.read(path), first)
+        self.assertEqual(first.base, __import__('hashlib').sha1(b'x = 1\n').hexdigest())
+        self.assertEqual((first.lines, first.raw), (['x = 1'], b'x = 1\n'))
+        with open(path, 'w', encoding='utf-8', newline='') as f:
+            f.write('x = 12\n')                           # the size changes: a new Source
+        self.assertIsNot(rs3lex.Source.read(path), first)
+
+    def test_T21_tokens_join_back_to_the_lines_and_comments_are_runs_of_one_tag(self):
+        text = 'def f(a):\n    ###fm one\n    ###fm two\n    ###cl reply\n    return a + 1  # not a comment of ours\n'
+        src = rs3lex.Source.read(self.sample('b.py', text))
+        self.assertEqual([''.join(t for _, t in line) for line in src.tokens()], src.lines)
+        self.assertEqual(src.comments(), {2: [2, 3, 'fm'], 4: [4, 4, 'cl']})
+        self.assertEqual([x[0] for x in src.functions()], ['f'])
+        self.assertFalse(src.inside(2))
+
+    def test_T22_a_file_no_lang_file_describes_is_a_ValueError_with_its_extension(self):
+        with self.assertRaises(ValueError) as caught:
+            rs3lex.Source.read(self.sample('c.zzz', 'x'))
+        self.assertIn('zzz', str(caught.exception))
+
+    def test_T23_coloured_gives_the_pieces_of_some_text_for_an_extension_and_none_for_an_unknown_one(self):
+        got = rs3lex.Source.coloured('py', 'x = 1\ny = "s"')
+        self.assertEqual([''.join(t for _, t in line) for line in got], ['x = 1', 'y = "s"'])
+        self.assertIsNone(rs3lex.Source.coloured('zzz', 'x'))
+
+    def test_T24_inside_says_a_row_in_a_triple_string_cannot_take_a_comment(self):
+        src = rs3lex.Source.read(self.sample('d.py', 'a = """\nline\n"""\nb = 2\n'))
+        self.assertTrue(src.inside(2))
+        self.assertFalse(src.inside(4))
+
     def bench_lex_python_file(self, timer):
         path = os.path.join(RS3, 'rs3lex.py')
         lines, lang = read_lines(path), rs3lex.language(path)

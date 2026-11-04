@@ -69,7 +69,7 @@ of its group (`editbox` under the code), so the bar sits between two items and d
 ## 4. Defaults: what you need not write
 
 A block can have a size of its own: `ftv` 75 mm wide, `methods` 50 mm wide, `editbox` 42 mm high, `serverstatus` 62 mm
-high (`WIDTH` or `HEIGHT` at the top of `panes/pane_NAME.py`). Where the layout gives that size no number, the block
+high (the `width` or `height` its `write()` returns, `done(..., width=75)`, rs3util). Where the layout gives that size no number, the block
 takes its own, and that edge is **draggable without a `d`**. So `ftv` means what `ftv 75dxh` would, and
 `[ftv wdxh, ...]` is just `[ftv, ...]`.
 
@@ -84,7 +84,9 @@ after `,` and `;` are too. That is why the address above has no sizes.
 A block takes data from a parameter named like its locator: `&toptabs=...` is the data of `toptabs`. A block with no
 parameter (ftv, methods, code, editbox) finds what it shows at run time (the file tree, the file of the open tab).
 
-For `toptabs` the data is **files**, as paths from the root of the server (the folder the tree starts at):
+For `toptabs` the data is **files**, as paths from HOME, the parent of the repository that holds rs3 (the Claude folder;
+rs3util.pathof is the one place that reads a path, either way, and `start=<path>` names another root, the nearest `.git`
+or `.claude` above it). The server's own folder is no root:
 
 | Written | Means |
 |---|---|
@@ -96,9 +98,11 @@ For `toptabs` the data is **files**, as paths from the root of the server (the f
 | `a/**/*.{py,md}` | braces and wildcards together: the `.py` and `.md` files |
 
 Wildcards are opened **when the page is built** (each time the address is opened), by name, a folder's files first,
-then its folders. Only files the tree would show are matched: not `.git`, `__pycache__`, an environment or a compiled
-file; nothing outside the root; at most 500 per block. A pattern that matches nothing gives nothing. A file added later
-appears when the page is opened again, not in a page that is already open.
+then its folders. Only files the tree would show are matched: not in `.git`, `__pycache__`, `zprev`, an environment or
+any folder with a dot (but `.claude`), not a compiled file, and not one that a `.gitignore` or `.ignore` on the way ignores
+(its patterns as git reads them, a nested repository by its own); nothing outside the root; at most 500 per block. A
+pattern that matches nothing gives nothing. A file added later appears when the page is opened again, not in a page that
+is already open. The tree (ftv) is the same walk, stopping at 20000 files and saying so ("max files exceeded").
 
 All of a block's paths go in **one value**, so many files stay short: the common folder once, then braces.
 
@@ -126,3 +130,12 @@ rs3.contactRS('load', '[ftv,[toptabs;[methods,[code;editbox]]]]',
 `blocks` is `{locator: [block, *data]}`; a locator not in it takes the block of its own name. The answer is
 `{ok, hash, url, path}`; the page opens in the browser unless `show` is false. The layout may be written with spaces and
 sizes (`[ftv wdxh, [toptabs wxh ; ...]]`): the address made from it is the short form above.
+
+## 8. Any html, and a report: the doc block
+
+`[doc]&doc=code.py/results/b_str2int.html` is a report file; `{'doc': ['doc', js, css, html]}` is html given whole. The doc
+shows it in a box it cannot get out of (pane_doc.py has the rules): its css is scoped to the box (`body{margin:20px}` is the
+box's margin), its script runs with `document` meaning the box (`aDOM`, with `aDOM.currentdiv` the box element) and is
+read first (rs3jsguard): no `this`, no arrow function, no `.constructor`, `.parentNode` or `.closest`, no computed names,
+no names outside the script's own and a short list. A script that says more is not run; the box lists why. The status bar's
+Find searches the text of a doc (every place marked, ▲ ▼ to step, ★ to go back to where it was).

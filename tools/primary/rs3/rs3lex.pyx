@@ -1,16 +1,28 @@
 # cython: language_level=3, infer_types=True
-r"""rs3lex.pyx -- the one lexer of rs3: a file as coloured pieces, its comment marker, its functions, and
-whether a line is inside a string or block comment. It reads lang/*.mu and nothing else.
+r"""rs3lex.pyx -- everything of rs3 that knows a language or a source file: the lexer (a file as coloured
+pieces), the comment marker, the functions, whether a line is inside a string or block comment, and the file itself
+read once. It reads lang/*.mu and nothing else.
 
     from use import load
-    load('rs3lex')                               # builds rs3lex.pyx into pyxfiles/ if need be, binds the names below
+    load('rs3lex')                               # builds rs3lex.pyx into pyxfiles/ if need be, binds Source and css
+
+    src = Source.read(real)               # a file read once (kept: the last 16, by path, size and time)
+    src.raw, src.text, src.lines, src.base (the sha1 of raw: an edit sends it back), src.lang, src.mark
+    src.tokens()                          # [[(role, text)]] for each line: the texts join back into the line
+    src.lexed()                           # [(tokens, in_block, depth)] for each line, scanned once
+    src.comments()                        # {first row: [first, last, tag]}: a run of review-comment lines of one tag
+    src.functions()                       # [(name, first, last, kind)] by the Function/Class lines
+    src.inside(row)                       # is that row inside a block comment or a string?
+    Source.coloured('py', text)           # the coloured pieces of some text read as that extension, or None
+    css()                                 # .r-<role>{color..} for every role, from the Rules tables
+
+Source.read raises ValueError for a file no lang file describes (the message says which extension), OSError if it cannot
+be read. The functions below the class (language, lex, review, inside, functions) are what Source is made of; they are
+not exported, and tests/b_rs3lex.py reaches them through the module.
+
     lang = language('unit.py')            # a Lang; NoLanguage if no lang file holds that extension
     got = lex(lines, lang)                # [(tokens, in_block, depth)] one for each line
-    tokens = got[0][0]                           # [(role, text)]: the texts join back into the line
-    css()                                 # .r-<role>{color..} for every role, from the Rules tables
     mark = review(lang)                   # the comment marker: mark.match(line), mark.write(...)
-    inside(lines, lang, row)              # is that row inside a block comment or a string?
-    functions(lines, lang)                # [(name, first, last, kind)] by the Function/Class lines
 
 language(path) -> Lang
     The language of a file by its extension: the `Files:` line of the lang/*.mu files. NoLanguage (an
@@ -43,15 +55,18 @@ long (a string's prefix, a number, a Cython cast). It is a .pyx: plain Python th
 2026-11-04 on a 350-line Python file: codelex 8.5 ms, this as Python 5.7 ms, compiled 4.0 ms (JavaScript against
 vclang 1.4x, Markdown 2.5x faster). tests/b_rs3lex.py has the timings and the proof that the pieces are the same.
 
-VERSION  M1 m01.v02 (2026-11-04): a .pyx, loaded with use.load.
+VERSION  M2 m01.v01 (2026-11-04): Source (the file read once, its tokens, comment runs and functions) is in here, from
+         rs3source.py, which is gone: the language and the file are one unit; exports are Source and css.
+         M1 m01.v02 (2026-11-04): a .pyx, loaded with use.load.
          M1 m01.v01 (2026-11-04): first version: codelex.py and vclang.py as one lexer (and one place for the
          comment marker, the function list and the inside test).
 """
+import hashlib
 import os
 import re
 from types import SimpleNamespace
 
-__all__ = ['Lang', 'NoLanguage', 'css', 'functions', 'inside', 'language', 'lex', 'review']
+__all__ = ['Source', 'css']
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 if os.path.basename(HERE) == 'pyxfiles':          # use.load builds into <folder>/pyxfiles: the lang folder is the module's folder's
@@ -1089,3 +1104,90 @@ def functions(lines, lang, got=None):
         end = found[k + 1][1] - 1 if k + 1 < len(found) else len(lines)
         out.append((name, first, end, kind))
     return out
+
+
+# ---- the file ------------------------------------------------------------------------------------------
+CACHED = 16
+CACHE = {}
+
+
+class Source:
+    """One source file, read once for the blocks that show it (code, methods, editbox): the code pane and the methods
+    pane ask for the same file one after the other, so it is read and coloured once. read keeps the last CACHED files,
+    by path, and gives the same Source while the size and time of the file are unchanged."""
+    __slots__ = ('real', 'raw', 'text', 'lines', 'base', 'lang', 'mark', 'scanned', 'runs')
+
+    @classmethod
+    def read(cls, real):
+        """The Source of a file: ValueError for a kind of file no lang file describes, OSError if it cannot be read."""
+        stat = os.stat(real)
+        key = (stat.st_mtime_ns, stat.st_size)
+        hit = CACHE.get(real)
+        if hit is not None and hit[0] == key:
+            return hit[1]
+        try:
+            lang = language(real)
+        except NoLanguage as error:
+            raise ValueError(str(error))
+        src = cls()
+        src.real, src.lang = real, lang
+        with open(real, 'rb') as f:
+            src.raw = f.read()
+        src.base = hashlib.sha1(src.raw).hexdigest()
+        src.text = src.raw.decode('utf-8', 'replace')
+        src.lines = src.text.replace('\r\n', '\n').replace('\r', '\n').split('\n')
+        if src.lines and src.lines[-1] == '':
+            src.lines.pop()
+        src.mark = review(lang)
+        src.scanned = None
+        src.runs = None
+        CACHE[real] = (key, src)
+        for old in list(CACHE)[:-CACHED]:
+            del CACHE[old]
+        return src
+
+    @staticmethod
+    def coloured(ext, text):
+        """The coloured pieces of each line of some text, read as a file of that extension (py, js, css ...): [[(role,
+        text)]], or None when no lang file has the extension."""
+        try:
+            lang = language('x.' + ext)
+        except NoLanguage:
+            return None
+        return [got[0] for got in lex(text.split('\n'), lang)]
+
+    def lexed(me):
+        """[(tokens, in_block, depth)] for each line, scanned once."""
+        if me.scanned is None:
+            me.scanned = lex(me.lines, me.lang)
+        return me.scanned
+
+    def tokens(me):
+        """The coloured pieces of each line, [(role, text)]."""
+        return [got[0] for got in me.lexed()]
+
+    def comments(me):
+        """{first row: [first, last, tag]} of the comment runs, rows from 1: a run of lines of the language's comment
+        marker with the same tag is one comment, and a reply is the next run, with its own tag."""
+        if me.runs is None:
+            found = {}
+            n = 0
+            while n < len(me.lines):
+                m = me.mark.match(me.lines[n])
+                if m:
+                    k = n
+                    while k + 1 < len(me.lines) and (c := me.mark.match(me.lines[k + 1])) and c.group(1) == m.group(1):
+                        k += 1
+                    found[n + 1] = [n + 1, k + 1, m.group(1)]
+                    n = k
+                n += 1
+            me.runs = found
+        return me.runs
+
+    def functions(me):
+        """[(name, first, last, kind)] of the file, from the Function and Class lines of its lang file."""
+        return functions(me.lines, me.lang, me.lexed())
+
+    def inside(me, row):
+        """Does line row (1-based) start inside a block comment or a string that runs over lines?"""
+        return inside(me.lines, me.lang, row)

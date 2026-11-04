@@ -24,7 +24,8 @@ IN = [...] and OUT = [...] below are these names; a test checks every OUT has a 
 The lines come from the open verb (rs3comment): a row for each line and a thread for each comment, the
 format is in rs3comment's header.
 
-VERSION  M1 m01.v01 (2026-11-03): first version.
+VERSION  M1 m01.v02 (2026-11-04): what it can find is returned by write().
+         M1 m01.v01 (2026-11-03): first version.
 """
 import html as htmllib
 
@@ -48,4 +49,4 @@ SKELETON = ('<div class="codeview"{path}><div class="cbar"><span class="cpath">n
 def write(path=None, S=None, page=None, loc=None):
     attr = f' data-path="{htmllib.escape(path)}"' if path else ''
     return done('code', css() + asset(__file__, 'css'), asset(__file__, 'js'),
-                SKELETON.format(path=attr))
+                SKELETON.format(path=attr), search='text')

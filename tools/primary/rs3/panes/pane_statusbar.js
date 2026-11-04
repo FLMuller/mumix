@@ -6,15 +6,14 @@ RS.pane('statusbar', function(ctx){
   var menu = q('cfgmenu'), FONTS = ['Consolas', 'Courier New', 'Lucida Console', 'Menlo', 'Monaco', 'monospace'];
   var up = ctx.linked(), busy = false, said = null, monitors = 0;
 
-  // ---- find: what can be searched depends on the panes the page has ----
-  var has = function(b){ return panes.some(function(p){ return p.block === b; }); };
-  [['files', 'ftv'], ['text', 'code'], ['text', 'toptabs'], ['names', 'methods'], ['log', 'log']].forEach(function(m){
-    if (has(m[1]) && !mode.querySelector('[value="' + m[0] + '"]')){
-      var o = document.createElement('option'); o.value = o.textContent = m[0]; mode.appendChild(o);
+  // ---- find: what can be searched is what the blocks of the page say they can find (the search their write() returned) ----
+  panes.forEach(function(p){
+    if (p.search && !mode.querySelector('[value="' + p.search + '"]')){
+      var o = document.createElement('option'); o.value = o.textContent = p.search; mode.appendChild(o);
     }
   });
   var last = mode.value;
-  if (!mode.options.length) mode.hidden = find.hidden = q('sprev').hidden = q('snext').hidden = true;
+  if (!mode.options.length) mode.hidden = find.hidden = q('sprev').hidden = q('snext').hidden = q('shome').hidden = true;
   function fire(m, text){ ctx.emit('searchtext', {text: text, mode: m}); }
   find.addEventListener('input', function(){ info.textContent = ''; fire(mode.value, find.value); });
   find.addEventListener('keydown', function(e){
@@ -27,6 +26,7 @@ RS.pane('statusbar', function(ctx){
   });
   q('snext').onclick = function(){ ctx.emit('searchnext', {mode: mode.value}); };
   q('sprev').onclick = function(){ ctx.emit('searchprev', {mode: mode.value}); };
+  q('shome').onclick = function(){ ctx.emit('searchhome', {mode: mode.value}); };
 
   // ---- the settings menu ----
   function fill(){

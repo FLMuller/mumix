@@ -10,8 +10,8 @@ On the bar, from the left
                         (when a report server page is already open with a live socket it does nothing, and
                         the state line says so). A change is kept by the server (the config verb), so every
                         page and every restart shows it, and it takes effect on the page at once.
-    Find                a box, a choice of what to search (files, text, names, log: only those the page
-                        has a pane for), the up and down buttons and the count of hits. Enter steps
+    Find                a box, a choice of what to search (what the blocks of the page say they can find: their
+                        write() returns it as `search`), the up and down buttons, the star and the count of hits. Enter steps
                         to the next hit, Shift+Enter to the one before.
     the state           the last message of a block (editbox: saving, saved, a refusal), in red when bad
     the server          rs3 and its port; "stopped" or "no link" when it is not answering
@@ -25,12 +25,14 @@ Signals
               onBusy {on}                    a request to the server is out (on) or all are answered
               onNotice {text, bad}           a message for the state line
     emits     searchtext {text, mode}, searchnext {mode}, searchprev {mode}   the find box
+              searchhome {mode}              the star: back to where the view was before the search
               withlineno {on}, withwrap {on}   the settings menu (the option box follows them)
               withconfig {}                  the settings changed: the manager sets the font, size,
                                              tab width and colour on the page
 IN and OUT below are these names.
 
-VERSION  M1 m01.v01 (2026-11-04): first version: the footer of the old report pages (rs2: runbench and
+VERSION  M1 m01.v02 (2026-11-04): Find offers what the blocks of the page say they can find; the star (searchhome).
+         M1 m01.v01 (2026-11-04): first version: the footer of the old report pages (rs2: runbench and
          vcomment) as a block, with the search that was in a top bar.
 """
 from rs3util import asset, done
@@ -38,7 +40,7 @@ from rs3util import asset, done
 __all__ = ['write']
 
 IN = ['searchcount', 'status', 'busy', 'notice']
-OUT = ['searchtext', 'searchnext', 'searchprev', 'withlineno', 'withwrap', 'withconfig']
+OUT = ['searchtext', 'searchnext', 'searchprev', 'searchhome', 'withlineno', 'withwrap', 'withconfig']
 
 # seven dots on a ring, each fainter than the one before: a comet that turns while the server is busy
 DOTS = ''.join(f'<circle cx="{x}" cy="{y}" r="2.1" opacity="{o}"/>' for x, y, o in (
@@ -61,6 +63,7 @@ HTML = ('<div class="sbar">'
         '<input class="sfind" type="search" placeholder="find">'
         '<button class="findstep sprev" title="previous">&#9650;</button>'
         '<button class="findstep snext" title="next">&#9660;</button>'
+        '<button class="findstep shome" title="back to where it was before the search">&#9733;</button>'
         '<span class="sinfo"></span><span class="sstate"></span><span class="gap"></span><span class="ssrv"></span>'
         '<svg class="slive" viewBox="0 0 22 22" data-live="disc"><title>pulsing: the server answers (turning while it '
         'loads a file); red: it does not&#10;click: open the report server in a new tab (nothing is opened when one is already open)</title><g class="lring"><g class="lpulse">' + DOTS +

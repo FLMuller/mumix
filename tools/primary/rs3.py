@@ -18,7 +18,7 @@ The server (what the daemon runs)
     Websocket: a message is JSON {"do": VERB, ...fields} and the reply is a JSON object with
     "ok". HTTP: GET and POST only, one request per connection.
     Every verb and route is run by a handler named in HANDLERS, in the folder rs3/ beside this
-    file (rs3core, rs3files, rs3pages, rs3comment). Each defines VERBS = {verb: function} with
+    file (rs3core, rs3pages, rs3comment). Each defines VERBS = {verb: function} with
     function(msg, S) -> dict, and may define ROUTES = {'GET': function, 'POST': function} with
     function(request, S) -> (code, bytes, type); S is the server's state. A verb or route
     claimed by two handlers stops the server at start.
@@ -76,7 +76,7 @@ LOGS = os.path.join(FOLDER, 'logs')
 LOG_FILE = os.path.join(LOGS, 'rs3.log')
 PID_FILE = os.path.join(FOLDER, 'rs3.pid')
 CONFIG_FILE = os.path.join(FOLDER, 'rs3.config')
-HANDLERS = ('rs3core', 'rs3files', 'rs3pages', 'rs3comment')   # hard-wired: no list on disk
+HANDLERS = ('rs3core', 'rs3pages', 'rs3comment')   # hard-wired: no list on disk
 GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 MAX_MSG = 65536                     # bytes of one message to the server (a question is short)
 MAX_HEAD = 8192                     # bytes of the handshake
@@ -289,6 +289,8 @@ def load_handlers(S):
     sys.path.insert(0, os.path.dirname(HERE))      # tools/: use.py loads rs3lex.pyx
     sys.path.insert(0, PANES)
     sys.path.insert(0, FOLDER)
+    from rs3table import Pages
+    S['pages'] = Pages()
     for name in HANDLERS:
         module = importlib.import_module(name)
         for verb, function in module.VERBS.items():
@@ -686,17 +688,6 @@ def lower_priority():
             pass
 
 
-def claude_root():
-    """The folder that holds .claude, found upward from this file: what pages are served from
-    and what a page's hash may name."""
-    here = HERE
-    while not os.path.isdir(os.path.join(here, '.claude')):
-        if os.path.dirname(here) == here:
-            raise RuntimeError(f'no folder holding .claude above {HERE}')
-        here = os.path.dirname(here)
-    return here
-
-
 def run(by, wait=False):
     """The server itself. Exit code 3 if the port is taken (one is running), 4 if a handler
     will not load. wait: keep trying to bind for 10 s (a restart: the old server is leaving)."""
@@ -711,7 +702,7 @@ def run(by, wait=False):
     if listener is None:
         return 3
     S = {'port': PORT, 'folder': FOLDER, 'config_file': CONFIG_FILE, 'verbs': {},
-         'routes': {}, 'root': claude_root(), 'pages': {}, 'next_id': 1, 'pending': {},
+         'routes': {}, 'pages': None, 'pending': {},
          'next_rid': 1, 'conns': {}, 'conn': None, 'say': log, 'built': {}, 'exit_at': 0,
          'started': time.time(), 'log_ring': LOG_RING, 'by': by, 'pages_of': pages_of,
          'send': send, 'script': os.path.abspath(__file__),

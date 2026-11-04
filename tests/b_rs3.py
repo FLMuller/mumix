@@ -125,8 +125,7 @@ class b_rs3(bench):
     sources = SOURCES
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass() if hasattr(super(), 'setUpClass') else None
+    def setup_fixtures(cls):
         cls.folder = os.path.join(ROOT, 'tests', 'z_sandbox', 'rs3tmp')
         os.makedirs(cls.folder, exist_ok=True)
         atexit.register(shutil.rmtree, cls.folder, True)
@@ -212,12 +211,43 @@ class b_rs3(bench):
         self.assertTrue(html['path'].startswith('/page/'), html['path'])             # html is not for an address: a kept page
 
     def test_T6_a_static_page_given_whole_is_taken_apart_and_its_parts_collated(self):
-        whole = '<html><style>.a{x:1}</style><div>one</div><script>alert(1)</script></html>'
+        whole = '<html><style>.a{x:1}</style><div>one</div><script>var n = 1;</script></html>'
         got = rs3.contactRS('load', '[doc wxh]', {'doc': ['doc', '', '', whole]}, 'whole', False)
         text = web('GET', got['path'])[2]
         self.assertEqual((text.count('<style'), text.count('<script')), (1, 1))
-        self.assertIn('.a{x:1}', text)
+        self.assertIn('[data-doc="doc"] .a{x:1}', text)                  # its rule is a rule of the box
         self.assertIn('<div>one</div>', text)
+        self.assertIn("(RS.docs = RS.docs || {})['doc'] = function(aDOM, document, window", text)    # its script is the box's
+
+    def test_T6a_a_script_that_says_more_than_a_doc_may_is_refused_and_the_box_says_why(self):
+        for script, why in (('window.parent.x = 1;', '.parent is not allowed'), ('fetch("/x");', 'the name fetch'),
+                            ('var f = function(){ return this; };', 'this is not allowed'),
+                            ('var o = {}; o.constructor("return 1")();', '.constructor is not allowed')):
+            got = rs3.contactRS('load', '[doc wxh]', {'doc': ['doc', '', '', f'<p>x</p><script>{script}</script>']}, 'bad', False)
+            text = web('GET', got['path'])[2]
+            self.assertIn('this page cannot be shown', text, script)
+            self.assertIn(why, text, script)
+            self.assertNotIn('(RS.docs = RS.docs', text, script)          # nothing of it runs
+
+    def test_T6b_inline_handlers_become_functions_of_the_box_and_javascript_links_are_refused(self):
+        page = '<p>t</p><button onclick="go(this.value)" id="b">x</button><script>function go(v){ var n = v; }</script>'
+        got = rs3.contactRS('load', '[doc wxh]', {'doc': ['doc', '', '', page]}, 'handler', False)
+        text = web('GET', got['path'])[2]
+        self.assertIn('data-aon-click="0"', text)
+        self.assertNotIn('onclick=', text)
+        self.assertIn('aDOM.on(["click"], [function(event, aThis){\naThis.value', text.replace('go(aThis.value)', 'aThis.value'))
+        got = rs3.contactRS('load', '[doc wxh]', {'doc': ['doc', '', '', '<a href="javascript:alert(1)">x</a>']}, 'link', False)
+        self.assertIn('this page cannot be shown', web('GET', got['path'])[2])
+
+    def test_T11b_a_block_says_what_it_can_search_and_the_status_bar_offers_that(self):
+        text = web('GET', '/reportserver')[2]
+        found = {m.group(1): m.group(2) for m in re.finditer(r'"block": "(\w+)", "where": \d+, "host": \w+, "search": (null|"\w+")', text)}
+        self.assertEqual(found.get('ftv'), '"files"')
+        self.assertEqual(found.get('log'), '"log"')
+        self.assertEqual(found.get('serverstatus'), 'null')
+        text = web('GET', '/?layout=[doc]&title=t')[2]
+        self.assertIn('"search": "text"', text)                           # a doc answers a text search
+        self.assertIn('class="findstep shome"', text)                     # the star
 
     def test_T7_two_blocks_of_one_kind_carry_their_css_and_script_once(self):
         got = rs3.contactRS('load', '[methods 40xh, methods2 wxh]', {}, 'two', False)
@@ -612,6 +642,22 @@ class b_rs3(bench):
             self.assertIn('./mumix/tools/primary/rs3.py', [f['p'] for f in got['files']])
         finally:
             page.close()
+
+    def test_T15c_each_module_exports_only_what_another_unit_uses(self):
+        rs3dir = os.path.join(ROOT, 'tools', 'primary', 'rs3')
+        want = {'rs3util.py': {'asset', 'done', 'split_package', 'pathof', 'address'}, 'rs3core.py': {'VERBS'},
+                'rs3pages.py': {'VERBS', 'ROUTES', 'register_url'}, 'rs3comment.py': {'VERBS'}, 'rs3table.py': {'Pages'},
+                'rs3jsguard.py': {'check', 'this_as'}, 'rs3layout.py': {'parse', 'names', 'block_of', 'render', 'plain', 'LayoutError'}}
+        for name in os.listdir(os.path.join(rs3dir, 'panes')):
+            if name.endswith('.py'):
+                want[os.path.join('panes', name)] = {'write'}
+        for name, names in want.items():
+            tree = ast.parse(open(os.path.join(rs3dir, name), encoding='utf-8').read())
+            found = [n for n in tree.body if isinstance(n, ast.Assign) and any(getattr(t, 'id', '') == '__all__' for t in n.targets)]
+            self.assertEqual(len(found), 1, name)
+            self.assertEqual({e.value for e in found[0].value.elts}, names, name)
+        for gone in ('rs3files.py', 'rs3source.py'):
+            self.assertFalse(os.path.exists(os.path.join(rs3dir, gone)), gone)
 
     def test_T15a_rs3_imports_only_the_standard_library_and_its_own_folder(self):
         folder = os.path.join(ROOT, 'tools', 'primary', 'rs3')

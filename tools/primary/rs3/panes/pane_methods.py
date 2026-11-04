@@ -18,7 +18,8 @@ Signals
               showpane {block, on}   its door button: shut this pane (its strip's door opens it again)
 IN and OUT below are these names.
 
-VERSION  M1 m01.v01 (2026-11-03): first version.
+VERSION  M1 m01.v02 (2026-11-04): its size and what it can find are returned by write(): no module constants.
+         M1 m01.v01 (2026-11-03): first version.
 """
 import html as htmllib
 
@@ -26,7 +27,6 @@ from rs3util import asset, done
 
 __all__ = ['write']
 
-WIDTH = 50                          # mm: its width in a row when the layout gives none (methods, not methods 70dxh)
 IN = ['openfile', 'closefile', 'linenoClicked', 'saved', 'searchtext']
 OUT = ['selectfunk', 'showpane']
 
@@ -35,4 +35,4 @@ def write(path=None, S=None, page=None, loc=None):
     attr = f' data-path="{htmllib.escape(path)}"' if path else ''
     return done('methods', asset(__file__, 'css'), asset(__file__, 'js'),
                 f'<div class="methods"{attr}><div class="mhead"><span class="doors"></span>methods</div>'
-                '<div class="mlist"><p class="mute">no file</p></div></div>')
+                '<div class="mlist"><p class="mute">no file</p></div></div>', width=50, search='names')

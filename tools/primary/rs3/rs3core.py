@@ -1,9 +1,9 @@
 r"""rs3core.py -- the verbs about the server itself, run for rs3.py.
 
     ping      {do: 'ping'}                   -> {ok, pong: 1, boot, time}
-    hello     {do: 'hello', hash | path | url}  -> {hash, path, id, boot, time}
-              a page says which page it is: a hash (from the page itself), a ./ file path, or the
-              address it was served from (/reportserver, /code/...). The server then sends
+    hello     {do: 'hello', hash | url}      -> {hash, path, id, boot, time}
+              a page says which page it is: a hash (from the page itself) or the address it was
+              served from (/reportserver, /code/..., /?layout=...). The server then sends
               commands to that connection by the hash. It says so again after every reconnect.
     config    {do: 'config', change?: {...}} -> {ok, config: {...}}
               the settings the pages share, after a change (a dict of some of them) is applied;
@@ -32,7 +32,8 @@ This module holds no state of its own: rs3.py hands each verb the server's state
 is the connection the message came from, during the call), and the settings file is
 S['config_file'].
 
-VERSION  M2 m01.v01 (2026-11-03): rs3: hello by hash or address, status, pulse, stop, restart.
+VERSION  M2 m01.v02 (2026-11-04): tree verb (the files of the page's root, by pathof, with the limit message); hello by hash or address only; the page table is rs3table's.
+         M2 m01.v01 (2026-11-03): rs3: hello by hash or address, status, pulse, stop, restart.
          (rs2 rscore m02.v01: load, snap and trigger.)
 """
 import json
@@ -42,8 +43,11 @@ import subprocess
 import sys
 import time
 
-from rs3files import path_hash, register, scope_of
+from rs3table import Pages
+from rs3util import pathof
 
+SHOWN = ('code', 'md', 'text', 'html')           # the kinds the tree shows
+MAX_BYTES = 4 * 1024 * 1024                  # a source file longer than this is shown 'big' and not opened
 DEFAULTS = {'font': 'Consolas', 'size': 12, 'initials': 'user', 'linenos': True,
             'tabwidth': 4, 'wrap': False, 'color': '#e8650f'}
 PULSE_ROWS = 500
@@ -63,8 +67,6 @@ def hello(msg, S):
     page = None
     if isinstance(msg.get('url'), str):
         page = rs3pages.register_url(S, msg['url'])
-    elif isinstance(msg.get('path'), str):
-        page = register(S, msg['path'])
     elif isinstance(msg.get('hash'), str):
         page = S['pages'].get(msg['hash'])
     if page is None:
@@ -197,10 +199,34 @@ def command(verb):
         if not isinstance(path, str) or not path.startswith(('./', '/')):
             return {'ok': False, 'loaded': False}
         return {'relay': {'do': verb, 'to': path, 'sel': msg.get('sel')},
-                'to_hash': path_hash(path)}      # no file lookup: an unknown spelling is not loaded
+                'to_hash': Pages.hash_of(path)}      # no file lookup: an unknown spelling is not loaded
     return run
+
+
+def tree(msg, S):
+    """The files of the page's root, for the tree block: {root, name, files: [{p, k, s}], truncated}. p is a ./ path from
+    HOME (like every path in a message), k code | md | text | html ('big' for a source file over MAX_BYTES), s the bytes.
+    truncated says the walk stopped at its limit (pathof): the list is not whole."""
+    page, why = S['pages'].known(msg.get('hash'))
+    if page is None:
+        return {'ok': False, 'error': why}
+    root = pathof('./', start=page['root'])
+    base = pathof(root) if root else None
+    if base is None:
+        return {'ok': False, 'error': 'the root of this page is not inside the home of rs3'}
+    found = pathof('./**', start=root, kinds=SHOWN)
+    head = '' if base == '.' else base[1:]
+    files = []
+    for path in sorted(found, key=str.lower):
+        kind, size = found.kind[path], found.size[path]
+        files.append({'p': './' + head[1:] + '/' + path[2:] if head else path,
+                      'k': 'big' if kind in ('code', 'md', 'text') and size > MAX_BYTES else kind, 's': size})
+    if found.truncated:
+        S['say'](f'tree: the list of {os.path.basename(root)} stops at {len(found)} files')
+    return {'root': base, 'name': os.path.basename(root) or root, 'files': files, 'truncated': found.truncated}
 
 
 VERBS = {'ping': ping, 'hello': hello, 'config': config, 'status': status, 'pulse': pulse,
          'stop': stop, 'restart': restart, 'snap': command('snap'),
-         'trigger': command('trigger')}
+         'trigger': command('trigger'), 'tree': tree}
+__all__ = ['VERBS']

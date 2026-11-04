@@ -14,7 +14,8 @@ Signals
     emits     nothing
 IN and OUT below are these names.
 
-VERSION  M1 m01.v01 (2026-11-03): first version.
+VERSION  M1 m01.v02 (2026-11-04): what it can find is returned by write().
+         M1 m01.v01 (2026-11-03): first version.
 The newest line is at the top; follow keeps the view there as lines arrive. The oldest is dropped past MAX.
 m01.v02: a time button on the bar turns the order (newest first v, oldest first ^); the choice is kept in the browser.
 """
@@ -32,4 +33,4 @@ def write(S=None, page=None, loc=None):
                 '<div class="log"><div class="lbar"><button class="lsort"></button>'
                 '<label title="stay with the newest line as lines arrive"><input type="checkbox" class="lfollow" checked> follow</label>'
                 '<span class="lcount">0 lines</span></div>'
-                '<div class="llines"></div></div>')
+                '<div class="llines"></div></div>', search='log')

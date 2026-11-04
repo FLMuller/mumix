@@ -1,9 +1,9 @@
 r"""rs3comment.py -- the verbs of the code, methods and editbox blocks: a file as commentable lines, the
 list of its methods, and the comments. Nothing outside the rs3 folder and the standard library is used
-(rs3lex.pyx is loaded with use.load, marked is a copy in this folder: rs3source.py checks that they are the ones loaded).
+(rs3lex.pyx and marked.py, a copy of md2htm, are loaded with use.load, which finds them beside this file).
 
-Verbs (websocket; each takes the page's hash, whose root is the scope of the page: rs3files.
-Paths are ./ from the root of the server, like every path in a message)
+Verbs (websocket; each takes the page's hash, whose root is the root of its file: rs3util.pathof.
+Paths are ./ from HOME, like every path in a message)
     open     {do: 'open', hash, path}        -> {ok, html, base, path}
              the lines of one file under the page's root: colouring, comment threads. `base` is
              the sha1 the file had when it was read; an edit must send it back.
@@ -45,11 +45,12 @@ same afterwards, for the rest the lines that are not comments), and it does not 
 comment or a back-quote string. Nothing else is ever written. The marker is the file's language's,
 whatever the page sends. The file is written to a temporary name and renamed over the original.
 
-VERSION  M3 m01.v03 (2026-11-04): a Markdown file opens as md2htm's page of it, in numbered blocks, its code blocks and the numbers of its text coloured, the columns of numbers centred; YAML front matter plain.
+VERSION  M3 m01.v04 (2026-11-04): the file is a Source of rs3lex; located is here (pathof); markdown and escape are here; exports only VERBS.
+         M3 m01.v03 (2026-11-04): a Markdown file opens as md2htm's page of it, in numbered blocks, its code blocks and the numbers of its text coloured, the columns of numbers centred; YAML front matter plain.
          M3 m01.v02 (2026-11-04): rs3lex is the language, the lexer and the comment marker: no vclang.
          M3 m01.v01 (2026-11-03): rebuilt from rs3vcomment: the work of vcserver.py (edits), vcode.py (the
          rows of other languages), and codemark.py (the rows and the colours of Python) is here, with Class.method
-         names from the syntax tree; the file is read once for open and methods (rs3source).
+         names from the syntax tree; the file is read once for open and methods (rs3lex's Source).
          (rs3vcomment M2 m01.v01: open gave the lines only. rs2 rsvcomment m02.v01: ./ paths in and out.)
 """
 import ast
@@ -58,12 +59,24 @@ import html
 import os
 import re
 
-from rs3files import located
-from rs3source import comments, escape, lexed, markdown, read, tokens
+from rs3util import pathof
 from use import load
 
-load('rs3lex')           # rs3lex.pyx: language, review, inside, functions ...
+load('marked')           # marked.py: md2htm, rs3's own copy, found beside this file
+load('rs3lex')           # rs3lex.pyx: Source and css
 
+def escape(text):
+    return html.escape(text, quote=False)
+
+
+def markdown(text):
+    """The HTML of some Markdown (md2htm starts it with a section comment: dropped)."""
+    parts = bytes(md2htm(text)).split(b'-->\n', 1)
+    return parts[1].decode('utf-8') if len(parts) > 1 else ''
+
+
+MAX_BYTES = 4 * 1024 * 1024                                # a source file longer than this is not opened
+OPENABLE = ('code', 'md', 'text')
 SHORT = 5                                                  # fewer lines than this is a short function
 DEF = re.compile(r'^\s*(?:async\s+)?(?:cp?def|def)\s+(?:[\w\[\]\s*]+?\s+)?(\w+)\s*\(')
 SUITES = ('test', 'tests')
@@ -82,6 +95,22 @@ NUMBER_CELL = re.compile(r'\s*<span class="r-number">[^<]*</span>\s*')
 SKIPPED = {'pre', 'code', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'script', 'style'}      # their text keeps its own look
 EXTENSIONS = {'python': 'py', 'py': 'py', 'cython': 'pyx', 'javascript': 'js', 'js': 'js', 'css': 'css', 'matlab': 'm',
               'vba': 'bas', 'text': 'txt', 'txt': 'txt', 'markdown': 'md', 'md': 'md'}
+
+
+def located(S, msg, field):
+    """(page, real path, None) of the page of msg's hash and the source file msg[field] names (a ./ path), or
+    (None, None, {ok: false, error}) when either is not allowed: the file must be a text file the tree shows, not
+    too long, and inside the root of the page (HOME for a page with no file)."""
+    page, why = S['pages'].known(msg.get('hash'))
+    if page is None:
+        return None, None, {'ok': False, 'error': why}
+    path = msg.get(field)
+    if pathof(path) is None:
+        return None, None, {'ok': False, 'error': f'{path!r} is not a ./ path inside the root'}
+    real = pathof(path, kinds=OPENABLE, maxsize=MAX_BYTES)
+    if real is None or pathof(real, start=page['root']) is None:
+        return None, None, {'ok': False, 'error': f'{path} is not a file this page may open'}
+    return page, real, None
 
 
 def refuse(why):
@@ -164,14 +193,13 @@ def coloured(page):
         ext = EXTENSIONS.get(m.group(1).lower())
         if ext is None:
             return m.group(0)
-        try:
-            lang = language('x.' + ext)
-        except NoLanguage:
-            return m.group(0)
         lines = html.unescape(m.group(2)).split('\n')
         if lines and lines[-1] == '':
             lines.pop()
-        shown = '\n'.join(line_html(got[0], text) for got, text in zip(lex(lines, lang), lines))
+        pieces = Source.coloured(ext, '\n'.join(lines))
+        if pieces is None:                           # no lang file has the extension
+            return m.group(0)
+        shown = '\n'.join(line_html(got, text) for got, text in zip(pieces, lines))
         return f'<pre><code class="language-{m.group(1)}">{shown}\n</code></pre>'
     return FENCED.sub(one, page)
 
@@ -238,7 +266,7 @@ def markdown_rows(src):
     """A Markdown file as md2htm formats it: a row for each top-level block, numbered by its first line, with the
     comment threads between them. The reference lines of the file ([x]: url) go to every block, so a link to one
     works wherever it is."""
-    lines, blocks, out = src.lines, comments(src), []
+    lines, blocks, out = src.lines, src.comments(), []
     refs = [x for x in lines if REFDEF.match(x)]
     starts = sorted(blocks)
     row = 1
@@ -267,8 +295,8 @@ def rows_html(src):
     shown as md2htm formats it (markdown_rows)."""
     if src.lang.mode == 'markdown':
         return markdown_rows(src)
-    pieces = tokens(src)
-    blocks = comments(src)
+    pieces = src.tokens()
+    blocks = src.comments()
     out = []
     row = 1
     while row <= len(src.lines):
@@ -292,7 +320,7 @@ def open_file(msg, S):
     if bad:
         return bad
     try:
-        src = read(real)
+        src = Source.read(real)
     except (OSError, ValueError) as error:
         return refuse(f'{msg.get("path")}: {error}')
     return {'html': rows_html(src), 'base': src.base, 'path': msg.get('path')}
@@ -393,7 +421,7 @@ def methods_of(src, root):
             used[word] = used.get(word, 0) + 1
         return [{'name': name, 'line': first, 'size': last - first + 1,
                  'calls': max(0, used.get(name.rsplit('.', 1)[-1], 0) - 1), 'colour': ''}
-                for name, first, last, kind in functions(src.lines, src.lang, lexed(src))]
+                for name, first, last, kind in src.functions()]
     tree = None
     if src.lang.name == 'python':
         try:
@@ -407,7 +435,7 @@ def methods_of(src, root):
         with open(test, encoding='utf-8', errors='replace') as f:
             tested_text += f.read() + '\n'
     listed = exports(src.text, tree)
-    ended = {b[1] for b in comments(src).values()}          # the last line of each comment
+    ended = {b[1] for b in src.comments().values()}          # the last line of each comment
     out = []
     for name, word, first, last, top, kind, owner in found:
         size = last - first + 1
@@ -427,10 +455,10 @@ def methods(msg, S):
     if bad:
         return bad
     try:
-        src = read(real)
+        src = Source.read(real)
     except (OSError, ValueError) as error:
         return refuse(f'{msg.get("path")}: {error}')
-    return {'path': msg.get('path'), 'methods': methods_of(src, os.path.realpath(page['root']))}
+    return {'path': msg.get('path'), 'methods': methods_of(src, pathof('./', start=page['root']))}
 
 
 # ---- the edits ----------------------------------------------------------------------------------
@@ -462,20 +490,21 @@ def edit(msg, S, kind):
     page, real, bad = located(S, msg, 'filename')
     if bad:
         return bad
-    lang = language(real)                            # the file's language says the marker
+    try:
+        src = Source.read(real)
+    except (OSError, ValueError) as error:
+        return refuse(f'edit: {error}')
+    lang, mark = src.lang, src.mark                   # the file's language says the marker
     if lang.close and lang.close in text:
         return refuse(f'edit: the text holds {lang.close}, which would end the comment')
-    with open(real, 'rb') as f:
-        raw = f.read()
-    if hashlib.sha1(raw).hexdigest() != base:
+    if src.base != base:
         return refuse('edit: the file has changed since the page read it')
-    eol = '\r\n' if b'\r\n' in raw else '\n'
+    eol = '\r\n' if b'\r\n' in src.raw else '\n'
     try:
-        old = raw.decode('utf-8').replace('\r\n', '\n')
+        old = src.raw.decode('utf-8').replace('\r\n', '\n')
     except UnicodeDecodeError:
         return refuse('edit: the file is not UTF-8')
     lines = old.split('\n')
-    mark = review(lang)
     try:
         if kind == 'update':
             first, last = int(msg['first']), int(msg['last'])
@@ -491,7 +520,7 @@ def edit(msg, S, kind):
             last = first - 1                                # nothing is replaced: it goes in before
     except (KeyError, TypeError, ValueError):
         return refuse('edit: the lines are not numbers')
-    if inside(lines, lang, first):
+    if src.inside(first):
         return refuse('edit: that line is inside a block comment or a string')
     new = mark.write(indent, tag, text) if text.strip() else []
     after = lines[:first - 1] + new + lines[last:]
@@ -516,3 +545,4 @@ def insert(msg, S):
 
 
 VERBS = {'open': open_file, 'methods': methods, 'check': check, 'update': update, 'insert': insert}
+__all__ = ['VERBS']

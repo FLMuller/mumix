@@ -316,8 +316,5 @@ var RS = (function(){
                              make: make}, extra || {});
     return ctor ? (ctor(ctx) || {}) : {};
   }
-  var DOCS = {};                         // the script of each doc block, run with aDOM = the block's element
-  panes.doc = function(ctx){ if (DOCS[ctx.loc]) DOCS[ctx.loc](ctx.el); return {}; };
-  return {pane: function(name, ctor){ panes[name] = ctor; }, start: start, emit: emit, cap: cap, doors: doors,
-          doc: function(loc, fn){ DOCS[loc] = fn; }};
+  return {pane: function(name, ctor){ panes[name] = ctor; }, start: start, emit: emit, cap: cap, doors: doors};
 })();

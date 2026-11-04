@@ -1,81 +1,166 @@
-r"""pane_doc.py -- the doc block: any static html, which is what a table or a chart of a report is.
+r"""pane_doc.py -- the doc block: any html, shown in a box that it cannot get out of.
 
-    write(js, css, html) -> {label, css, js, html}
-    write(path)          a report page that is a file: its ./ path (an .html, .htm or .result inside the root)
+    write(js, css, html)    the three pieces of a static page
+    write(path)             a page that is a file: the ./ path of an .html or .result (rs3util.pathof, at most 8 MB)
 
-The data is the three pieces of a static page. A page that carries its own <style> and <script>
-may be given whole as `html` (the other two empty): the server takes every <style> and <script>
-out of it (rs3util.split_package) and collates them with the rest of the page. The ideal package
-is one <style>, one <script> and the html. The script runs with `aDOM`, the element of the block,
-as its one parameter, so it can reach its own html and nothing else: write document.getElementById
-as aDOM.querySelector. With no server the package is still a working static page.
-Given one ./ path instead, the block is that file: the page of a report (a runbench .html, a .result) in a layout of
-its own, so it has the status bar and the rest of rs3 (/?layout=[doc]&doc=mumix/results/b_x.html): its <style> and
-<script> are taken out as above and the inside of its <body> is the html.
+A doc is what a table, a chart or a whole report page is. The html may carry its own <style> and <script>: they are taken
+out (rs3util.split_package), the inside of its <body> is the html, and
+    the css     every rule is made a rule of the box: html, body and :root are the box, any other selector is below it, so
+                a report's `body{margin:20px}` and `td{...}` touch nothing outside it (@media is kept, @import is dropped)
+    the script  runs inside the box with `document` meaning aDOM, the box (rs3/panes/pane_doc.js): aDOM.currentdiv is the box
+                element, getElementById and querySelector(All) look only inside it, createElement makes elements, and
+                addEventListener('DOMContentLoaded', f) runs f when the box is ready. window, location and localStorage are
+                the box's own (a storage of its own, a location that is the page's address), and the names the rest of the
+                page's world has (parent, top, fetch, WebSocket ...) are undefined. A script that reaches for more than that
+                is refused before it runs (rs3jsguard.check: no this, no arrow function, no .constructor or .parentNode, no
+                computed names), and the box says why.
+    the inline handlers   onclick="f(this)" in the html becomes a function of the box (rs3jsguard.this_as writes this as
+                the element), so the script's functions need not be global.
+    links       a javascript: href or src is refused.
+A script of a doc is one unit per page: its names are the box's, so two docs on one page do not meet.
 
-Signals: none. IN = [] OUT = []
+Signals
+    receives  onSearchtext {text, mode}  mode 'text': every place the text occurs in the box is marked, and the first is shown
+              onSearchnext {mode}, onSearchprev {mode}   step through the marks (the status bar's down and up)
+              onSearchhome {mode}        back to where the box was scrolled before the search (the status bar's star)
+    emits     searchcount {index, total}   the count of the marks, for the status bar
+IN and OUT below are these names.
 
-VERSION  M1 m01.v01 (2026-11-03): first version.
-         m01.v02: a file given by its ./ path.
+VERSION  M2 m01.v01 (2026-11-04): rebuilt: the script runs as aDOM in a box (checked first), the css is scoped to the box, a
+         file is a source like any other, and the box answers the status bar's search. Replaces the doc that took a file's
+         script as the page's own.
+         M1 m01.v02: a file given by its ./ path. M1 m01.v01 (2026-11-03): first version.
 """
 import hashlib
-import os
+import html as htmllib
+import json
 import re
 
-import rs3files
-from rs3util import done, split_package
+from rs3jsguard import check, this_as
+from rs3util import asset, done, pathof, split_package
 
 __all__ = ['write']
 
-IN = []
-OUT = []
+IN = ['searchtext', 'searchnext', 'searchprev', 'searchhome']
+OUT = ['searchcount']
 
-
+MAX_PAGE = 8 * 1024 * 1024
 BODY = re.compile(r'<body[^>]*>(.*)</body\s*>', re.S | re.I)
-SELECTOR = re.compile(r'([^{}]+)\{')
-PAGE_TAG = re.compile(r'(?<![\w#.\-])(?:html|body)(?![\w\-])')
+HANDLER = re.compile(r'''\son([a-z]+)\s*=\s*(?:"([^"]*)"|'([^']*)')''', re.I)
+JAVASCRIPT_URL = re.compile(r'''\b(?:href|src|action|formaction|xlink:href)\s*=\s*["']?\s*javascript:''', re.I)
+TOP_SELECTOR = re.compile(r'(?:html|body|:root)(?![\w-])\s*', re.I)
+OWN_BODY = re.compile(r'body(?![\w-])\s*', re.I)
+# the names the box passes to a script, in order (pane_doc.js calls the script with the first five and the timers)
+PARAMETERS = ('aDOM, document, window, location, localStorage, setTimeout, clearTimeout, setInterval, clearInterval, '
+              'self, top, parent, frames, globalThis, fetch, XMLHttpRequest, WebSocket, Reflect, Proxy')
 
 
-def scoped(css):
-    """The css of a page with its html and body rules made rules of the block (.doc): the page of rs3 keeps its own html
-    and body (a margin or a height on body would push the status bar off the page)."""
-    def fix(found):
-        selector = found.group(1)
-        if selector.strip().startswith('@'):
-            return found.group(0)
-        return PAGE_TAG.sub('.doc', selector).replace('.doc .doc', '.doc') + '{'
-    return SELECTOR.sub(fix, css)
-
-
-def file_html(S, path):
-    """The text of a report page, a file inside the root with the extension of a page (the ones the server serves as
-    pages: rs3files.PAGE_KINDS). ValueError says why not."""
-    real = rs3files.real_of(S, path)
-    if real is None or os.path.splitext(real)[1].lower() not in rs3files.PAGE_KINDS or not os.path.isfile(real):
-        raise ValueError(f'{path} is not a report page of the root')
-    if os.path.getsize(real) > rs3files.MAX_POST:
-        raise ValueError(f'{path} is too long')
+def file_text(path):
+    """The text of a report page: a file inside HOME with the extension of a page. ValueError says why not."""
+    real = pathof(path, kinds=('html',), maxsize=MAX_PAGE)
+    if real is None:
+        raise ValueError(f'{path} is not a report page (.html or .result) this server may show')
     with open(real, encoding='utf-8', errors='replace') as f:
         return f.read()
 
 
+def scope_selector(selector, scope):
+    """One selector made a selector of the box: html, body and :root are the box, the rest is below it."""
+    selector = selector.strip()
+    found = TOP_SELECTOR.match(selector)
+    if found:
+        rest = selector[found.end():]
+        again = OWN_BODY.match(rest)                    # html body ...
+        rest = rest[again.end():] if again else rest
+        return scope + ((' ' + rest) if rest and rest[0] not in '.:[#' else rest)
+    return scope + ' ' + selector
+
+
+def scoped(css, scope):
+    """The css with every rule made a rule of the box `scope` (an attribute selector). @media and @supports are scoped
+    inside, @keyframes and @font-face are left, @import and @charset are dropped."""
+    out, i, n = [], 0, len(css)
+    while i < n:
+        j = css.find('{', i)
+        k = css.find(';', i)
+        if j < 0:
+            break
+        head = css[i:j].strip()
+        if head.startswith('@') and 0 <= k < j:         # @import / @charset: a statement with no block
+            i = k + 1
+            continue
+        level, end = 1, j + 1
+        while end < n and level:
+            if css.startswith('/*', end):
+                stop = css.find('*/', end + 2)
+                end = n if stop < 0 else stop + 2
+                continue
+            level += (css[end] == '{') - (css[end] == '}')
+            end += 1
+        body = css[j + 1:end - 1]
+        head = re.sub(r'/\*.*?\*/', '', head, flags=re.S).strip()
+        if head.startswith('@media') or head.startswith('@supports'):
+            out.append(f'{head}{{{scoped(body, scope)}}}')
+        elif head.startswith('@'):
+            out.append(f'{head}{{{body}}}')
+        elif head:
+            parts, level2, last = [], 0, 0
+            for pos, c in enumerate(head):
+                level2 += (c in '([') - (c in ')]')
+                if c == ',' and level2 == 0:
+                    parts.append(head[last:pos])
+                    last = pos + 1
+            parts.append(head[last:])
+            out.append(','.join(scope_selector(part, scope) for part in parts) + '{' + body + '}')
+        i = end
+    return '\n'.join(out)
+
+
+def take_handlers(markup):
+    """(markup with each on...="code" turned into data-aon-TYPE="N", [(type, code)]): the code of the handlers, in order."""
+    found = []
+
+    def one(match):
+        code = htmllib.unescape(match.group(2) if match.group(2) is not None else match.group(3))
+        found.append((match.group(1).lower(), code))
+        return f' data-aon-{match.group(1).lower()}="{len(found) - 1}"'
+    return HANDLER.sub(one, markup), found
+
+
+def refused(label, loc, reasons):
+    items = ''.join(f'<li>{htmllib.escape(r)}</li>' for r in reasons)
+    return done(label, '', '', f'<div class="doc docerr" data-doc="{htmllib.escape(loc)}"><b>this page cannot be shown: '
+                'its script says more than a doc may (rs3jsguard)</b><ul>' + items + '</ul></div>', search='text')
+
+
 def write(*data, S=None, page=None, loc=None):
-    whole = len(data) == 1 and data[0].startswith('./')       # a report file: its script is the page's own, not wrapped
+    whole = len(data) == 1 and data[0].startswith('./')
     if whole:
-        js, css, html = '', '', file_html(S, data[0])
+        js, css, markup = '', '', file_text(data[0])
     else:
-        js, css, html = (list(data) + ['', '', ''])[:3]
-    if '<style' in html.lower() or '<script' in html.lower():
-        html, more_css, more_js = split_package(html)
+        js, css, markup = (list(data) + ['', '', ''])[:3]
+    if '<style' in markup.lower() or '<script' in markup.lower():
+        markup, more_css, more_js = split_package(markup)
         css = '\n'.join(x for x in (css, more_css) if x)
         js = '\n'.join(x for x in (js, more_js) if x)
-    body = BODY.search(html)
-    if body:                                  # a whole page: the inside of its body
-        html = body.group(1)
-    css = scoped(css)
-    label = 'doc:' + hashlib.sha1((css + '\0' + js).encode('utf-8')).hexdigest()[:10]
-    if whole:
-        wrapped = js                          # the page's own script: its inline onclick and DOMContentLoaded work as in the file
-    else:
-        wrapped = f'RS.doc({loc!r}, function(aDOM){{\n{js}\n}});' if js.strip() else ''
-    return done(label, css, wrapped, f'<div class="doc">{html}</div>')
+    body = BODY.search(markup)
+    if body:                                              # a whole page: the inside of its body
+        markup = body.group(1)
+    label = 'doc:' + hashlib.sha1((loc + '\0' + css + '\0' + js + '\0' + markup).encode('utf-8')).hexdigest()[:10]
+    if JAVASCRIPT_URL.search(markup):
+        return refused(label, loc, ['a javascript: link or source is not allowed'])
+    markup, handlers = take_handlers(markup)
+    problems = check(js, [code for _, code in handlers]) if (js.strip() or handlers) else []
+    if problems:
+        return refused(label, loc, problems[:20])
+    scope = f'[data-doc="{loc}"]'
+    wrapped = ''
+    if js.strip() or handlers:
+        kinds = json.dumps(sorted({kind for kind, _ in handlers}))
+        table = ','.join(f'function(event, aThis){{\n{this_as(code)}\n}}' for _, code in handlers)
+        wrapped = (f'(RS.docs = RS.docs || {{}})[{loc!r}] = function({PARAMETERS}){{\n\'use strict\';\n{js}\n'
+                   f'aDOM.on({kinds}, [{table}]);\n}};')
+    got = done(label, scoped(css, scope), wrapped,
+               f'<div class="doc" data-doc="{htmllib.escape(loc)}">{markup}</div>', search='text')
+    got['also'] = [('doc', asset(__file__, 'css'), asset(__file__, 'js'))]
+    return got

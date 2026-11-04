@@ -19,7 +19,8 @@ with an empty text. The box only shows who the comment is from: the user id is t
 of Claude's (tag cld) or of another user is changed under its own tag. The row under the text is the
 user id and what the box is doing (saving, saved, a refusal) on the left, and Save and Remove on the right.
 
-VERSION  M1 m01.v03 (2026-11-04): the user id is shown, not typed (the settings menu owns it); Save and
+VERSION  M1 m01.v04 (2026-11-04): its size is returned by write(): no module constant.
+         M1 m01.v03 (2026-11-04): the user id is shown, not typed (the settings menu owns it); Save and
          Remove at the right; its own height, 42 mm, in a column.
          M1 m01.v02 (2026-11-03): the comment saves itself (as the old page's editor did).
          M1 m01.v01 (2026-11-03): first version.
@@ -28,7 +29,6 @@ from rs3util import asset, done
 
 __all__ = ['write']
 
-HEIGHT = 42                         # mm: its height in a column when the layout gives none (edit, not edit wx35d)
 IN = ['commentline', 'commentselect', 'closefile', 'withconfig']
 OUT = ['saved', 'notice']
 
@@ -40,4 +40,4 @@ def write(S=None, page=None, loc=None):
                 '<textarea class="etext" placeholder="comment"></textarea>'
                 '<div class="ebtn"><span class="euser" title="who the comment is from: the user id of the settings menu"></span>'
                 '<span class="estate"></span><span class="gap"></span>'
-                '<button class="esave">Save</button><button class="eremove">Remove</button></div></div>')
+                '<button class="esave">Save</button><button class="eremove">Remove</button></div></div>', height=42)

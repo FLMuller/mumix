@@ -27,7 +27,8 @@ IN and OUT below are these names.
 The css and js of the code block ride along (the `also` of the dict write returns), so a
 page with tabs and no code block of its own still works.
 
-VERSION  M1 m01.v02 (2026-11-05): sections of a static page as tabs (the report page), put away and brought back.
+VERSION  M1 m01.v03 (2026-11-04): what it can find is returned by write().
+         M1 m01.v02 (2026-11-05): sections of a static page as tabs (the report page), put away and brought back.
          M1 m01.v01 (2026-11-03): first version.
 """
 import html as htmllib
@@ -57,6 +58,6 @@ def write(*items, S=None, page=None, loc=None):
                f'<div class="tt" data-open="{first}"><div class="ttop"><select class="ttcombo" title="the open tabs">'
                '<option value="">tabs&hellip;</option></select>'
                '<button class="scrollbtn ttl" title="earlier">&#9664;</button><div class="ttbar"></div>'
-               '<button class="scrollbtn ttr" title="later">&#9654;</button></div><div class="ttbody"></div>' + ''.join(sections) + '</div>')
+               '<button class="scrollbtn ttr" title="later">&#9654;</button></div><div class="ttbody"></div>' + ''.join(sections) + '</div>', search='text')
     got['also'] = [(inner['label'], inner['css'], inner['js'])]
     return got
