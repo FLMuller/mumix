@@ -954,7 +954,7 @@ def finish_run(suites, results, stem, budget, wall, server):
     path = write_report(rows, results, stem, stamp, wall, machine, server)
     if server:
         try:
-            rsrv.start(*server)
+            rsrv.ensure('runbench', *server)
         except Exception as error:                  # the server is a convenience: never fail
             print(f'report server: could not start ({error!r})')
     with open(os.path.join(results, 'last_run.json'), 'w', encoding='utf-8') as f:

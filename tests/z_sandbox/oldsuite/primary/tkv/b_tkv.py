@@ -25,7 +25,7 @@ from types import SimpleNamespace
 
 class b_tkv(bench):
     BenchName    = "tkv"
-    BenchVersion = "1.0"
+    BenchVersion = "M1.0.2"
     BenchHeader  = "Python port — initial draft"
     Nx           = 30000
     NRep         = 10

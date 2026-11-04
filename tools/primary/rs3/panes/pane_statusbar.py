@@ -6,8 +6,10 @@ of a layout that does not name a `statusbar` of its own, so no layout can lose i
 
 On the bar, from the left
     the menu button     the settings: font, size, initials, tab width, line numbers, wrap, your
-                        colour. A change is kept by the server (the config verb), so every page and
-                        every restart shows it, and it takes effect on the page at once.
+                        colour, and a link that opens the report server (/reportserver) in a new tab, leaving this page as it is
+                        (when a report server page is already open with a live socket it does nothing, and
+                        the state line says so). A change is kept by the server (the config verb), so every
+                        page and every restart shows it, and it takes effect on the page at once.
     Find                a box, a choice of what to search (files, text, names, log: only those the page
                         has a pane for), the up and down buttons and the count of hits. Enter steps
                         to the next hit, Shift+Enter to the one before.
@@ -52,6 +54,7 @@ HTML = ('<div class="sbar">'
         '<label>line numbers <input class="cfglines" type="checkbox"></label>'
         '<label>wrap <input class="cfgwrap" type="checkbox"></label>'
         '<label>your colour <input class="cfgcolor" type="color"></label>'
+        '<a class="cfgsrv" href="/reportserver" target="_blank" rel="noopener">open the report server (new tab)</a>'
         '</div>'
         '<span>Find</span><select class="smode" title="what to search"></select>'
         '<input class="sfind" type="search" placeholder="find">'

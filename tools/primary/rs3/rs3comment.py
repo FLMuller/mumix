@@ -45,7 +45,7 @@ same afterwards, for the rest the lines that are not comments), and it does not 
 comment or a back-quote string. Nothing else is ever written. The marker is the file's language's,
 whatever the page sends. The file is written to a temporary name and renamed over the original.
 
-VERSION  M3 m01.v03 (2026-11-04): a Markdown file opens as md2htm's page of it, in numbered blocks, its code blocks coloured; YAML front matter plain.
+VERSION  M3 m01.v03 (2026-11-04): a Markdown file opens as md2htm's page of it, in numbered blocks, its code blocks and the numbers of its text coloured, the columns of numbers centred; YAML front matter plain.
          M3 m01.v02 (2026-11-04): rs3lex is the language, the lexer and the comment marker: no vclang.
          M3 m01.v01 (2026-11-03): rebuilt from rs3vcomment: the work of vcserver.py (edits), vcode.py (the
          rows of other languages), and codemark.py (the rows and the colours of Python) is here, with Class.method
@@ -72,6 +72,14 @@ FENCE = re.compile(r'^\s*(```|~~~)')
 HEADING = re.compile(r'^\s{0,3}#{1,6}(?:\s|$)')
 LISTLINE = re.compile(r'^\s*(?:[-*+]|\d{1,9}[.)])\s')
 REFDEF = re.compile(r'^\s{0,3}\[[^\]\n]+\]:\s*\S')
+NUMBER_TEXT = re.compile(r'(?<![\w.#&])(?:0[xX][0-9a-fA-F]+|\d[\d,]*\.?\d*(?:[eE][+-]?\d+)?)(?!\w)')
+TAG = re.compile(r'(<[^>]+>)')
+ENTITY = re.compile(r'(&#?\w+;)')
+TABLE = re.compile(r'<table\b[^>]*>.*?</table>', re.S)
+ROW = re.compile(r'<tr>.*?</tr>', re.S)
+CELL = re.compile(r'<(t[dh])((?: [^>]*)?)>(.*?)</t[dh]>', re.S)
+NUMBER_CELL = re.compile(r'\s*<span class="r-number">[^<]*</span>\s*')
+SKIPPED = {'pre', 'code', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'script', 'style'}      # their text keeps its own look
 EXTENSIONS = {'python': 'py', 'py': 'py', 'cython': 'pyx', 'javascript': 'js', 'js': 'js', 'css': 'css', 'matlab': 'm',
               'vba': 'bas', 'text': 'txt', 'txt': 'txt', 'markdown': 'md', 'md': 'md'}
 
@@ -179,6 +187,53 @@ def front_matter(lines):
     return 0
 
 
+def numbered(page):
+    """md2htm's html with the numbers in its text (table cells, paragraphs, lists) wrapped in the number role of the
+    lang files, so they have its colour. Code, links and headings are left as they are, and so are the entities."""
+    out, skip = [], 0
+    for part in TAG.split(page):
+        if part.startswith('<'):
+            name = re.match(r'</?(\w+)', part)
+            if name and name.group(1).lower() in SKIPPED and not part.endswith('/>'):
+                skip = max(0, skip + (-1 if part.startswith('</') else 1))
+            out.append(part)
+        elif skip or not part:
+            out.append(part)
+        else:
+            out.append(''.join(p if p.startswith('&') else NUMBER_TEXT.sub(r'<span class="r-number">\g<0></span>', p)
+                               for p in ENTITY.split(part)))
+    return ''.join(out)
+
+
+def centred(page):
+    """The tables of md2htm's html with the columns of numbers centred. A column is one when every cell of its body
+    is nothing but a number (a blank cell does not count against it, and one number is enough): its header is
+    centred with it. An alignment the author wrote (:-- :-: --:, which md2htm makes an align attribute) is kept, and
+    the rest of the cells are left."""
+    def table(found):
+        text = found.group(0)
+        rows = [CELL.findall(row) for row in ROW.findall(text)]
+        body = [row for row in rows if row and row[0][0] == 'td']
+        width = max((len(row) for row in rows), default=0)
+        numeric = {k for k in range(width)
+                   if any(k < len(row) and NUMBER_CELL.fullmatch(row[k][2]) for row in body)
+                   and all(k >= len(row) or not row[k][2].strip() or NUMBER_CELL.fullmatch(row[k][2]) for row in body)}
+        if not numeric:
+            return text
+
+        def row(found_row):
+            at = [-1]
+
+            def cell(m):
+                at[0] += 1
+                if at[0] in numeric and 'align=' not in m.group(2):
+                    return f'<{m.group(1)}{m.group(2)} align="center">{m.group(3)}</{m.group(1)}>'
+                return m.group(0)
+            return CELL.sub(cell, found_row.group(0))
+        return ROW.sub(row, text)
+    return TABLE.sub(table, page)
+
+
 def markdown_rows(src):
     """A Markdown file as md2htm formats it: a row for each top-level block, numbered by its first line, with the
     comment threads between them. The reference lines of the file ([x]: url) go to every block, so a link to one
@@ -202,7 +257,7 @@ def markdown_rows(src):
         for first, last in md_blocks(lines, row, stop - 1):
             text = '\n'.join(lines[first - 1:last] + ([''] + refs if refs else []))
             out.append(f'<div class="ln md" id="L{first}" data-n="{first}"><span class="no">{first}</span>'
-                       f'<span class="mg"></span><div class="mdblock">{coloured(markdown(text))}</div></div>')
+                       f'<span class="mg"></span><div class="mdblock">{centred(numbered(coloured(markdown(text))))}</div></div>')
         row = stop
     return '\n'.join(out)
 

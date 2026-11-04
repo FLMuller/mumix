@@ -118,6 +118,10 @@ button.stab.bad{background:#c0392b;border-color:#8e2a20;color:#fff}
 .foot button,.foot a.btn{font:inherit;padding:1px 8px;border:1px solid #e0a878;border-radius:3px;background:#fff;color:#8a4500;cursor:pointer;text-decoration:none}
 .foot button:hover,.foot a.btn:hover{background:#f5cba7}
 .foot .gap{flex:1;min-width:8px}
+.foot .findstep{padding:0 5px;height:20px;font-size:9px;line-height:1}
+/* the matches of the find box in the code lines (CSS Custom Highlight API): light orange with darker orange text, the current one stronger */
+::highlight(find){background-color:#ffe3bf;color:#a34700}
+::highlight(findnow){background-color:#ffa94d;color:#5c2600}
 #live{order:9;width:5.5mm;height:5.5mm;flex:none;overflow:visible;--tint:#d35400}
 #live #ring,#live #disc{display:none}
 #live[data-live="spin"] #ring,#live[data-live="pulse"] #ring{display:block;transform-origin:11px 11px}
@@ -134,7 +138,7 @@ button.stab.bad{background:#c0392b;border-color:#8e2a20;color:#fff}
 
 /* ---- the code tab ---- */
 .codepane{display:flex;align-items:flex-start;gap:8px;margin-top:6px}
-.funcs{flex:none;width:260px;max-height:70vh;overflow:auto}
+.funcs{flex:none;width:50mm;min-width:20mm;max-width:60vw;max-height:70vh;overflow:auto;resize:horizontal}
 .funcs.hid{display:none}
 .funcs table.grid{margin-top:0}
 .funcs td.green a{color:#1a7f37;font-weight:bold}

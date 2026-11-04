@@ -7,6 +7,8 @@ read; the Role text is for people. Load this file in the editor with the Load .m
 Page background #FFFFFF, font size 13px.
 
 Files: .py
+Function: ^\s*(?:async\s+)?def\s+(\w+)
+Class: ^\s*class\s+(\w+)
 
 ## Words
 

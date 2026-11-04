@@ -4,7 +4,7 @@ RS.pane('statusbar', function(ctx){
   var cfg = ctx.config, panes = ctx.page.panes, port = ctx.page.port;
   var mode = q('smode'), find = q('sfind'), info = q('sinfo'), state = q('sstate'), srv = q('ssrv'), live = q('slive');
   var menu = q('cfgmenu'), FONTS = ['Consolas', 'Courier New', 'Lucida Console', 'Menlo', 'Monaco', 'monospace'];
-  var up = ctx.linked(), busy = false, said = null;
+  var up = ctx.linked(), busy = false, said = null, monitors = 0;
 
   // ---- find: what can be searched depends on the panes the page has ----
   var has = function(b){ return panes.some(function(p){ return p.block === b; }); };
@@ -43,6 +43,9 @@ RS.pane('statusbar', function(ctx){
   document.addEventListener('click', function(e){      // the menu closes on a click anywhere outside it
     if (!menu.hidden && !e.target.closest('.cfgmenu') && !e.target.closest('.cfgbtn')) menu.hidden = true;
   });
+  q('cfgsrv').onclick = function(e){       // a report server page with a live socket is already open: nothing is opened
+    if (monitors){ e.preventDefault(); menu.hidden = true; say('the report server is already open'); }
+  };
   function changed(){
     var change = {font: q('cfgfont').value, size: +q('cfgsize').value, initials: q('cfginitials').value.trim(),
                   tabwidth: +q('cfgtab').value, linenos: q('cfglines').checked, wrap: q('cfgwrap').checked,
@@ -72,7 +75,7 @@ RS.pane('statusbar', function(ctx){
     onStatus: function(d){
       if (d.stopped){ up = false; srv.textContent = 'rs3 :' + port + ' stopped'; }
       else if (d.lost){ up = false; srv.textContent = d.restarting ? 'rs3 restarting' : 'rs3 :' + port + ' no link'; }
-      else { up = true; srv.textContent = 'rs3 :' + port + (d.pages != null ? ' - ' + d.pages + ' open' : ''); }
+      else { up = true; monitors = d.monitors || 0; srv.textContent = 'rs3 :' + port + (d.pages != null ? ' - ' + d.pages + ' open' : ''); }
       show();
     },
     onBusy: function(d){ busy = !!d.on; show(); },

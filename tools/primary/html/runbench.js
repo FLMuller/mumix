@@ -58,6 +58,7 @@ function selTab(id){
   b.classList.add('active');
   b.scrollIntoView({inline:'nearest', block:'nearest'});
   store('tab', id);
+  findPaint();                              // the matches of the find box, in the tab now shown
 }
 function closeTab(id){
   var s = hiddenSet(); s.add(id); store('hidden', Array.from(s));
@@ -71,6 +72,7 @@ function closeTab(id){
     if (rest.length) selTab(tabIdOf(idx > 0 ? rest[idx-1] : rest[0]));
   }
   buildCombo();
+  document.dispatchEvent(new Event('tabschanged'));      // vcomment.js marks the open files in its tree
 }
 function comboSel(id){
   if (!id) return;
@@ -84,6 +86,7 @@ function comboSel(id){
   selTab(id);
   document.getElementById('tabCombo').selectedIndex = 0;
   buildCombo();
+  document.dispatchEvent(new Event('tabschanged'));
 }
 var holdTimer = null, holdIv = null, didHold = false;
 function holdStart(d){
@@ -510,11 +513,80 @@ function findText(text){
     } else if (badge) badge.remove();
   });
   document.querySelectorAll('table.grid').forEach(applyTable);
-  document.getElementById('findInfo').textContent = findTerm === '' ? '' : total + ' matches';
+  findTotal = total;
+  findPaint();
+}
+// Where the text is, in the tab shown. The matches in its code lines are painted with the CSS
+// Custom Highlight API (::highlight(find), runbench.css): a Range over the text, so a match may run
+// across the colour spans of a line, and the page itself is not changed (the comment editor and the
+// line numbers go on working). The arrows beside the find box, or Enter and Shift+Enter in it, go to
+// the next and the previous match and scroll the code pane there. A browser without the API still
+// gets the counts and the filter of the tables. Case is ignored.
+var findTotal = 0, findHits = [], findAt = -1, FINDMAX = 3000;
+function findRanges(el, term){              // the ranges of term in the text of el
+  var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = [], text = '', n;
+  while ((n = walker.nextNode())){ nodes.push({node: n, at: text.length}); text += n.nodeValue; }
+  var low = text.toLowerCase(), spans = [], at = 0;
+  while ((at = low.indexOf(term, at)) >= 0){ spans.push([at, at + term.length]); at += term.length; }
+  function where(o){                         // the text node holding offset o, and the offset in it
+    for (var i = nodes.length - 1; i >= 0; i--) if (nodes[i].at <= o) return [nodes[i].node, o - nodes[i].at];
+    return [nodes[0].node, 0];
+  }
+  return spans.map(function(s){
+    var r = document.createRange(), a = where(s[0]), b = where(s[1] - 1);
+    r.setStart(a[0], a[1]); r.setEnd(b[0], b[1] + 1);
+    return r;
+  });
+}
+function findInfoShow(){
+  var el = document.getElementById('findInfo');
+  if (findTerm === ''){ el.textContent = ''; return; }
+  var here = findHits.length ? (findAt >= 0 ? (findAt + 1) + '/' : '') + findHits.length + ' here, ' : '';
+  el.textContent = here + findTotal + ' matches';
+}
+function findPaint(){
+  findHits = []; findAt = -1;
+  if (window.CSS && CSS.highlights && typeof Highlight !== 'undefined'){
+    CSS.highlights.delete('find'); CSS.highlights.delete('findnow');
+    var panel = document.querySelector('.tpanel.active');
+    if (findTerm !== '' && panel){
+      var els = panel.querySelectorAll('.clines .ln code, .clines .cmt');
+      for (var i = 0; i < els.length && findHits.length < FINDMAX; i++) findHits = findHits.concat(findRanges(els[i], findTerm));
+      if (findHits.length){
+        var all = new Highlight();
+        findHits.forEach(function(r){ all.add(r); });
+        CSS.highlights.set('find', all);
+      }
+    }
+  }
+  findInfoShow();
+}
+function findStep(d){                       // the next (1) or previous (-1) match, scrolled into view
+  if (!findHits.length) return;
+  findAt = (findAt + d + findHits.length) % findHits.length;
+  var r = findHits[findAt];
+  CSS.highlights.set('findnow', new Highlight(r));
+  var box = r.startContainer.parentElement && r.startContainer.parentElement.closest('.clines');
+  if (box) box.scrollTop += r.getBoundingClientRect().top - box.getBoundingClientRect().top - box.clientHeight / 3;
+  findInfoShow();
 }
 document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape'){ var f = document.getElementById('find'); if (f.value){ f.value = ''; findText(''); } }
+  if (e.key === 'Escape'){
+    var f = document.getElementById('find'); if (f.value){ f.value = ''; findText(''); }
+    var m = document.getElementById('cfgmenu'); if (m && !m.hidden) m.hidden = true;
+  }
+  if (e.key === 'Enter' && e.target && e.target.id === 'find'){ e.preventDefault(); findStep(e.shiftKey ? -1 : 1); }
 });
+function findButtons(){                     // the two arrows, made here so every page that has a find box gets them
+  var info = document.getElementById('findInfo');
+  if (!info || document.getElementById('findprev')) return;
+  [['findprev', '&#9664;', 'previous match (Shift+Enter)', -1], ['findnext', '&#9654;', 'next match (Enter)', 1]].forEach(function(b){
+    var el = document.createElement('button');
+    el.id = b[0]; el.className = 'findstep'; el.innerHTML = b[1]; el.title = b[2];
+    el.onclick = function(){ findStep(b[3]); };
+    info.parentNode.insertBefore(el, info);
+  });
+}
 
 // ---- click a block that kept its Markdown to edit it ----
 document.addEventListener('dblclick', function(e){
@@ -747,8 +819,10 @@ function saveComment(pane){
 document.addEventListener('click', function(e){
   var t = e.target;
   if (!t.closest) return;
+  var menu = document.getElementById('cfgmenu');     // the settings menu closes on a click anywhere outside it, in a code pane too
+  if (menu && !menu.hidden && !t.closest('#cfgmenu') && !t.closest('#cfgbtn')) menu.hidden = true;
   var pane = t.closest('.codepane'), a;
-  if (!pane){ if (!t.closest('#cfgmenu') && !t.closest('#cfgbtn')) document.getElementById('cfgmenu').hidden = true; return; }
+  if (!pane) return;
   if (t.closest('.fnbtn')){ pane.querySelector('.funcs').classList.toggle('hid'); return; }
   if (t.closest('.cprev')){ stepComment(pane, -1); return; }
   if (t.closest('.cnext')){ stepComment(pane, 1); return; }
@@ -770,6 +844,7 @@ document.addEventListener('input', function(e){
   pane.saveTimer = setTimeout(function(){ saveComment(pane); }, 600);
 });
 function init(){
+  findButtons();
   applyConfig();
   BOOK[SELF] = {html: document.getElementById('panels').innerHTML, title: document.title};
   setupBook();

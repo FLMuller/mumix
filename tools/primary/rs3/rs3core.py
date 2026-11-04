@@ -122,8 +122,9 @@ def config(msg, S):
 def state(S):
     """What the monitor page shows of the server."""
     pages = [c for c in S['conns'].values() if c['upgraded'] and c['origin'] is not None]
+    monitors = sum(1 for c in pages if (S['pages'].get(c.get('hash')) or {}).get('admin'))     # report server pages with a live socket
     return {'boot': S['boot'], 'pid': os.getpid(), 'port': S['port'], 'started': S['started'],
-            'uptime': time.time() - S['started'], 'pages': len(pages),
+            'uptime': time.time() - S['started'], 'pages': len(pages), 'monitors': monitors,
             'connections': len(S['conns']), 'by': S.get('by'), 'known': len(S['pages']),
             'version': 'rs3 M2 m01.v01'}
 

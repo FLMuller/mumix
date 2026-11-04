@@ -49,7 +49,7 @@ YT = [0.2, 1.1, 1.9, 3.2, 3.9, 5.1]
 
 class b_svgchart(bench):
     BenchName = 'svgchart'
-    BenchVersion = 'M1.0.4'
+    BenchVersion = 'M1.0.6'
     BenchHeader = ''
     sources = SOURCES
 

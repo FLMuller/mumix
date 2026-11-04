@@ -116,7 +116,7 @@ def table(kind):
 
 class b_xlver(bench):
     BenchName = 'xlver'
-    BenchVersion = 'M1.0.14'
+    BenchVersion = 'M1.0.16'
     BenchHeader = ''
     sources = SOURCES
 

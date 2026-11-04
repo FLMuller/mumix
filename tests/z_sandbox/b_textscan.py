@@ -95,7 +95,7 @@ def no_entities(raw):
 
 class b_textscan(bench):
     BenchName = "textscan"
-    BenchVersion = "M1.0.5"
+    BenchVersion = "M1.0.7"
     BenchHeader = ""
     sources = SOURCES
 

@@ -31,7 +31,7 @@ globals().update(load('fields', into={}))          # Fields
 
 class b_fields(bench):
     BenchName = 'fields'
-    BenchVersion = 'M1.0.3'
+    BenchVersion = 'M1.0.5'
     BenchHeader = ''
     sources = SOURCES
 

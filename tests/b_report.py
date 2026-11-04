@@ -58,7 +58,7 @@ def header_of(table):
 
 class b_report(bench):
     BenchName = 'report'
-    BenchVersion = 'M1.0.3'
+    BenchVersion = 'M1.0.5'
     BenchHeader = ''
     sources = SOURCES
 

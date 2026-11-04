@@ -48,7 +48,7 @@ NS = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
 
 class b_mumix(bench):
     BenchName = 'mumix'
-    BenchVersion = 'M1.0.8'
+    BenchVersion = 'M1.0.11'
     BenchHeader = ''
     sources = SOURCES
 

@@ -2,6 +2,7 @@ r"""rs3layout.py -- the layout string of a page: [ftv 70dxh, [serverstatus wx50d
 
     tree = parse(text)            the layout as a tree; LayoutError (a ValueError) says where
     names(tree) -> [loc, ...]     the locators, in order of appearance
+    plain(tree, has_default) -> str   the layout as text with every size a block's own default makes needless left out
     render(tree, html_of) -> str  the page body: html_of is {loc: html of that block}
 
 Grammar
@@ -27,7 +28,7 @@ VERSION  M1 m01.v01 (2026-11-03): first version.
 import html
 import re
 
-__all__ = ['parse', 'names', 'render', 'LayoutError']
+__all__ = ['parse', 'names', 'render', 'plain', 'LayoutError']
 
 TOKEN = re.compile(r'\s*(\[|\]|,|;|[^\s\[\],;]+)')
 LOC = re.compile(r'^[a-z][a-z]*[0-9]*$')
@@ -141,6 +142,33 @@ def names(tree):
     return [loc for sub in tree['items'] for loc in names(sub)]
 
 
+def size_text(size):
+    """The size word of a size: the inverse of size_of."""
+    def one(dim, lead):
+        kind, value, drag = dim
+        base = (f'{value:g}' if kind == 'mm' else lead if value == 1.0 else f'{value:g}f')
+        return base + ('d' if drag else '')
+    return one(size[0], 'w') + 'x' + one(size[1], 'h')
+
+
+def plain(tree, has_default, parent='col'):
+    """The layout as text with the sizes that need not be said left out: a block that has a size of its own for
+    the way it runs (has_default(loc, 'row' | 'col'): a width in a row, a height in a column) needs no `wdxh`, and a
+    group or a block that fills needs no `wxh`. parse(plain(tree, ...)) lays out the same page."""
+    fill = ('fill', 1.0, False)
+    size = tree['size']
+    if tree['kind'] == 'cell':
+        main = size[0] if parent == 'row' else size[1]
+        across = size[1] if parent == 'row' else size[0]
+        needless = main[0] == 'fill' and main[1] == 1.0 and has_default(tree['loc'], parent) and across == fill
+        if size == (fill, fill) or needless:
+            return tree['loc']
+        return tree['loc'] + ' ' + size_text(size)
+    sep = ',' if tree['dir'] == 'row' else ';'
+    text = '[' + sep.join(plain(sub, has_default, tree['dir']) for sub in tree['items']) + ']'
+    return text if size == (fill, fill) else text + ' ' + size_text(size)
+
+
 def style(size, direction):
     """The inline style that a size gives an item in a parent running in `direction`, and
     whether its main edge is draggable. In a row the main size is the width."""
@@ -158,14 +186,15 @@ def render(tree, html_of, parent='col', defaults=None, last=False):
     """The html of a layout. A cell is <div class="cell" data-loc=LOC>; the cells and groups with
     a draggable edge are followed by <div class="drag">. html_of is {loc: html of the block}.
     defaults is {loc: (width mm, height mm)}: what a block has in a row (its width) or in a column (its
-    height) when the layout gives that size no number (`ftv wdxh`, `edit wxhd`), where otherwise it would
-    fill; a number (`ftv 70dxh`) is always the layout's. A block with no size of its own is not in it."""
+    height) when the layout gives that size no number (`ftv`, `ftv wdxh`, `edit`), where otherwise it would
+    fill, and that edge is draggable without a d (the bar goes before a last item, after the others); a number
+    (`ftv 70dxh`) is always the layout's. A block with no size of its own is not in it."""
     size = tree['size']
     if defaults and tree['kind'] == 'cell' and tree['loc'] in defaults:
         given = defaults[tree['loc']][0 if parent == 'row' else 1]
         main = size[0] if parent == 'row' else size[1]
         if given and main[0] == 'fill' and main[1] == 1.0:
-            main = ('mm', float(given), main[2])
+            main = ('mm', float(given), True)                  # a block's own size is draggable: the server puts the bar on its edge
             size = (main, size[1]) if parent == 'row' else (size[0], main)
     flex, drag = style(size, parent)
     if tree['kind'] == 'cell':

@@ -28,7 +28,7 @@ from rs3util import asset, done
 
 __all__ = ['write']
 
-HEIGHT = 42                         # mm: its height in a column when the layout gives none (edit wxhd, not edit wx35d)
+HEIGHT = 42                         # mm: its height in a column when the layout gives none (edit, not edit wx35d)
 IN = ['commentline', 'commentselect', 'closefile', 'withconfig']
 OUT = ['saved', 'notice']
 

@@ -20,6 +20,8 @@ from use import load
 
 __all__ = ['KV', 'TKV']
 
+###FLM why so complicated? just load 'kv','tkv' and creste the two stores?
+###FLM or, as kv tkv are syblings, from kv import kv. simplify.
 kvnames = load('kv', into={})
 tkvnames = load('tkv', into={})
 KV = kvnames['kv']

@@ -53,7 +53,7 @@ globals().update(load('kv', into={}))  # kv, kvr, kvw, KvError, KvSparseDimMisma
 class b_kv(bench):
     # -- identity and tuning ------------------------------------------------
     BenchName    = "kv"                   # runbench overwrites from the class name
-    BenchVersion = "M1.0.11"               # set ONCE; runbench auto-ticks the 3rd field
+    BenchVersion = "M1.0.14"               # set ONCE; runbench auto-ticks the 3rd field
     BenchHeader  = ""                     # runbench fills this from the CLI message
     sources      = SOURCES
     NKeys        = 100                    # leaf keys and sparse keys in each bench store

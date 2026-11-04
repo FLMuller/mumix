@@ -1,0 +1,80 @@
+2026-11-03 14:52:14 started, pid 7704, port 47652, by -c, verbs ['config', 'ping']
+2026-11-03 14:53:25 refused handshake from 127.0.0.1: 'GET /index.html HTTP/1.1' origin None host '127.0.0.1:47652'
+2026-11-03 14:55:30 refused handshake from 127.0.0.1: 'GET /index.html HTTP/1.1' origin None host '127.0.0.1:47652'
+2026-11-03 14:55:42 stop requested by claude cli-test, pid 7704
+2026-11-03 14:55:47 started, pid 42900, port 47652, by -c, verbs ['config', 'ping']
+2026-11-03 15:00:08 stop requested by claude restart for step 2, pid 42900
+2026-11-03 15:00:10 started, pid 33324, port 47652, by -c, verbs ['config', 'list', 'ping', 'tree']
+2026-11-03 15:00:46 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-03 15:01:50 stop requested by claude restart for vcomment verbs, pid 33324
+2026-11-03 15:01:53 started, pid 3392, port 47652, by b_rs2, verbs ['check', 'config', 'insert', 'list', 'open', 'ping', 'tree', 'update']
+2026-11-03 15:01:53 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-03 15:02:08 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-03 15:02:08 refused: check: not a file inside the repository
+2026-11-03 15:02:08 refused: open: ../../../x.py is not a file inside C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix
+2026-11-03 15:02:08 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-1 now 1 lines
+2026-11-03 15:02:08 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 1 lines
+2026-11-03 15:02:09 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 0 lines
+2026-11-03 15:02:09 refused: edit: the file has changed since the page read it
+2026-11-03 15:04:12 stop requested by claude restart for the relay, pid 3392
+2026-11-03 15:04:15 started, pid 44488, port 47652, by b_rs2, verbs ['check', 'config', 'insert', 'list', 'load', 'open', 'ping', 'snap', 'tree', 'trigger', 'update']
+2026-11-03 15:04:15 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-03 15:04:16 refused: check: not a file inside the repository
+2026-11-03 15:04:16 refused: open: ../../../x.py is not a file inside C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix
+2026-11-03 15:04:16 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-1 now 1 lines
+2026-11-03 15:04:16 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 1 lines
+2026-11-03 15:04:16 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 0 lines
+2026-11-03 15:04:16 refused: edit: the file has changed since the page read it
+2026-11-03 15:56:13 stop requested by claude restart for path addressing, pid 44488
+2026-11-03 15:56:16 started, pid 34404, port 47652, by b_rs2, verbs ['check', 'config', 'hello', 'insert', 'list', 'load', 'open', 'ping', 'snap', 'tree', 'trigger', 'update']
+2026-11-03 15:56:16 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-03 15:56:16 refused: check: not a file inside the repository
+2026-11-03 15:56:16 refused: open: ../../../x.py is not a file inside C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix
+2026-11-03 15:56:16 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-1 now 1 lines
+2026-11-03 15:56:16 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 1 lines
+2026-11-03 15:56:16 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 0 lines
+2026-11-03 15:56:16 refused: edit: the file has changed since the page read it
+2026-11-03 15:58:28 stop requested by claude restart for hashes of paths, pid 34404
+2026-11-03 15:58:31 started, pid 47764, port 47652, by b_rs2, verbs ['check', 'config', 'hello', 'insert', 'list', 'load', 'open', 'ping', 'snap', 'tree', 'trigger', 'update']
+2026-11-03 15:58:31 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-03 15:58:32 refused: check: not a file inside the repository
+2026-11-03 15:58:32 refused: open: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\no\such.py is not a file inside C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix
+2026-11-03 15:58:32 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-1 now 1 lines
+2026-11-03 15:58:32 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 1 lines
+2026-11-03 15:58:32 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 0 lines
+2026-11-03 15:58:32 refused: edit: the file has changed since the page read it
+2026-11-03 16:01:02 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-03 16:01:02 refused: check: not a file inside the repository
+2026-11-03 16:01:02 refused: open: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\no\such.py is not a file inside C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix
+2026-11-03 16:01:03 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-1 now 1 lines
+2026-11-03 16:01:03 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 1 lines
+2026-11-03 16:01:03 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 0 lines
+2026-11-03 16:01:03 refused: edit: the file has changed since the page read it
+2026-11-03 22:07:19 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-03 22:07:19 refused: check: not a file inside the repository
+2026-11-03 22:07:19 refused: open: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\no\such.py is not a file inside C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix
+2026-11-03 22:07:19 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-1 now 1 lines
+2026-11-03 22:07:19 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 1 lines
+2026-11-03 22:07:19 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 0 lines
+2026-11-03 22:07:19 refused: edit: the file has changed since the page read it
+2026-11-03 23:50:11 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-03 23:50:11 refused: check: not a file inside the repository
+2026-11-03 23:50:11 refused: open: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\no\such.py is not a file inside C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix
+2026-11-03 23:50:11 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-1 now 1 lines
+2026-11-03 23:50:11 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 1 lines
+2026-11-03 23:50:11 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 0 lines
+2026-11-03 23:50:11 refused: edit: the file has changed since the page read it
+2026-11-04 09:13:01 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-04 09:13:01 refused: check: not a file inside the repository
+2026-11-04 09:13:01 refused: open: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\no\such.py is not a file inside C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix
+2026-11-04 09:13:01 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-1 now 1 lines
+2026-11-04 09:13:01 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 1 lines
+2026-11-04 09:13:01 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 0 lines
+2026-11-04 09:13:01 refused: edit: the file has changed since the page read it
+2026-11-04 10:57:20 post: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\.rsposts\snap1.svg 53 bytes
+2026-11-04 10:57:20 refused: check: not a file inside the repository
+2026-11-04 10:57:20 refused: open: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\no\such.py is not a file inside C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix
+2026-11-04 10:57:20 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-1 now 1 lines
+2026-11-04 10:57:20 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 1 lines
+2026-11-04 10:57:20 edit: C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\results\rs2_t\sample.py lines 2-2 now 0 lines
+2026-11-04 10:57:20 refused: edit: the file has changed since the page read it

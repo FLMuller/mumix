@@ -18,6 +18,7 @@ from rs3util import asset, done
 
 __all__ = ['write']
 
+HEIGHT = 62                         # mm: its height in a column when the layout gives none: all its rows and its buttons, with no scroll bar
 IN = ['status']
 OUT = []
 

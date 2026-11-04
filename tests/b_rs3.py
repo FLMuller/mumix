@@ -21,6 +21,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.parse
 
 
 def findtools():                      # walk up to the folder that holds tools/
@@ -178,6 +179,38 @@ class b_rs3(bench):
         self.assertIn('aDOM', text)                               # the doc script has its own element
         self.assertNotIn('@@', text)
 
+    def test_T5b_a_page_of_paths_has_an_address_that_makes_it_again_with_nothing_kept(self):
+        layout = '[ftv wdxh, [toptabs ; [methods wdxh, [code ; edit wxhd]]]]'
+        blocks = {'ftv': ['ftv'], 'toptabs': ['toptabs', './mumix/tools/primary/rs3.py', './mumix/tests/b_rs3.py'],
+                  'methods': ['methods'], 'code': ['code'], 'edit': ['editbox']}
+        got = rs3.contactRS('load', layout, blocks, '', False)
+        self.assertTrue(got['ok'], got)
+        self.assertTrue(got['path'].startswith('/?layout='), got['path'])
+        self.assertEqual(got['path'].count('toptabs='), 1)                             # all of a block's paths in one value
+        self.assertIn('toptabs=mumix/{tools/primary/rs3.py,tests/b_rs3.py}', got['path'])   # the common folder once
+        many = {'toptabs': ['toptabs', './mumix/tools/primary/rs3.py', './mumix/tools/primary/rs3comment.py', './mumix/tools/primary/rs3files.py',
+                            './mumix/tests/b_rs3.py']}
+        folded = rs3.contactRS('load', '[toptabs wxh]', many, '', False)['path']
+        self.assertEqual(folded.count('toptabs='), 1)
+        self.assertEqual(folded.count('tools/primary'), 1)                             # the folder, and the stem rs3, written once
+        self.assertLess(len(folded), 160)                                              # (four paths of ~35 characters)
+        again = web('GET', folded)[2]
+        self.assertIn('data-open="[&quot;./mumix/tools/primary/rs3.py&quot;, &quot;./mumix/tools/primary/rs3comment.py&quot;, '
+                      '&quot;./mumix/tools/primary/rs3files.py&quot;, &quot;./mumix/tests/b_rs3.py&quot;]"', again)   # the paths as they were
+        odd = rs3.contactRS('load', '[toptabs wxh]', {'toptabs': ['toptabs', './mumix/a,b.py', './mumix/c.py']}, '', False)
+        self.assertTrue(odd['path'].startswith('/page/'), odd['path'])               # a path with a comma has no address form
+        self.assertIn('block.edit=editbox', got['path'])                              # a block not named like its locator
+        status, head, text = web('GET', got['path'])
+        self.assertEqual(status, 200)
+        self.assertEqual(re.findall(r'data-loc="(\w+)"', text), ['ftv', 'toptabs', 'methods', 'code', 'edit', 'statusbar'])
+        self.assertIn('data-open="[&quot;./mumix/tools/primary/rs3.py&quot;', text)    # its data arrived
+        self.assertIn('<title>ftv + toptabs + methods + code + edit - rs3.py</title>', text)   # a title from the address
+        self.assertEqual(web('GET', '/?layout=%5Bdoc')[0], 500)                    # a layout that does not parse
+        self.assertEqual(web('GET', '/?title=x')[0], 500)                               # no layout
+        self.assertTrue(rs3.contactRS('load', '[doc wxh', {}, '', False)['ok'] is False)
+        html = rs3.contactRS('load', '[doc wxh]', {'doc': ['doc', '', '', '<p>x</p>']}, 't', False)
+        self.assertTrue(html['path'].startswith('/page/'), html['path'])             # html is not for an address: a kept page
+
     def test_T6_a_static_page_given_whole_is_taken_apart_and_its_parts_collated(self):
         whole = '<html><style>.a{x:1}</style><div>one</div><script>alert(1)</script></html>'
         got = rs3.contactRS('load', '[doc wxh]', {'doc': ['doc', '', '', whole]}, 'whole', False)
@@ -217,7 +250,7 @@ class b_rs3(bench):
             text = web('GET', got['path'])[2]
             return dict(re.findall(r'data-loc="(\w+)" style="([^"]*)"', text))
         got = cells('[ftv wdxh, [doc wxh ; methods wxh]]')
-        self.assertIn('flex:0 0 50mm', got['ftv'])                       # no number: the block's own 50 mm
+        self.assertIn('flex:0 0 75mm', got['ftv'])                       # no number: the block's own 75 mm
         self.assertIn('flex:1 1 0', got['doc'])                          # a block with none of its own fills
         self.assertIn('flex:0 0 70mm', cells('[ftv 70dxh, [doc wxh]]')['ftv'])    # a number is the layout's
         self.assertIn('flex:0 0 30mm', cells('[ftv 30xh, [doc wxh]]')['ftv'])
@@ -238,6 +271,120 @@ class b_rs3(bench):
         found = re.findall(r'data-loc="(\w+)"', text)
         self.assertEqual(found, ['ftv', 'serverstatus', 'log', 'statusbar'])
         self.assertEqual((text.count('<style'), text.count('<script')), (1, 1))
+
+    def test_T10a_page_reportserver_with_any_text_is_the_same_monitor_page(self):
+        want = web('GET', '/reportserver')[2]
+        for tail in ('/?reportserver', '/?reportserver=1', '/?reportserver&anything=at_all'):
+            status, head, text = web('GET', tail)
+            self.assertEqual(status, 200, tail)
+            self.assertEqual(re.findall(r'data-loc="(\w+)"', text), ['ftv', 'serverstatus', 'log', 'statusbar'], tail)
+            self.assertIn('"address": "/reportserver"', text.replace('":"', '": "'), tail)     # the same page, the same address
+        before = rs3.contactRS('status')['status']['monitors']
+        page = FakePage('/?reportserver=whatever')
+        try:
+            self.assertEqual(rs3.contactRS('status')['status']['monitors'], before + 1)     # and it is the admin page
+        finally:
+            page.close()
+
+    def test_T5c_an_address_leaves_out_the_sizes_the_blocks_have_of_their_own(self):
+        full = '[ftv wdxh, [toptabs ; [methods wdxh, [code ; editbox wxhd]]]]'
+        got = rs3.contactRS('load', full, {'toptabs': ['toptabs', './mumix/tools/primary/rs3.py'], 'editbox': ['editbox']}, '', False)
+        self.assertTrue(got['ok'], got)
+        url = urllib.parse.unquote(got['url'])
+        self.assertIn('layout=[ftv,[toptabs;[methods,[code;editbox]]]]', url)       # no wdxh, wxhd, wxh
+        self.assertNotIn('wxh', url.split('&')[0])
+        text = web('GET', got['path'])[2]
+        again = web('GET', rs3.contactRS('load', '[ftv, [toptabs ; [methods, [code ; editbox]]]]', {'toptabs': ['toptabs', './mumix/tools/primary/rs3.py'], 'editbox': ['editbox']}, '', False)['path'])[2]
+        self.assertEqual(re.findall(r'class="drag[^"]*"|flex:[^;"]*;', text), re.findall(r'class="drag[^"]*"|flex:[^;"]*;', again))
+        sized = rs3.contactRS('load', '[ftv 70dxh, [doc wxh ; doc2 wx30d]]', {'doc': ['doc', '', '', '<p>a</p>']}, '', False)
+        self.assertTrue(sized['ok'], sized)                                              # (html data: a hash page, nothing to shorten)
+        kept = rs3.contactRS('load', '[ftv 70dxh, [code ; editbox wx30d]]', {}, '', False)['url']
+        self.assertIn('ftv_70dxh', kept)                                                # a size that is not the default stays
+        self.assertIn('editbox_wx30d', kept)
+
+    def test_T5g_the_paths_of_an_address_start_at_the_root_without_a_dot_slash(self):
+        got = rs3.contactRS('load', '[toptabs ; code]', {'toptabs': ['toptabs', './mumix/tools/primary/rs3.py']}, '', False)
+        self.assertIn('toptabs=mumix/tools/primary/rs3.py', got['path'])
+        self.assertNotIn('./', got['path'])
+        for written in ('mumix/tools/primary/rs3.py', './mumix/tools/primary/rs3.py'):    # either is read
+            text = web('GET', f'/?layout=[toptabs;code]&toptabs={written}')[2]
+            self.assertIn('data-open="[&quot;./mumix/tools/primary/rs3.py&quot;]"', text)
+            text = web('GET', f'/?layout=[toptabs;code]&toptabs={written}')[2]
+            self.assertIn('data-open="[&quot;./mumix/tools/primary/rs3.py&quot;]"', text)
+        mixed = rs3.contactRS('load', '[toptabs ; code]', {'toptabs': ['toptabs', './mumix/a,b.py', './mumix/c.py']}, '', False)
+        self.assertTrue(mixed['ok'], mixed)
+
+    def test_T5d_a_wildcard_in_a_file_name_opens_the_files_it_matches_when_the_page_is_built(self):
+        panes = './mumix/tools/primary/rs3/panes/'
+        got = rs3.contactRS('load', '[toptabs ; code]', {'toptabs': ['toptabs', panes + 'pane_s*.js', panes + 'pane_toptabs.?s*']}, '', False)
+        self.assertTrue(got['ok'], got)
+        self.assertIn('pane_s*.js', urllib.parse.unquote(got['url']))                  # the address keeps the wildcard
+        text = web('GET', got['path'])[2]
+        shown = re.search(r'data-open="([^"]*)"', text).group(1).replace('&quot;', '"')
+        opened = json.loads(shown)
+        self.assertEqual(opened, [panes + 'pane_search.js', panes + 'pane_serverstatus.js', panes + 'pane_statusbar.js',
+                                  panes + 'pane_toptabs.css', panes + 'pane_toptabs.js'])                          # by name; ? and * both work
+        none = rs3.contactRS('load', '[toptabs ; code]', {'toptabs': ['toptabs', panes + 'no_such_*.xyz']}, '', False)
+        self.assertEqual(json.loads(re.search(r'data-open="([^"]*)"', web('GET', none['path'])[2]).group(1).replace('&quot;', '"')), [])
+        out = rs3.contactRS('load', '[toptabs ; code]', {'toptabs': ['toptabs', './mumix/../*.py', './mumix/tools/*/.git*']}, '', False)
+        self.assertTrue(out['ok'], out)                                                # nothing outside the root, or hidden, is matched
+
+    def test_T10c_every_page_has_the_seven_dot_ring_in_orange_on_nothing_as_its_icon(self):
+        for address in ('/reportserver', '/code/' + self.rel[2:]):
+            text = web('GET', address)[2]
+            found = re.search(r'<link rel="icon" type="image/svg\+xml" href="(data:image/svg\+xml,[^"]+)"', text)
+            self.assertTrue(found, address)
+            svg = urllib.parse.unquote(found.group(1).split(',', 1)[1])
+            self.assertEqual(svg.count('<circle'), 7)
+            self.assertIn('#d35400', svg)                                              # the deep orange of the footer's line
+            self.assertNotIn('opacity', svg)                                           # all seven the same
+            self.assertNotIn('<rect', svg)                                             # no background: it is transparent
+
+    def test_T5e_double_star_goes_down_through_the_folders_and_a_folder_name_may_have_a_wildcard(self):
+        base = './mumix/tools/primary/rs3'
+
+        def opened(*patterns):
+            got = rs3.contactRS('load', '[toptabs ; code]', {'toptabs': ['toptabs', *patterns]}, '', False)
+            self.assertTrue(got['ok'], got)
+            shown = re.search(r'data-open="([^"]*)"', web('GET', got['path'])[2]).group(1).replace('&quot;', '"')
+            return json.loads(shown)
+        deep = opened(base + '/**/*.js')
+        self.assertIn(base + '/html/manager.js', deep)                                  # a folder below
+        self.assertIn(base + '/panes/pane_log.js', deep)
+        self.assertNotIn(base + '/rs3core.py', deep)                                    # not a .js
+        every = opened(base + '/**')
+        self.assertIn(base + '/rs3core.py', every)                                      # a trailing ** is every file below
+        self.assertIn(base + '/panes/pane_log.css', every)
+        self.assertFalse([path for path in every if '__pycache__' in path or path.endswith('.pyc')])
+        self.assertLess(every.index(base + '/rs3core.py'), every.index(base + '/panes/pane_log.css'))   # a folder's files, then its folders
+        among = opened(base + '/pa*/pane_log.*')
+        self.assertEqual(among, [base + '/panes/pane_log.css', base + '/panes/pane_log.js', base + '/panes/pane_log.py'])
+        self.assertEqual(opened(base + '/*/../*.py'), [])                               # no .. in a pattern
+
+    def test_T5f_braces_in_a_wildcard_pick_the_kinds_of_file(self):
+        base = './mumix/tools/primary/rs3'
+        got = rs3.contactRS('load', '[toptabs ; code]', {'toptabs': ['toptabs', base + '/**/*.{py,md}']}, '', False)
+        self.assertTrue(got['ok'], got)
+        self.assertIn('/?layout=', got['url'])                                             # an address, not a kept page
+        shown = re.search(r'data-open="([^"]*)"', web('GET', got['path'])[2]).group(1).replace('&quot;', '"')
+        opened = json.loads(shown)
+        self.assertIn(base + '/rs3core.py', opened)
+        self.assertIn(base + '/SIGNALS.md', opened)
+        self.assertEqual({path.rsplit('.', 1)[1] for path in opened}, {'py', 'md'})
+
+    def test_T10b_status_counts_the_report_server_pages_with_a_live_socket_so_the_menu_link_can_leave_the_page_as_it_is(self):
+        before = rs3.contactRS('status')['status']['monitors']
+        page = FakePage('/reportserver')
+        try:
+            self.assertEqual(rs3.contactRS('status')['status']['monitors'], before + 1)
+        finally:
+            page.close()
+        deadline = time.time() + 3
+        while rs3.contactRS('status')['status']['monitors'] != before and time.time() < deadline:
+            time.sleep(0.1)
+        self.assertEqual(rs3.contactRS('status')['status']['monitors'], before)
+        text = web('GET', '/reportserver')[2]
+        self.assertIn('href="/reportserver" target="_blank"', text)          # the menu link opens a new tab
 
     def test_T11_view_makes_a_viewer_page_for_one_file_and_refuses_others(self):
         got = rs3.contactRS('view', self.rel, False)
@@ -314,6 +461,27 @@ class b_rs3(bench):
             self.assertIn('<span class="r-keyword">def</span>', text)       # its code, coloured by the python lang file
             self.assertIn('class="cm"', text)                               # the comment thread between the blocks
             self.assertRegex(text, r'id="L13" data-n="13"')                 # the table, after the comment
+            self.assertIn('<span class="r-number">1</span></td>', text)    # the numbers of its text have the number colour
+            self.assertIn('<td align="center"><span class="r-number">2</span></td>', text)    # a column of numbers is centred
+            self.assertNotIn('<h1><span', text)                             # (a heading keeps its own look)
+        finally:
+            page.close()
+
+    def test_T13f_a_column_of_numbers_is_centred_unless_an_alignment_is_written_and_the_rest_is_left(self):
+        path = os.path.join(self.folder, 'align.md')
+        with open(path, 'w', encoding='utf-8', newline='') as f:
+            f.write('| name | n | w | mixed | blank |\n|:--|---|--:|---|---|\n| a | 10 | 7 | 5 | 1.5 |\n| b | 20 | 8 | x | |\n')
+        rel = rel_of(path)
+        page = FakePage(rs3.contactRS('view', rel, False)['path'])
+        try:
+            text = page.ask({'do': 'open', 'hash': page.hash, 'path': rel})['html']
+            self.assertIn('<th align="center">n</th>', text)                  # a column of numbers: header and cells centred
+            self.assertIn('<td align="center"><span class="r-number">10</span></td>', text)
+            self.assertIn('<td align="right"><span class="r-number">7</span></td>', text)    # written --: kept
+            self.assertIn('<td align="left">a</td>', text)                    # written :--: kept
+            self.assertNotIn('align="center">x', text)                        # a column that is not all numbers: left
+            self.assertNotIn('<th align="center">mixed', text)
+            self.assertIn('<td align="center"><span class="r-number">1.5</span></td>', text)  # a blank cell does not count against
         finally:
             page.close()
 
@@ -346,6 +514,19 @@ class b_rs3(bench):
             self.assertNotRegex(text, r'id="L3" data-n="3"')               # the second text line shares row 2's block
         finally:
             page.close()
+
+    def test_T5a_a_tab_strip_holds_the_sections_of_a_static_page_and_collates_their_style(self):
+        sections = [['Summary', '<style>.sum{color:red}</style><p class="sum">all well</p>'], ['Failures', '<table><tr><td>x</td></tr></table>', True]]
+        got = rs3.contactRS('load', '[toptabs wxh]', {'toptabs': ['toptabs', *sections]}, 'report', False)
+        self.assertTrue(got['ok'], got)
+        text = web('GET', got['path'])[2]
+        self.assertEqual((text.count('<style'), text.count('<script')), (1, 1))      # still one of each
+        self.assertIn('.sum{color:red}', text)                                       # the section's style, collated
+        self.assertEqual(text.count('<template class="ttsec"'), 2)
+        self.assertIn('data-title="Summary">', text)
+        self.assertIn('data-title="Failures" data-bad="1">', text)                   # the red one
+        self.assertIn('<p class="sum">all well</p>', text)
+        self.assertNotIn('<style>.sum', text.split('<template', 1)[1])               # (taken out of the section itself)
 
     def test_T13a_a_markdown_file_is_shown_as_md2htm_formats_it_headings_and_tables(self):
         rel = './mumix/tools/primary/rs3/SIGNALS.md'
@@ -517,7 +698,9 @@ class b_rs3(bench):
             self.assertNotIn('RS.selftest()', web('GET', path)[2])
 
     # ---- restart last: it ends this server and a new one takes the port --------------------------------
-    def test_T99_restart_gives_a_new_boot_and_the_port_answers_again(self):
+    def test_T99_restart_gives_a_new_boot_and_the_port_answers_again_and_a_loaded_page_survives_it(self):
+        made = rs3.contactRS('load', '[doc wxh]', {'doc': ['doc', '', '', '<p>it survives</p>']}, 'a survivor', False)
+        self.assertTrue(made['ok'], made)
         was = rs3.contactRS('ping')['boot']
         self.assertTrue(rs3.contactRS('restart')['ok'])
         end = time.time() + 15
@@ -527,6 +710,10 @@ class b_rs3(bench):
             got = rs3.contactRS('ping', timeout=1.0)
             now = got.get('boot', was) if got.get('ok') else was
         self.assertNotEqual(now, was)
+        status, head, text = web('GET', made['path'])                  # the new server builds the page again from its kept spec
+        self.assertEqual(status, 200)
+        self.assertIn('it survives', text)
+        self.assertIn('a survivor', text)
 
     def bench_ping(self, timer):
         with timer as test:

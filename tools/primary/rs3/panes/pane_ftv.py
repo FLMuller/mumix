@@ -30,7 +30,7 @@ from rs3util import asset, done
 
 __all__ = ['write']
 
-WIDTH = 50                          # mm: its width in a row when the layout gives none (ftv wdxh, not ftv 70dxh)
+WIDTH = 75                          # mm: its width in a row when the layout gives none (ftv, not ftv 70dxh)
 IN = ['openfile', 'closefile', 'searchtext']
 OUT = ['openfile', 'closefile', 'showpane']
 

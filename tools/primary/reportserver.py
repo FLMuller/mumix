@@ -1,11 +1,25 @@
 r"""reportserver.py -- the report server: a small websocket daemon that lets an open report list
 and load the other reports of its series. One process, no threads, asleep until a byte arrives.
 
-    from reportserver import ensure_bats, start, running, token
+    from reportserver import ensure, start, stop, status, running, token
     running()                  # 'ours', 'other' (the port is used by something else) or None
-    print(start())             # 'report server: started (pid 123)' or 'report server: running'
+    ensure('runbench')         # what a program calls: nothing if it runs, else the bat opens
+    print(start('claude 2026-11-03-01;43;12'))   # 'report server: started (pid 123)' or 'running'
     python reportserver.py     # run the server itself, in this process (the daemon runs this)
-    python reportserver.py --start | --stop    # start the daemon (one only) | stop it
+    python reportserver.py --start --by BY | --stop --by BY | --status | --register FOLDER
+                               # start the daemon (one only) | stop it | say how it is |
+                               # let it read the reports in FOLDER
+
+Who. Every start and stop says who asked, BY, and the server's log keeps it: "started, pid 123,
+    port 47651, by claude 2026-11-03-01;43;12" and "stop requested by ...". BY is 1 to 60 of
+    letters, digits, space and . _ - : ; (the bat's own label is a name and its opening time).
+    The server cannot log its own death (Windows ends it at once), so stop() logs first.
+The bat. The one way a person meets the server is .claude/vscripts/reportserver.bat: a window
+    with the status, a prompt and the log beside it. A program that needs the server calls
+    ensure(by): nothing is done if it runs, else the bat is opened (os.startfile, a window the
+    user can see) with --by BY --start, which starts the daemon. ensure(by, visible=False) runs
+    the bat with --hidden instead: no window at all. A port or files that are not the default
+    ones (a test) start the daemon directly. bat_path() says where the bat is, '' if missing.
 
 The daemon
     start() launches the server detached and without a window (pythonw), at below-normal
@@ -28,16 +42,27 @@ What a page may ask (a websocket to ws://127.0.0.1:PORT, one JSON text message e
     that must be in the directory listing of that folder and have the asker's series name; it
     may be of any age.
 
-register(folder) adds a folder to reportserver.roots (once). write_bats(folder) writes
-reportserver.bat (start the daemon; prints started / already running) and
-reportserver_stop.bat there, with this Python and this file by absolute path, and returns the
-path of the first. prepare(folder) does both and returns that path.
+Extension verbs (2026-11-01, for vcomment): reportserver.handlers, beside reportserver.roots,
+names modules (one a line, importable from this folder) that each define
+handler(S, msg, root, name, log) -> reply text or None. They are asked after the settings and
+before the report verbs; None leaves the message to the report server. vcserver.py is one.
+
+register(folder) adds a folder to reportserver.roots (once). prepare(folder) does that and returns
+bat_path(), which the pages show when the server is not running.
+
+status(...) -> {state, pid, since, port, roots, last}: state 'ours', 'other' or None; pid from the
+pid file and since its time (the server writes it when it starts); roots the number of
+registered folders; last the last line of the log.
+
+VERSION  M1 m01.v01 (2026-11-03): who asked (BY) in the log, status(), ensure() and the bat in
+         .claude/vscripts instead of the two bats this module used to write (write_bats is gone).
 """
 import atexit
 import ast
 import base64
 import hashlib
 import html
+import importlib
 import json
 import os
 import re
@@ -56,8 +81,8 @@ from use import load
 
 load('marked')                       # md2htm, compiled: use finds marked.pyx beside this file
 
-__all__ = ['PORT', 'token', 'unpack', 'running', 'start', 'register', 'write_bats', 'prepare',
-           'main']
+__all__ = ['PORT', 'token', 'unpack', 'running', 'start', 'stop', 'status', 'ensure',
+           'bat_path', 'register', 'prepare', 'main']
 
 PORT = 47651
 HOST = '127.0.0.1'
@@ -74,6 +99,7 @@ WAKE = 60                           # seconds the select sleeps at most
 LOG_MAX = 100 * 1024
 NAME = re.compile(r'^(?P<stem>[A-Za-z0-9_.\-]{1,60})_(?P<when>\d{4}\.\d\d\.\d\d_\d\d;\d\d'
                   r'(?:\.\d\d)?[a-z]{0,2})\.html$')           # the minute, seconds, then a, b ... zz
+BY = re.compile(r'^[A-Za-z0-9 _.;:\-]{1,60}$')       # who asked: safe in a log line and a command
 SHELL = re.compile(r'<!--SHELL:BEGIN-->(.*?)<!--SHELL:END-->', re.S)
 TITLE = re.compile(r'<title>(.*?)</title>', re.S)
 
@@ -129,6 +155,35 @@ def roots(S):
 def refuse(S, why):
     log(S, 'refused: ' + why)
     return '[]'
+
+
+HANDLERS = []                                       # see handlers()
+
+
+def handlers(S):
+    """The extension verbs: functions handler(S, msg, root, name, log) -> reply text, or None
+    when the message is not theirs. They come from the modules named in the .handlers file beside
+    the roots file (one module name a line, importable from this folder; the file is read again
+    when it changes). A page of another program (vcomment) is answered by its own module, after
+    the settings and before the report verbs; a module that fails to load is logged and left out."""
+    path = os.path.splitext(S['roots_file'])[0] + '.handlers'
+    try:
+        stamp = os.path.getmtime(path)
+    except OSError:
+        stamp = None
+    if stamp != S.get('handlers_stamp'):
+        S['handlers_stamp'] = stamp
+        HANDLERS.clear()
+        if stamp is not None:
+            with open(path, encoding='utf-8') as f:
+                for line in f:
+                    name = line.strip()
+                    try:
+                        if name:
+                            HANDLERS.append(importlib.import_module(name).handler)
+                    except Exception:
+                        log(S, f'handler module {name} failed to load:\n' + traceback.format_exc())
+    return HANDLERS
 
 
 # ---- the settings and the comment editor -----------------------------------------------------
@@ -332,6 +387,14 @@ def reply_for(S, text):
         return refuse(S, 'the asker is in no registered folder')
     if 'config' in msg:
         return config_reply(S, msg['config'])
+    for handler in handlers(S):
+        try:
+            answer = handler(S, msg, root, name, lambda text: log(S, text))
+        except Exception:
+            log(S, 'handler failed:\n' + traceback.format_exc())
+            return '[]'
+        if answer is not None:
+            return answer
     if msg.get('check'):
         return check_reply(S, msg, root, name)
     if msg.get('update') or msg.get('insert'):
@@ -562,8 +625,9 @@ def lower_priority():
             pass
 
 
-def run(port, roots_file, log_file, pid_file):
-    """The server itself. Exit code 3 if the port is taken (one is running)."""
+def run(port, roots_file, log_file, pid_file, by='foreground'):
+    """The server itself. Exit code 3 if the port is taken (one is running). by is who asked
+    for it (start() says), and goes in the log."""
     listener = bind(port)
     if listener is None:
         return 3
@@ -574,7 +638,7 @@ def run(port, roots_file, log_file, pid_file):
     with open(pid_file, 'w') as f:
         f.write(str(os.getpid()))
     atexit.register(lambda: os.path.isfile(pid_file) and os.remove(pid_file))
-    log(S, f'started, pid {os.getpid()}, port {port}')
+    log(S, f'started, pid {os.getpid()}, port {port}, by {by}')
     while True:
         try:
             serve(S, listener)
@@ -614,8 +678,18 @@ def files():
     return tuple(os.path.join(folder, 'reportserver.' + kind) for kind in ('roots', 'log', 'pid'))
 
 
-def start(port=PORT, roots_file=None, log_file=None, pid_file=None):
-    """Start the daemon unless one is running. Returns one line saying what happened."""
+def check_by(by):
+    """The label of who asked, or ValueError: see BY."""
+    if not isinstance(by, str) or not BY.match(by):
+        raise ValueError(f'reportserver: by must be 1 to 60 of letters, digits, space and '
+                         f'. _ - : ; (got {by!r})')
+    return by
+
+
+def start(by, port=PORT, roots_file=None, log_file=None, pid_file=None):
+    """Start the daemon unless one is running. by is who asks (the log keeps it). Returns one
+    line saying what happened."""
+    check_by(by)
     state = running(port)
     if state == 'ours':
         return 'report server: running'
@@ -623,7 +697,7 @@ def start(port=PORT, roots_file=None, log_file=None, pid_file=None):
         return f'report server: port {port} is used by another program; not started'
     default = files()
     args = [os.path.abspath(__file__), '--port', str(port), '--roots', roots_file or default[0],
-            '--log', log_file or default[1], '--pid', pid_file or default[2]]
+            '--log', log_file or default[1], '--pid', pid_file or default[2], '--by', by]
     exe = sys.executable
     if os.name == 'nt':
         windowless = os.path.join(os.path.dirname(exe), 'pythonw.exe')
@@ -643,8 +717,11 @@ def start(port=PORT, roots_file=None, log_file=None, pid_file=None):
     return 'report server: started, but not answering yet (see reportserver.log)'
 
 
-def stop(pid_file=None, port=PORT):
-    """Stop the daemon named in the pid file. Returns one line."""
+def stop(by, pid_file=None, port=PORT, log_file=None):
+    """Stop the daemon named in the pid file. by is who asks: the log says so before the
+    server goes, since Windows ends it at once and it cannot log its own death. Returns one
+    line."""
+    check_by(by)
     pid_file = pid_file or files()[2]
     try:
         with open(pid_file) as f:
@@ -654,6 +731,7 @@ def stop(pid_file=None, port=PORT):
     if running(port) != 'ours':
         os.remove(pid_file)
         return 'report server: not running (stale pid file removed)'
+    log({'log': log_file or files()[1]}, f'stop requested by {by}, pid {pid}')
     try:
         os.kill(pid, signal.SIGTERM)
     except OSError as error:
@@ -676,57 +754,129 @@ def register(folder, roots_file=None):
     return True
 
 
-def write_bats(folder):
-    """reportserver.bat and reportserver_stop.bat in folder; the path of the first."""
-    script = os.path.abspath(__file__)
-    python = sys.executable
-    for name, flag, what in (('reportserver.bat', '--start', 'Start the report server'),
-                             ('reportserver_stop.bat', '--stop', 'Stop the report server')):
-        text = (f'@echo off\r\nrem {what} (one only runs). Written by runbench2.\r\n'
-                f'rem To start it at every logon: schtasks /create /sc onlogon /tn reportserver '
-                f'/tr "\\"{python}\\" \\"{script}\\" --start"\r\n'
-                f'"{python}" "{script}" {flag}\r\ntimeout /t 3 >nul\r\n')
-        path = os.path.join(folder, name)
-        try:
-            with open(path, encoding='ascii', newline='') as f:
-                same = f.read() == text
-        except OSError:
-            same = False
-        if not same:
-            os.makedirs(folder, exist_ok=True)
-            with open(path, 'w', encoding='ascii', newline='') as f:
-                f.write(text)
-    return os.path.join(folder, 'reportserver.bat')
+def bat_path():
+    """The bat a person meets the server through: .claude/vscripts/reportserver.bat in the
+    first folder up from here that has it; '' when there is none."""
+    here = HERE
+    while True:
+        path = os.path.join(here, '.claude', 'vscripts', 'reportserver.bat')
+        if os.path.isfile(path):
+            return path
+        if os.path.dirname(here) == here:
+            return ''
+        here = os.path.dirname(here)
 
 
 def prepare(folder, roots_file=None):
-    """Register the folder and write the bat files; the path of reportserver.bat."""
+    """Register the folder; the path of the bat, for a page to show when the server is down."""
     register(folder, roots_file)
-    return write_bats(folder)
+    return bat_path()
+
+
+def status(port=PORT, roots_file=None, log_file=None, pid_file=None):
+    """How the server is: {state, pid, since, port, roots, last}. state is 'ours', 'other' or
+    None (see running); pid and since (epoch seconds) come from the pid file, which the server
+    writes when it starts, so they are None when there is none; roots counts the registered
+    folders; last is the last line of the log ('' when there is none)."""
+    default = files()
+    roots_file, log_file = roots_file or default[0], log_file or default[1]
+    pid_file = pid_file or default[2]
+    pid = since = None
+    try:
+        with open(pid_file) as f:
+            pid = int(f.read().strip())
+        since = os.path.getmtime(pid_file)
+    except (OSError, ValueError):
+        pass
+    try:
+        with open(roots_file, encoding='utf-8') as f:
+            roots = sum(1 for line in f if line.strip())
+    except OSError:
+        roots = 0
+    last = ''
+    try:
+        with open(log_file, 'rb') as f:
+            f.seek(max(0, os.path.getsize(log_file) - 2000))
+            lines = f.read().decode('utf-8', 'replace').splitlines()
+        last = next((x for x in reversed(lines) if x.strip()), '')
+    except OSError:
+        pass
+    return {'state': running(port), 'pid': pid, 'since': since, 'port': port, 'roots': roots,
+            'last': last}
+
+
+def ensure(by, port=PORT, roots_file=None, log_file=None, pid_file=None, visible=True):
+    """What a program calls when it needs the server. Nothing happens if it runs. Else, with
+    the default port and files and a bat to open, the bat is opened for a person to see
+    (visible) or run with no window at all (not visible); the bat starts the daemon. Any other
+    port or files (a test) start the daemon itself. Returns one line, as start() does."""
+    check_by(by)
+    if running(port) == 'ours':
+        return 'report server: running'
+    bat = bat_path()
+    default = files()
+    ours = (port == PORT and roots_file in (None, default[0]) and log_file in (None, default[1])
+            and pid_file in (None, default[2]))
+    if not bat or not ours or os.name != 'nt':
+        return start(by, port, roots_file, log_file, pid_file)
+    if visible:
+        os.startfile(bat, arguments=f'--by "{by}" --start')     # a window, like a double click
+        for _ in range(50):
+            time.sleep(0.2)
+            if running(port) == 'ours':
+                return 'report server: started in the bat window'
+        return 'report server: the bat window was opened, not answering yet (see its window)'
+    done = subprocess.run([bat, '--by', by, '--start', '--hidden'], capture_output=True,
+                          text=True, creationflags=0x08000000, timeout=60)     # no window
+    return (done.stdout.strip().splitlines() or ['report server: no answer'])[-1]
 
 
 def main(argv=None):
     args = list(sys.argv[1:] if argv is None else argv)
     opts = {'--port': str(PORT)}
     default = files()
-    opts.update({'--roots': default[0], '--log': default[1], '--pid': default[2]})
+    opts.update({'--roots': default[0], '--log': default[1], '--pid': default[2], '--by': None})
     mode = 'run'
+    folder = ''
     while args:
         word = args.pop(0)
-        if word in ('--start', '--stop'):
+        if word in ('--start', '--stop', '--status'):
             mode = word[2:]
+        elif word == '--register' and args:
+            mode, folder = 'register', args.pop(0)
         elif word in opts and args:
             opts[word] = args.pop(0)
         else:
             raise SystemExit(f'reportserver: unknown argument {word}')
     port = int(opts['--port'])
+    by = opts['--by']
+    if mode in ('start', 'stop') and by is None:
+        raise SystemExit(f'reportserver: --{mode} needs --by NAME (who is asking)')
+    if by is not None:
+        try:
+            check_by(by)
+        except ValueError as error:
+            raise SystemExit(str(error))
     if mode == 'start':
-        print(start(port, opts['--roots'], opts['--log'], opts['--pid']))
+        print(start(by, port, opts['--roots'], opts['--log'], opts['--pid']))
         return 0
     if mode == 'stop':
-        print(stop(opts['--pid'], port))
+        print(stop(by, opts['--pid'], port, opts['--log']))
         return 0
-    return run(port, opts['--roots'], opts['--log'], opts['--pid'])
+    if mode == 'register':
+        if not os.path.isdir(folder):
+            raise SystemExit(f'reportserver: no such folder {folder}')
+        added = register(folder, opts['--roots'])
+        print(f'report server: {"registered" if added else "already registered"} '
+              f'{os.path.abspath(folder)}')
+        return 0
+    if mode == 'status':
+        got = status(port, opts['--roots'], opts['--log'], opts['--pid'])
+        got['state'] = got['state'] or 'none'
+        for key, value in got.items():
+            print(f'{key}={"" if value is None else value}')
+        return 0
+    return run(port, opts['--roots'], opts['--log'], opts['--pid'], by or 'foreground')
 
 
 if __name__ == '__main__':

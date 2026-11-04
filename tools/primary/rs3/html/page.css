@@ -8,6 +8,13 @@ body{font:13px Verdana,Arial,sans-serif;color:var(--ink);background:var(--paper)
 .group.row{flex-direction:row}
 .group.col{flex-direction:column}
 .cell{min-width:0;min-height:0;box-sizing:border-box;overflow:auto;position:relative}
+/* the scroll bars: a 1 mm orange bar that slides in a 3 mm track of the footer's colour (no arrow buttons) */
+::-webkit-scrollbar{width:3mm;height:3mm}
+::-webkit-scrollbar-track{background:var(--bar)}
+::-webkit-scrollbar-thumb{background:var(--accent);background-clip:padding-box;border:1mm solid transparent;border-radius:2mm}
+::-webkit-scrollbar-thumb:hover{background:#c25400;background-clip:padding-box}
+::-webkit-scrollbar-button{display:none}
+::-webkit-scrollbar-corner{background:var(--bar)}
 /* the draggable edge: a 1 mm line, with a wider (invisible) hit area for a pen or a finger */
 .drag{flex:none;background:var(--line);position:relative;touch-action:none;z-index:2}
 .drag.v{width:1mm;cursor:col-resize}

@@ -26,7 +26,7 @@ from types import SimpleNamespace
 
 class b_kv(bench):
     BenchName    = "kv"
-    BenchVersion = "1.016"
+    BenchVersion = "M1.16.2"
     BenchHeader  = "test all"
     Nx           = 20000
     NRep         = 10

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<!--
+panesplit.html -- sandbox mockup: does a divider drag work with a pen, a finger and a mouse?
+
+Question   Does a splitter driven by Pointer Events (with capture) follow a pen where the
+           mouse-event splitter of vcomment.js does not?
+Layout     left pane | right column (top pane over bottom pane), two dividers.
+Variants   POINTER: pointerdown / pointermove / pointerup with setPointerCapture, touch-action:none,
+                    and an invisible grab zone around a 1 mm line (1.5 mm each side, 4 mm when coarse).
+           MOUSE:   mousedown on the divider, mousemove / mouseup on the document (the way
+                    vcomment.js does it now).
+Hypothesis A pen and touch do not fire the mouse events a drag needs, so MOUSE fails with a pen and
+           POINTER works. The log shows what each variant actually receives.
+Result     The pointer variant worked with the pen (user, 2026-11-03).
+VERSION    M1 m01.v02 (2026-11-03): the dividers are a 1 mm line; the grab zone is invisible.
+           M1 m01.v01 (2026-11-03): first version (6 px / 14 px bars, too thick).
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>panesplit</title>
+<style>
+:root{--line:1mm;--reach:1.5mm}
+@media (pointer:coarse){:root{--reach:4mm}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font:13px Verdana,Arial,sans-serif;background:#fff;color:#222}
+.top{display:flex;gap:12px;align-items:center;padding:6px 10px;background:#fdebd0;border-bottom:1px solid #e0a878;height:34px}
+.top label{cursor:pointer}
+#main{display:flex;height:calc(100% - 34px - 150px)}
+#left{flex:none;width:40%;min-width:60px;background:#f4f9ff;overflow:hidden}
+#col{flex:1;min-width:60px;display:flex;flex-direction:column}
+#rt{flex:none;height:50%;min-height:40px;background:#fff8f2;overflow:hidden}
+#rb{flex:1;min-height:40px;background:#f1f8ee;overflow:hidden}
+.pane{padding:8px}
+/* the drawn line is 1 mm; the part the pointer can catch is the ::before, which reaches --reach
+   to each side of it (wider for a pen or finger) without taking any room from the panes */
+.bar{flex:none;background:#c9610c;position:relative}
+.bar::before{content:'';position:absolute;z-index:2}
+.bar:hover{background:#e67e22}
+.bar.drag{background:#7a3a00}
+#vbar{width:var(--line);cursor:col-resize}
+#vbar::before{top:0;bottom:0;left:calc(-1 * var(--reach));right:calc(-1 * var(--reach))}
+#hbar{height:var(--line);cursor:row-resize}
+#hbar::before{left:0;right:0;top:calc(-1 * var(--reach));bottom:calc(-1 * var(--reach))}
+/* a pointer variant gets no browser panning, so a pen or finger drag reaches the script */
+body.pointer .bar{touch-action:none}
+#log{height:150px;overflow:auto;background:#222;color:#cfe;font:11px Consolas,monospace;padding:6px 10px;white-space:pre}
+b{color:#b34700}
+</style>
+</head>
+<body class="pointer">
+<div class="top">
+  <strong>Splitter test</strong>
+  <label><input type="radio" name="v" value="pointer" checked> POINTER events</label>
+  <label><input type="radio" name="v" value="mouse"> MOUSE events (as vcomment.js now)</label>
+  <span id="status"></span>
+</div>
+<div id="main">
+  <div id="left" class="pane"><b>left</b><div id="lsz"></div></div>
+  <div id="vbar" class="bar" title="drag"></div>
+  <div id="col">
+    <div id="rt" class="pane"><b>right top</b><div id="tsz"></div></div>
+    <div id="hbar" class="bar" title="drag"></div>
+    <div id="rb" class="pane"><b>right bottom</b><div id="bsz"></div></div>
+  </div>
+</div>
+<div id="log"></div>
+<script>
+var left = document.getElementById('left'), rt = document.getElementById('rt'), col = document.getElementById('col');
+var vbar = document.getElementById('vbar'), hbar = document.getElementById('hbar');
+var logBox = document.getElementById('log'), mode = 'pointer', drag = null;
+
+function say(text){                        // newest line at the bottom, 200 lines kept
+  logBox.textContent += text + '\n';
+  var lines = logBox.textContent.split('\n');
+  if (lines.length > 200) logBox.textContent = lines.slice(-200).join('\n');
+  logBox.scrollTop = logBox.scrollHeight;
+}
+function sizes(){
+  document.getElementById('lsz').textContent = Math.round(left.getBoundingClientRect().width) + ' px wide';
+  document.getElementById('tsz').textContent = Math.round(rt.getBoundingClientRect().height) + ' px high';
+  document.getElementById('bsz').textContent = Math.round(document.getElementById('rb').getBoundingClientRect().height) + ' px high';
+}
+function move(bar, x, y){                  // the bar follows the pointer, kept inside its area
+  if (bar === vbar){
+    var wrap = document.getElementById('main').getBoundingClientRect();
+    left.style.width = Math.max(60, Math.min(x - wrap.left, wrap.width - 66)) + 'px';
+  } else {
+    var c = col.getBoundingClientRect();
+    rt.style.height = Math.max(40, Math.min(y - c.top, c.height - 46)) + 'px';
+  }
+  sizes();
+}
+function note(e){ return e.type + ' ' + (e.pointerType || 'mouse') + ' (' + Math.round(e.clientX) + ',' + Math.round(e.clientY) + ')'; }
+
+// ---- POINTER variant ----
+[vbar, hbar].forEach(function(bar){
+  bar.addEventListener('pointerdown', function(e){
+    if (mode !== 'pointer') return;
+    drag = bar; bar.classList.add('drag');
+    bar.setPointerCapture(e.pointerId);    // every later event of this pointer comes to the bar
+    e.preventDefault(); say('POINTER ' + note(e));
+  });
+  bar.addEventListener('pointermove', function(e){
+    if (mode !== 'pointer' || drag !== bar) return;
+    move(bar, e.clientX, e.clientY);
+  });
+  ['pointerup', 'pointercancel'].forEach(function(t){
+    bar.addEventListener(t, function(e){
+      if (mode !== 'pointer' || drag !== bar) return;
+      drag = null; bar.classList.remove('drag'); say('POINTER ' + note(e));
+    });
+  });
+});
+
+// ---- MOUSE variant (the way vcomment.js does it now) ----
+[vbar, hbar].forEach(function(bar){
+  bar.addEventListener('mousedown', function(e){
+    if (mode !== 'mouse') return;
+    drag = bar; bar.classList.add('drag'); e.preventDefault(); say('MOUSE ' + e.type + ' (' + e.clientX + ',' + e.clientY + ')');
+  });
+});
+document.addEventListener('mousemove', function(e){ if (mode === 'mouse' && drag) move(drag, e.clientX, e.clientY); });
+document.addEventListener('mouseup', function(e){
+  if (mode === 'mouse' && drag){ say('MOUSE ' + e.type); drag.classList.remove('drag'); drag = null; }
+});
+
+// ---- what the page receives at all, so a failure shows what arrived instead ----
+['pointerdown', 'pointercancel', 'touchstart', 'mousedown'].forEach(function(t){
+  document.addEventListener(t, function(e){
+    if (!e.target.closest || !e.target.closest('.bar')) return;
+    if (t === 'pointercancel') say('!! pointercancel ' + (e.pointerType || '') + ': the browser took the gesture');
+    else if (t !== 'pointerdown' || mode !== 'pointer') say('   arrived: ' + t + (e.pointerType ? ' ' + e.pointerType : ''));
+  }, true);
+});
+
+Array.prototype.forEach.call(document.querySelectorAll('input[name=v]'), function(r){
+  r.addEventListener('change', function(){
+    mode = r.value; document.body.className = mode;
+    document.getElementById('status').textContent = 'variant: ' + mode.toUpperCase();
+    say('--- variant ' + mode.toUpperCase());
+  });
+});
+window.addEventListener('resize', sizes);
+document.getElementById('status').textContent = 'variant: POINTER';
+say('drag the vertical bar, then the horizontal one; try each variant with a mouse, then the pen');
+sizes();
+</script>
+</body>
+</html>

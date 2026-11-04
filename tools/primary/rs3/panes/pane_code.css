@@ -40,6 +40,7 @@
 .mdblock.front pre{margin:0;padding:3px 8px;font-size:11px;background:#fdebd0;border:none;border-radius:3px;color:#8a4500;white-space:pre-wrap}
 .mdblock hr{border:none;border-top:1px solid #e0a878}
 .mdblock table{border-collapse:collapse;margin:.4em 0}
-.mdblock th,.mdblock td{border:1px solid #e0a878;padding:3px 10px;text-align:left;vertical-align:top}
+.mdblock th,.mdblock td{border:1px solid #e0a878;padding:3px 10px;vertical-align:top}
+.mdblock th:not([align]),.mdblock td:not([align]){text-align:left}      /* (an align the author wrote, or a column of numbers, is the cell's own) */
 .mdblock th{background:#fdebd0;color:#8a4500}
 .mdblock tbody tr:nth-child(even) td{background:#fff6ec}

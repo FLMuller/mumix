@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="vcomment">
+<title>{{TITLE}}</title>
+<style>
+{{css}}</style>
+<style>
+{{rolecss}}</style>
+<style>
+{{vccss}}</style>
+</head>
+<body>
+<h1>{{TITLE}}</h1>
+<div class="vcwrap">
+<div id="vctree">
+  <div class="vchead">
+    <button id="vcfold" title="hide the file list" onclick="vcFold(true)">&#9664;</button>
+    <input id="vcfilter" type="search" placeholder="filter files" oninput="vcFilter(this.value)">
+    <button id="vcreload" title="read the file list again" onclick="vcLoadTree()">&#8635;</button>
+  </div>
+  <div id="vcfiles"><p class="mute">waiting for the report server&hellip;</p></div>
+</div>
+<div id="vcsplit" title="drag to resize"></div>
+<button id="vcunfold" title="show the file list" onclick="vcFold(false)">&#9654;</button>
+<div class="shell vcshell">
+<div id="book">
+<div class="topbar">
+  <select id="tabCombo" onchange="comboSel(this.value)"><option value="">tabs&hellip;</option></select>
+  <button class="scrollbtn" title="earlier"
+          onmousedown="holdStart(-1)" onmouseup="holdEnd(-1)" onmouseleave="holdEnd()">&#9664;</button>
+  <div class="tab-strip" id="tabStrip"></div>
+  <button class="scrollbtn" title="later"
+          onmousedown="holdStart(1)" onmouseup="holdEnd(1)" onmouseleave="holdEnd()">&#9654;</button>
+</div>
+<div id="panels"><!--SHELL:BEGIN-->
+{{_\main/_}}<!--SHELL:END--></div>
+</div>
+</div>
+</div>
+<div class="foot">
+  <button id="cfgbtn" class="cfgbtn" title="settings" onclick="toggleCfg()"><svg viewBox="0 0 14 10"><path d="M1 1.5h12M1 5h12M1 8.5h12"/></svg></button>
+  <div id="cfgmenu" class="cfgmenu" hidden>
+    <label>font <select id="cfgfont" onchange="cfgChanged()"></select></label>
+    <label>size <input id="cfgsize" type="number" min="6" max="40" onchange="cfgChanged()"></label>
+    <label>initials <input id="cfginitials" type="text" maxlength="8" onchange="cfgChanged()"></label>
+    <label>tab width <input id="cfgtab" type="number" min="1" max="16" onchange="cfgChanged()"></label>
+    <label>line numbers <input id="cfglines" type="checkbox" onchange="cfgChanged()"></label>
+    <label>wrap <input id="cfgwrap" type="checkbox" onchange="cfgChanged()"></label>
+    <label>your colour <input id="cfgcolor" type="color" onchange="cfgChanged()"></label>
+  </div>
+  <span>Find</span><input id="find" type="search" placeholder="text in all tabs" oninput="findText(this.value)">
+  <span id="findInfo"></span>
+  <span id="vcstate"></span>
+  <span class="gap"></span>
+  <span id="srv"></span>
+  <svg id="live" viewBox="0 0 22 22" data-live="disc"><title>pulsing: the report server answers (turning while it loads a file); red: it does not</title><g id="ring"><g id="pulse"><circle cx="11" cy="4"r="2.1" opacity="1"/><circle cx="16.47" cy="6.64" r="2.1" opacity=".82"/><circle cx="17.82" cy="12.56" r="2.1" opacity=".65"/><circle cx="14.04" cy="17.31" r="2.1" opacity=".5"/><circle cx="7.96" cy="17.31" r="2.1" opacity=".37"/><circle cx="4.18" cy="12.56" r="2.1" opacity=".28"/><circle cx="5.53" cy="6.64" r="2.1" opacity=".22"/></g></g><circle id="disc" cx="11" cy="11" r="4"/></svg>
+  <select id="runs" title="not used by vcomment" onchange="switchRun(this.value)"></select>
+</div>
+<script>
+var STEM = {{STEM}}, RUNS = {{RUNS}}, SELF = {{NAME}}, TOKEN = {{TOKEN}}, PORT = {{PORT}}, BAT = {{BAT}};
+var VC = {{VC}};
+</script>
+<script>
+{{js}}</script>
+<script>
+{{vcjs}}</script>
+</body>
+</html>

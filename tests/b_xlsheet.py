@@ -210,7 +210,7 @@ EDGE_VALUES = [0, 1, -1, 0.1, 1e-9, 1e21, 12345678901234567890, float('nan'), fl
 
 class b_xlsheet(bench):
     BenchName = 'xlsheet'
-    BenchVersion = 'M1.0.4'
+    BenchVersion = 'M1.0.7'
     BenchHeader = ''
     sources = SOURCES
 

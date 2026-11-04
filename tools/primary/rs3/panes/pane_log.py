@@ -16,6 +16,7 @@ IN and OUT below are these names.
 
 VERSION  M1 m01.v01 (2026-11-03): first version.
 The newest line is at the top; follow keeps the view there as lines arrive. The oldest is dropped past MAX.
+m01.v02: a time button on the bar turns the order (newest first v, oldest first ^); the choice is kept in the browser.
 """
 from rs3util import asset, done
 
@@ -28,6 +29,7 @@ OUT = []
 
 def write(S=None, page=None, loc=None):
     return done('log', asset(__file__, 'css'), asset(__file__, 'js').replace('@@MAX@@', str(MAX)),
-                '<div class="log"><div class="lbar"><span class="lcount">0 lines</span>'
-                '<label title="newest line first: stay at the top as lines arrive"><input type="checkbox" class="lfollow" checked> follow</label></div>'
+                '<div class="log"><div class="lbar"><button class="lsort"></button>'
+                '<label title="stay with the newest line as lines arrive"><input type="checkbox" class="lfollow" checked> follow</label>'
+                '<span class="lcount">0 lines</span></div>'
                 '<div class="llines"></div></div>')

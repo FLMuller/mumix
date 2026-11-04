@@ -10,3 +10,9 @@ Desktop.ini
 .DS_Store
 results/
 tools/primary/reportserver/
+
+# rs3 runtime files
+tools/primary/rs3/logs/
+tools/primary/rs3/pages/
+tools/primary/rs3/rs3.pid
+tools/primary/rs3/rs3.config

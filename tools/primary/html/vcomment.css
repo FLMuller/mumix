@@ -1,0 +1,51 @@
+/* vcomment.css -- the file tree beside the tabs; the rest is runbench.css */
+:root{--reach:1.5mm}                    /* how far a pointer may be from a 1 mm line and still take it */
+@media (pointer:coarse){:root{--reach:4mm}}   /* a finger or a pen is less exact than a mouse */
+body{margin:10px 10px 36px}
+h1{margin:0 0 6px}
+/* The right side fills what the tree leaves, and only the code lines scroll: every box on the way
+   down is a flex column that may shrink (min-height:0), so a taller comment box takes its height
+   from the code lines and the page itself never scrolls. */
+.vcwrap{position:relative;display:flex;align-items:stretch;height:calc(100vh - 78px)}
+#vctree{flex:none;width:280px;min-width:120px;max-width:70vw;overflow:auto;border:1px solid #e0a878;background:#fff;font-size:11px}
+.vchead{position:sticky;top:0;z-index:2;display:flex;gap:4px;padding:3px;background:#fdebd0;border-bottom:1px solid #e0a878}
+#vcfilter{flex:1;min-width:0;font:inherit;border:1px solid #e0a878;background:#fff}
+#vcreload,#vcfold,#vcunfold{border:1px solid #e0a878;border-radius:3px;background:#fff;color:#8a4500;cursor:pointer}
+#vcunfold{position:absolute;left:calc(1mm + 4px);top:4px;z-index:4;display:none}
+.vcwrap.folded #vctree{display:none}
+.vcwrap.folded #vcunfold{display:block}
+/* the line between the tree and the tabs: 1 mm drawn, the ::before is what a pointer can take */
+#vcsplit{flex:none;position:relative;width:1mm;cursor:col-resize;background:#c9610c;touch-action:none}
+#vcsplit::before{content:'';position:absolute;top:0;bottom:0;left:calc(-1 * var(--reach));right:calc(-1 * var(--reach));z-index:3}
+#vcsplit:hover{background:#e67e22}
+#vcsplit.drag{background:#7a3a00}
+.vcwrap.folded #vcsplit{cursor:default}
+.vcshell{flex:1;min-width:0;width:auto;display:flex;flex-direction:column;overflow:hidden}
+.vcshell #book{flex:1;min-height:0;display:flex;flex-direction:column}
+.vcshell .topbar{flex:none}
+.vcshell #panels{flex:1;min-height:0;display:flex;flex-direction:column}
+.vcshell .tpanel.active{flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto}
+.vcshell .codepane{flex:1;min-height:0;align-items:stretch}
+.vcshell .funcs{max-height:none;height:100%}
+.vcshell .code{min-height:0}
+.vcshell .clines{flex:1;min-height:0;max-height:none}
+#vcfiles details{margin-left:10px}
+#vcfiles>details{margin-left:2px}
+#vcfiles summary{cursor:pointer;color:#8a4500;font-weight:bold;padding:1px 4px;white-space:nowrap}
+#vcfiles .vcf{display:block;padding:1px 6px 1px 14px;text-decoration:none;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#vcfiles a.vcf:hover{background:#fdebd0}
+#vcfiles a.vcf.on{background:#e67e22;color:#fff}
+#vcfiles .vcf.other,#vcfiles .vcf.big{color:#aaa;cursor:default}
+#vcfiles .vcf.html::after{content:' \2197';color:#b34700}
+#vcfiles p{margin:6px}
+#vcstate{color:#8a4500}
+#runs{display:none}
+.mdview{max-width:900px;padding:8px 14px;background:#fff;border:1px solid #e0a878;margin-top:6px}
+.tpanel .note{margin:10px}
+/* the comment box: a 1 mm line on its top edge to drag (up makes it taller, the code lines give way) */
+.vcshell .cedit{position:relative;flex:none;border-top:0;padding-top:calc(1mm + 4px)}
+.vcshell .cedit textarea{resize:none;display:block}
+.cgrip{position:absolute;left:0;right:0;top:0;height:1mm;background:#c9610c;cursor:row-resize;touch-action:none}
+.cgrip::before{content:'';position:absolute;left:0;right:0;top:calc(-1 * var(--reach));bottom:calc(-1 * var(--reach))}
+.cgrip:hover{background:#e67e22}
+.cgrip.drag{background:#7a3a00}
