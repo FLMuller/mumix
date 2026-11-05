@@ -61,7 +61,7 @@ def imported(folder, name, call):
 
 class b_use(bench):
     BenchName = 'use'
-    BenchVersion = 'M1.0.11'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.13'          # runbench adds 1 to the last number on every run
     BenchHeader = 'use.compile: a .pyx to a module with gcc, hidden'
     sources = SOURCES
 

@@ -172,13 +172,16 @@ import re
 import subprocess
 import sys
 import sysconfig
+import types
 from pathlib import Path
 
 __all__ = ['use', 'load', 'run', 'build', 'compile', 'CompileError', 'locate', 'exclude', 'anchor']
 
-HERE = Path(__file__).resolve().parent              # the folder run() reloads code of
-DEFAULTS = ('primary',)                             # use() and load() with no item
-PRIMARY = 'primary'                                 # the home of the self-sufficient tools
+# Private to use.py: nothing outside it reads these.
+priv = types.SimpleNamespace(
+    MYPARENT=Path(__file__).resolve().parent,   # the folder of this file
+    PRIMARY='primary')                          # the home of the self-sufficient tools,
+                                                # and the place when no item is given
 PYXOUT = 'pyxfiles'                                 # <folder>/pyxfiles holds the builds
 CALLER_SUBS = 2                                     # levels below the caller's folder
 PARENT_SUBS = 1                                     # levels below a parent of the caller
@@ -276,7 +279,7 @@ def steps(here):
             continue
         seen.add(root)
         out.append((root, 0))
-        out.append((root / PRIMARY, PRIMARY_DEPTH))
+        out.append((root / priv.PRIMARY, PRIMARY_DEPTH))
         if root in parents and root not in (here, start) and crowded(root):
             continue                                # too big to scan below: own files only
         out.append((root, depth))
@@ -346,7 +349,7 @@ def find(name, here):
     if best is None:
         return None, None
     if best.is_dir():
-        return [best] + ([best / PRIMARY] if (best / PRIMARY).is_dir() else []), None
+        return [best] + ([best / priv.PRIMARY] if (best / priv.PRIMARY).is_dir() else []), None
     return [best.parent], name
 
 
@@ -451,7 +454,7 @@ def use(*args):
         else:
             entries.append([token, False, False])
     if not entries:
-        entries = [[name, False, False] for name in DEFAULTS]
+        entries = [[name, False, False] for name in (priv.PRIMARY,)]
 
     folders = Folders()
     ok = True
@@ -853,7 +856,7 @@ def load(*items, silent=True, into=None, reload=None):
         reload = interactive()
     state = Loading(into if into is not None else sys._getframe(1).f_globals, reload)
     entries = []                                    # (item, subs) in call order
-    for token in items or DEFAULTS:
+    for token in items or (priv.PRIMARY,):
         token = str(token)
         if token.startswith('+'):
             if token.lower() == '+subs' and entries:
@@ -916,7 +919,7 @@ def build(*items):
     here = caller()
     ok_all = True
     seen = set()
-    for item in items or DEFAULTS:
+    for item in items or (priv.PRIMARY,):
         item = str(item)
         if item[:1] == '.':
             continue
@@ -951,7 +954,7 @@ def build(*items):
 def reload_project():
     """Drop the project's pure-Python modules from sys.modules so the next import sees
     edits: not compiled ones, not this one, nothing outside the folder of use."""
-    root = str(HERE)
+    root = str(priv.MYPARENT)
     for name in list(sys.modules):
         if name == __name__:
             continue

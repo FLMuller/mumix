@@ -122,7 +122,7 @@ class FakePage:
 
 class b_rs3(bench):
     BenchName = 'rs3'
-    BenchVersion = 'M1.0.4'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.6'          # runbench adds 1 to the last number on every run
     BenchHeader = 'the third report server: pages of blocks, through contactRS, HTTP and a page'
     sources = SOURCES
 
