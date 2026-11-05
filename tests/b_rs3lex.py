@@ -137,7 +137,7 @@ def compare(self, path, lines):
 
 class b_rs3lex(bench):
     BenchName = 'rs3lex'
-    BenchVersion = 'M1.0.6'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.1.6'        # runbench adds 1 to the last number on every run
     BenchHeader = 'the one lexer of rs3, against codelex and vclang'
     sources = SOURCES
 
@@ -195,8 +195,11 @@ class b_rs3lex(bench):
     def test_T6_the_colours_are_those_of_codelex(self):
         if CODELEX is None:
             self.skipTest('rs3twolex/rs3 is not there')
-        new = set(rs3lex.css().splitlines())
-        self.assertEqual(sorted(set(CODELEX.css().splitlines()) - new), [])
+        was, now = set(CODELEX.css().splitlines()), set(rs3lex.css().splitlines())
+        paler = ['.r-string{color:#1F2328;font-weight:400;}', '.r-triple{color:#1F2328;font-weight:400;}']
+        self.assertEqual(sorted(was - now), paler)       # the only old lines that changed: rs3's lang files put
+        self.assertEqual(sorted(l for l in now - was if l.startswith(('.r-string', '.r-triple'))),    # the text of a
+                         [line.replace('400;}', '400;background:#FFFEFA;}') for line in paler])      # string on a paler background
 
     # ---- the comment marker, inside, and the functions -----------------------------------------------------
     def test_T7_a_comment_is_written_and_read_back_in_every_language(self):
@@ -280,6 +283,24 @@ class b_rs3lex(bench):
         src = rs3lex.Source.read(self.sample('d.py', 'a = """\nline\n"""\nb = 2\n'))
         self.assertTrue(src.inside(2))
         self.assertFalse(src.inside(4))
+
+    def test_T25_a_def_with_its_body_on_its_own_line_ends_there_and_stays_a_method_of_its_class(self):
+        text = ('class Box:\n    def count(self):   return 1\n    def names(self):   return 2\n\n    def full(self):\n        return 3\n'
+                '\n\nx = 1\ndef tail(): return x\n')
+        facts = rs3lex.Source.read(self.sample('e.py', text)).facts()
+        got = [(d.dotted, d.first, d.last, d.owner) for d in facts.defs]
+        self.assertEqual(got, [('Box', 1, 6, ''), ('Box.count', 2, 2, 'Box'), ('Box.names', 3, 3, 'Box'),      # a one-liner ends on its row
+                               ('Box.full', 5, 6, 'Box'), ('tail', 10, 10, '')])                                # (it ran to the end of the file)
+        self.assertEqual(facts.scope[1:], [0, 1, 2, 0, 3, 3, -1, -1, -1, 4])
+
+    def test_T26_a_cython_class_and_its_def_cdef_and_cpdef_functions_are_defs_and_a_cdef_variable_is_not(self):
+        text = ('cdef class Box:\n    cdef int n\n    def count(self, bytes key):\n        return 1\n\n    cdef int _grow(self):\n        return 2\n\n'
+                '    cpdef full(self):\n        return 3\n\ncdef inline bytes helper(x):\n    return x\n\n\ncdef int total = 0\n')
+        facts = rs3lex.Source.read(self.sample('f.pyx', text)).facts()
+        got = [(d.kind, d.dotted, d.first, d.last, d.owner) for d in facts.defs]
+        self.assertEqual(got, [('class', 'Box', 1, 10, ''), ('def', 'Box.count', 3, 4, 'Box'), ('def', 'Box._grow', 6, 7, 'Box'),
+                               ('def', 'Box.full', 9, 10, 'Box'), ('def', 'helper', 12, 13, '')])         # cdef int n and total: not defs
+        self.assertEqual([d.parent for d in facts.defs], [-1, 0, 0, 0, -1])
 
     def bench_lex_python_file(self, timer):
         path = os.path.join(RS3, 'rs3lex.py')

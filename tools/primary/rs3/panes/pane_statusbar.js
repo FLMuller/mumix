@@ -13,20 +13,37 @@ RS.pane('statusbar', function(ctx){
     }
   });
   var last = mode.value;
-  if (!mode.options.length) mode.hidden = find.hidden = q('sprev').hidden = q('snext').hidden = q('shome').hidden = true;
+  if (!mode.options.length) mode.hidden = find.hidden = q('shome').hidden = true;
   function fire(m, text){ ctx.emit('searchtext', {text: text, mode: m}); }
-  find.addEventListener('input', function(){ info.textContent = ''; fire(mode.value, find.value); });
+  // The star works like the star of the tables (RS.table): each click moves on, and the button shows where it is.
+  // Both triangles: at the start (a new search). The down one (data-dir desc): the next hit. The up one (asc): the previous hit.
+  // The star again: back to where the view was before the search.
+  var star = q('shome'), MOVE = {'': 'desc', desc: 'asc', asc: ''};
+  function at(dir){
+    star.classList.toggle('on', !!dir);
+    if (dir) star.dataset.dir = dir; else delete star.dataset.dir;
+  }
+  star.onclick = function(){
+    var dir = MOVE[star.dataset.dir || ''];
+    at(dir);
+    if (dir === 'desc') ctx.emit('searchnext', {mode: mode.value});
+    else if (dir === 'asc') ctx.emit('searchprev', {mode: mode.value});
+    else ctx.emit('searchhome', {mode: mode.value});
+  };
+  star.disabled = true;                      // grey while there is nothing to step through: no text, or nothing found
+  find.addEventListener('input', function(){
+    info.textContent = ''; at(''); star.disabled = !find.value; fire(mode.value, find.value);
+  });
   find.addEventListener('keydown', function(e){
-    if (e.key === 'Enter') ctx.emit(e.shiftKey ? 'searchprev' : 'searchnext', {mode: mode.value});
+    if (e.key !== 'Enter') return;
+    at(e.shiftKey ? 'asc' : 'desc');        // the star shows the step that was made
+    ctx.emit(e.shiftKey ? 'searchprev' : 'searchnext', {mode: mode.value});
   });
   mode.addEventListener('change', function(){
     fire(last, '');                         // the one we leave is cleared
-    last = mode.value; info.textContent = '';
+    last = mode.value; info.textContent = ''; at('');
     if (find.value) fire(mode.value, find.value);
   });
-  q('snext').onclick = function(){ ctx.emit('searchnext', {mode: mode.value}); };
-  q('sprev').onclick = function(){ ctx.emit('searchprev', {mode: mode.value}); };
-  q('shome').onclick = function(){ ctx.emit('searchhome', {mode: mode.value}); };
 
   // ---- the settings menu ----
   function fill(){
@@ -79,7 +96,7 @@ RS.pane('statusbar', function(ctx){
   srv.textContent = 'rs3 :' + port;
   show();
   return {
-    onSearchcount: function(d){ info.textContent = d.total ? d.index + ' / ' + d.total : 'none'; },
+    onSearchcount: function(d){ info.textContent = d.total ? d.index + ' / ' + d.total : 'none'; star.disabled = !d.total; },
     onStatus: function(d){
       if (d.stopped){ up = false; srv.textContent = 'rs3 :' + port + ' stopped'; }
       else if (d.lost){ up = false; srv.textContent = d.restarting ? 'rs3 restarting' : 'rs3 :' + port + ' no link'; }

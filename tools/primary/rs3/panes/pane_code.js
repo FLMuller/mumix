@@ -79,18 +79,28 @@ RS.pane('code', function(ctx){
   view.querySelector('.cnext').onclick = function(){ step(1); };
 
   // ---- search: the Highlight API marks the hits without touching the lines' html ----
-  function mark(text){
+  function span(parts, a, b){              // a Range over characters a..b of the joined text of the parts
+    var r = document.createRange(), i;
+    for (i = 0; i < parts.length && parts[i].from + parts[i].node.nodeValue.length <= a; i++);
+    r.setStart(parts[i].node, a - parts[i].from);
+    for (i = 0; i < parts.length && parts[i].from + parts[i].node.nodeValue.length < b; i++);
+    r.setEnd(parts[i].node, b - parts[i].from);
+    return r;
+  }
+  function mark(text){                      // a hit may run over the coloured pieces of a line: modules( is two
     hits = []; at = -1;
     if (window.CSS && CSS.highlights) CSS.highlights.delete('rs-find');
     if (text){
-      var want = text.toLowerCase(), walker = document.createTreeWalker(lines, NodeFilter.SHOW_TEXT), node;
-      while ((node = walker.nextNode())){
-        if (node.parentElement.closest('.cm') || node.parentElement.classList.contains('no')) continue;
-        var low = node.nodeValue.toLowerCase(), from = 0, k;
-        while ((k = low.indexOf(want, from)) >= 0){
-          var r = document.createRange(); r.setStart(node, k); r.setEnd(node, k + want.length); hits.push(r); from = k + want.length;
+      var want = text.toLowerCase();
+      lines.querySelectorAll('.ln code').forEach(function(code){
+        var parts = [], all = '', walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT), node;
+        while ((node = walker.nextNode())){
+          if (node.parentElement.closest('.cm')) continue;
+          parts.push({node: node, from: all.length}); all += node.nodeValue;
         }
-      }
+        var low = all.toLowerCase(), from = 0, k;
+        while ((k = low.indexOf(want, from)) >= 0){ hits.push(span(parts, k, k + want.length)); from = k + want.length; }
+      });
       if (window.CSS && CSS.highlights && hits.length) CSS.highlights.set('rs-find', new Highlight(...hits));
     }
     return hits.length;

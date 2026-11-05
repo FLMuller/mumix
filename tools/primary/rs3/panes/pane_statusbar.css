@@ -6,6 +6,9 @@
 .sbar button:hover{background:#f5cba7}
 .sbar .gap{flex:1;min-width:8px}
 .sbar .findstep{padding:0 5px;height:20px;font-size:9px;line-height:1}
+.sbar .shome{color:#b34700;background:none;border:none;padding:0 3px}      /* the colour of the lines of the settings button */
+.sbar .shome:hover{background:none;color:#e67e22}
+.sbar .shome:disabled{color:#c8b8a8;cursor:default}                           /* nothing found: grey */
 .sbar .cfgbtn{flex:none;width:20px;height:20px;padding:0;display:flex;align-items:center;justify-content:center;border:none;border-radius:0;background:none;color:#b34700}
 .sbar .cfgbtn:hover{background:none;color:#e67e22}
 .cfgbtn svg{width:16px;height:12px;display:block;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}

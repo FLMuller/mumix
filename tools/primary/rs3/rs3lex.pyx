@@ -57,7 +57,11 @@ long (a string's prefix, a number, a Cython cast). It is a .pyx: plain Python th
 2026-11-04 on a 350-line Python file: codelex 8.5 ms, this as Python 5.7 ms, compiled 4.0 ms (JavaScript against
 vclang 1.4x, Markdown 2.5x faster). tests/b_rs3lex.py has the timings and the proof that the pieces are the same.
 
-VERSION  M2 m02.v01 (2026-11-04): Source keeps the last 512 files (was 16); facts() finds a Python file's defs, per-line facts, words and scopes in its token stream once; derived() keeps what a consumer built, for spaghettichk.
+VERSION  M2 m02.v03 (2026-11-05): facts(): a Cython file's cdef class, cdef and cpdef functions are defs (their words and names have the roles ckeyword,
+         cdefname and cdefclass, which the def finder did not know), so the methods of a cdef class have it as their parent.
+         M2 m02.v02 (2026-11-05): facts(): a def with its body on its own row (def f(self): return 1) ended at the last row of the file, so it was
+         read as hundreds of lines long and the defs after it were filed under it, not under their class; it ends on its row now.
+         M2 m02.v01 (2026-11-04): Source keeps the last 512 files (was 16); facts() finds a Python file's defs, per-line facts, words and scopes in its token stream once; derived() keeps what a consumer built, for spaghettichk.
          M2 m01.v02 (2026-11-04): css(): the text of a row that has the colour of its role has none of its own.
          M2 m01.v01 (2026-11-04): Source (the file read once, its tokens, comment runs and functions) is in here, from
          rs3source.py, which is gone: the language and the file are one unit; exports are Source and css.
@@ -1124,6 +1128,8 @@ IDENT = re.compile(r'^[A-Za-z_]\w*$')
 ASSIGN = {'=', '+=', '-=', '*=', '/=', '//=', '%=', '**=', '|=', '&=', '^=', '>>=', '<<='}
 BRANCH = {'if', 'elif', 'for', 'while', 'except', 'and', 'or', 'case'}
 BLOCKS = {'if', 'elif', 'else', 'for', 'while', 'try', 'except', 'finally', 'with', 'match', 'case'}
+DEFWORDS = {'def', 'class', 'cdef', 'cpdef', 'async'}                  # the words a def line starts with (Cython's are 'ckeyword')
+DEFNAMES = {'defname', 'classname', 'cdefname', 'cdefclass'}           # the role of the name it defines: Cython has its own two
 DOCROLES = {'docstring', 'triple', 'string'}
 CONSTANT = re.compile(r'^(?:[A-Z]{3}\w*|__all__)$')
 LITERAL = {'number', 'string', 'kwconst', 'punct', 'operator'}
@@ -1309,8 +1315,8 @@ def build_facts(lines, rows):
     at = {m[0]: m for m in marks}
     found = []
     for first, last, toks in marks:
-        if toks and toks[0][0] == 'keyword' and toks[0][1] in ('def', 'class', 'cdef', 'cpdef', 'async'):
-            named = next((t for t in toks if t[0] in ('defname', 'classname')), None)
+        if toks and toks[0][0] in ('keyword', 'ckeyword') and toks[0][1] in DEFWORDS:
+            named = next((t for t in toks if t[0] in DEFNAMES), None)         # a cdef variable has no such name: not a def
             if named:
                 found.append((named[1], first, 'class' if any(t[0] == 'keyword' and t[1] == 'class' for t in toks[:3]) else 'def'))
     defs = []
@@ -1318,7 +1324,7 @@ def build_facts(lines, rows):
         mark = at.get(first)
         head = mark[2] if mark else []
         end = mark[1] if mark else first
-        stop = last
+        stop = end                    # a def whose body is on its own line has no later row of its own: it ends there
         for later in marks:
             if later[0] > end and later[2] and later[2][0][0] != 'lcomment' and indent[later[0] - 1] <= indent[first - 1]:
                 break
@@ -1330,7 +1336,7 @@ def build_facts(lines, rows):
             top = marks[k][0]
             decorators.append(marks[k][2][0][1][1:])
             k -= 1
-        start = next((i for i, t in enumerate(head) if t[0] in ('defname', 'classname')), 0) + 1
+        start = next((i for i, t in enumerate(head) if t[0] in DEFNAMES), 0) + 1
         short = name
         docs, doc = docstring_of(rows, end)
         defs.append(SimpleNamespace(name=short, dotted=name, kind=kind, top=top, first=first,

@@ -27,7 +27,7 @@ div.ferr b{text-decoration:underline}
 #fguide code{background:#fdebd0;padding:0 4px;border-radius:2px;white-space:nowrap}
 details.bandmenu summary::-webkit-details-marker{display:none}
 details.bandmenu.filtering summary{background:#fff;color:#8a4500;font-weight:bold}
-div.bandpop{position:absolute;top:100%;left:0;z-index:5;margin-top:3px;padding:4px 12px 4px 8px;background:#fff;color:#3a2a1c;border:1px solid #e0a878;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.3);text-align:left;font-weight:normal;white-space:nowrap;max-height:260px;overflow:auto}
+div.bandpop{position:absolute;top:100%;left:0;z-index:20;margin-top:3px;padding:4px 12px 4px 8px;background:#fff;color:#3a2a1c;border:1px solid #e0a878;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.3);text-align:left;font-weight:normal;white-space:nowrap;max-height:260px;overflow:auto}
 div.bandpop label{display:block;cursor:pointer;padding:1px 0}
 details.bandmenu.filtering label.all{color:#999}
 span.shown{margin-left:14px;color:#3a3a3a}

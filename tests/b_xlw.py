@@ -88,7 +88,7 @@ def partext(filename, part):
 
 class b_xlw(bench):
     BenchName = 'xlw'
-    BenchVersion = 'M1.0.12'
+    BenchVersion = 'M1.0.17'
     BenchHeader = ''
     sources = SOURCES
 

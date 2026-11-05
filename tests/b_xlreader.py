@@ -105,7 +105,7 @@ def sha(path):
 
 class b_xlreader(bench):
     BenchName = 'xlreader'
-    BenchVersion = 'M1.0.11'
+    BenchVersion = 'M1.0.12'
     BenchHeader = ''
     sources = SOURCES
 

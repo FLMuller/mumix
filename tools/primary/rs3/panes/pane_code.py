@@ -26,7 +26,8 @@ IN = [...] and OUT = [...] below are these names; a test checks every OUT has a 
 The lines come from the open verb (rs3comment): a row for each line and a thread for each comment, the
 format is in rs3comment's header.
 
-VERSION  M1 m01.v07 (2026-11-04): showmethods in: fold the file to the methods the list shows, or grey all but one.
+VERSION  M1 m01.v08 (2026-11-05): find works over the coloured pieces of a line (modules( is two).
+         M1 m01.v07 (2026-11-04): showmethods in: fold the file to the methods the list shows, or grey all but one.
          M1 m01.v06 (2026-11-04): a click anywhere on a line also asks for a comment, unless text was selected.
          M1 m01.v05 (2026-11-04): the mark outranks the row colours of docstrings and comments; a click anywhere on a line marks it (the soft orange of the number's hover); only the number asks for a comment; it stays marked while the comment box (data-keepsel) is clicked.
          M1 m01.v04 (2026-11-04): a click on a line number marks the whole line until a scroll or a click elsewhere.

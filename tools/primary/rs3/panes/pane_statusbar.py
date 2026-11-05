@@ -11,7 +11,7 @@ On the bar, from the left
                         the state line says so). A change is kept by the server (the config verb), so every
                         page and every restart shows it, and it takes effect on the page at once.
     Find                a box, a choice of what to search (what the blocks of the page say they can find: their
-                        write() returns it as `search`), the up and down buttons, the star and the count of hits. Enter steps
+                        write() returns it as `search`), the star button (next, previous, back) and the count of hits. Enter steps
                         to the next hit, Shift+Enter to the one before.
     the state           the last message of a block (editbox: saving, saved, a refusal), in red when bad
     the server          rs3 and its port; "stopped" or "no link" when it is not answering
@@ -31,7 +31,9 @@ Signals
                                              tab width and colour on the page
 IN and OUT below are these names.
 
-VERSION  M1 m01.v02 (2026-11-04): Find offers what the blocks of the page say they can find; the star (searchhome).
+VERSION  M1 m01.v03 (2026-11-05): one button, the star of the tables, does the work of three: each click moves on, next hit
+         (the down triangle), previous hit (the up one), back to where it was (the star); Enter and Shift+Enter step as before.
+         M1 m01.v02 (2026-11-04): Find offers what the blocks of the page say they can find; the star (searchhome).
          M1 m01.v01 (2026-11-04): first version: the footer of the old report pages (rs2: runbench and
          vcomment) as a block, with the search that was in a top bar.
 """
@@ -61,9 +63,9 @@ HTML = ('<div class="sbar">'
         '</div>'
         '<span>Find</span><select class="smode" title="what to search"></select>'
         '<input class="sfind" type="search" placeholder="find">'
-        '<button class="findstep sprev" title="previous">&#9650;</button>'
-        '<button class="findstep snext" title="next">&#9660;</button>'
-        '<button class="findstep shome" title="back to where it was before the search">&#9733;</button>'
+        '<button class="sortbtn shome" title="find: next hit, previous hit, back to where it was">'
+        '<svg viewBox="0 0 20 20"><polygon class="up" points="10,1.5 17.4,14.5 2.6,14.5"/>'
+        '<polygon class="dn" points="10,18.5 2.6,5.5 17.4,5.5"/></svg></button>'
         '<span class="sinfo"></span><span class="sstate"></span><span class="gap"></span><span class="ssrv"></span>'
         '<svg class="slive" viewBox="0 0 22 22" data-live="disc"><title>pulsing: the server answers (turning while it '
         'loads a file); red: it does not&#10;click: open the report server in a new tab (nothing is opened when one is already open)</title><g class="lring"><g class="lpulse">' + DOTS +

@@ -17,7 +17,8 @@
 // This is a copy of the table code of runbench.js (the report pages), made for rs3; the filter language (the block marked FILTER
 // below) is the same text. The cap on column widths is left out (the pane sets its own).
 //
-// VERSION  M1 m01.v02 (2026-11-04): every value ticked is "all" again (the others are cleared).
+// VERSION  M1 m01.v03 (2026-11-05): the filter popup is fixed to the window under its button, so the pane does not clip it.
+//          M1 m01.v02 (2026-11-04): every value ticked is "all" again (the others are cleared).
 //          M1 m01.v01 (2026-11-04): first version, from runbench.js.
 RS.table = (function(){
 'use strict';
@@ -180,6 +181,18 @@ function selectMenu(t, c, distinct){
     apply();
   };
   d.appendChild(s); d.appendChild(pop);
+  // The popup is fixed to the window, placed under the button: the pane around the table scrolls and clips what hangs out of it.
+  function place(){
+    var r = s.getBoundingClientRect();
+    pop.style.position = 'fixed';
+    pop.style.top = (r.bottom + 3) + 'px';
+    pop.style.maxHeight = Math.max(120, Math.min(260, window.innerHeight - r.bottom - 12)) + 'px';
+    pop.style.left = Math.max(4, Math.min(r.left, window.innerWidth - pop.offsetWidth - 8)) + 'px';
+  }
+  d.addEventListener('toggle', function(){
+    if (d.open){ place(); window.addEventListener('scroll', place, true); window.addEventListener('resize', place); }
+    else { window.removeEventListener('scroll', place, true); window.removeEventListener('resize', place); }
+  });
   return d;
 }
 

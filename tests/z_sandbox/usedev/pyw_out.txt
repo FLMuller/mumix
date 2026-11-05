@@ -1,0 +1,2 @@
+stderr is <_io.TextIOWrapper name='<stderr>' mode='w' encoding='cp1252'>, stdout is <_io.TextIOWrapper name='<stdout>' mode='w' encoding='cp1252'>
+returned num_errors=1

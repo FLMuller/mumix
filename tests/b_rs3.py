@@ -122,7 +122,7 @@ class FakePage:
 
 class b_rs3(bench):
     BenchName = 'rs3'
-    BenchVersion = 'M1.0.6'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.14'          # runbench adds 1 to the last number on every run
     BenchHeader = 'the third report server: pages of blocks, through contactRS, HTTP and a page'
     sources = SOURCES
 
@@ -252,7 +252,9 @@ class b_rs3(bench):
         self.assertEqual(found.get('serverstatus'), 'null')
         text = web('GET', '/?layout=[doc]&title=t')[2]
         self.assertIn('"search": "text"', text)                           # a doc answers a text search
-        self.assertIn('class="findstep shome"', text)                     # the star
+        self.assertIn('class="sortbtn shome"', text)                      # one star, as in the tables, for next, previous, back
+        self.assertNotIn('sprev', text)                                   # ... so no buttons of their own
+        self.assertNotIn('snext', text)
 
     def test_T7_two_blocks_of_one_kind_carry_their_css_and_script_once(self):
         got = rs3.contactRS('load', '[methods 40xh, methods.2 wxh]', {}, 'two', False)

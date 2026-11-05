@@ -41,7 +41,7 @@ from types import SimpleNamespace
 
 class b_tkv(bench):
     BenchName    = "tkv"
-    BenchVersion = "M1.0.9"
+    BenchVersion = "M1.0.14"
     BenchHeader  = ""
     sources      = SOURCES
 
