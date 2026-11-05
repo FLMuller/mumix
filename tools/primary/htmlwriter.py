@@ -30,8 +30,11 @@ VERSION  M2 m02.v01 (2026-10-28): rebuilt: the writers, htmtemplate and htmsave 
          the series names and the token moved to the page (js) and runbench3; the old module
          is zprev/htmlwriter.py.
 """
+import sys
+import os
 import re
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/: the one use.py
 from use import load
 
 load('mdwriter')                     # mdappend, mdwrite, mdwriteln, compiled: use finds mdwriter.pyx beside this file

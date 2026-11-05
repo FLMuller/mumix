@@ -10,6 +10,9 @@ Signals
                                          is dropped, announcing showcode off for it); show false: wipe, if that
                                          file is the one shown, and say so
               onSelectfunk {lineno}      scroll to that line and flash it
+              onShowmethods {path, ranges, focus}   ranges [[first, last], ...] of the file shown: the other lines are
+                                         folded away (a gap line shows where); focus: they are greyed, not folded; null
+                                         ranges: the whole file again
               onSaved {path}             the file's comments changed: read it again
               onSearchtext {text, mode}  mode 'text': mark every hit, scroll to the first
               onSearchnext / onSearchprev {mode}   step through the hits
@@ -23,23 +26,27 @@ IN = [...] and OUT = [...] below are these names; a test checks every OUT has a 
 The lines come from the open verb (rs3comment): a row for each line and a thread for each comment, the
 format is in rs3comment's header.
 
-VERSION  M1 m01.v06 (2026-11-04): a click anywhere on a line also asks for a comment, unless text was selected.
+VERSION  M1 m01.v07 (2026-11-04): showmethods in: fold the file to the methods the list shows, or grey all but one.
+         M1 m01.v06 (2026-11-04): a click anywhere on a line also asks for a comment, unless text was selected.
          M1 m01.v05 (2026-11-04): the mark outranks the row colours of docstrings and comments; a click anywhere on a line marks it (the soft orange of the number's hover); only the number asks for a comment; it stays marked while the comment box (data-keepsel) is clicked.
          M1 m01.v04 (2026-11-04): a click on a line number marks the whole line until a scroll or a click elsewhere.
          M1 m01.v03 (2026-11-04): showfile in, showcode out (no more openfile/closefile, no where); write() says it takes files.
          M1 m01.v02 (2026-11-04): what it can find is returned by write().
          M1 m01.v01 (2026-11-03): first version.
 """
+import sys
+import os
 import html as htmllib
 
 from rs3util import asset, done
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))  # tools/: the one use.py
 from use import load
 
 load('rs3lex')           # rs3lex.pyx: css() gives the colour of every role
 
 __all__ = ['write']
 
-IN = ['showfile', 'selectfunk', 'saved', 'searchtext',
+IN = ['showfile', 'selectfunk', 'showmethods', 'saved', 'searchtext',
       'searchnext', 'searchprev']
 OUT = ['showcode', 'linenoClicked', 'commentline', 'commentselect', 'searchcount']
 

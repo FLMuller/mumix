@@ -94,7 +94,7 @@ of its group (`editbox` under the code), so the bar sits between two items and d
 
 ## 4. Defaults: what you need not write
 
-A block can have a size of its own: `ftv` 75 mm wide, `methods` 50 mm wide, `editbox` 42 mm high, `serverstatus` 62 mm
+A block can have a size of its own: `ftv` 75 mm wide, `methods` 55 mm wide, `editbox` 42 mm high, `serverstatus` 62 mm
 high (the `width` or `height` its `write()` returns, `done(..., width=75)`, rs3util). Where the layout gives that size no number, the block
 takes its own, and that edge is **draggable without a `d`**. So `ftv` means what `ftv 75dxh` would, and
 `[ftv wdxh, ...]` is just `[ftv, ...]`.

@@ -122,7 +122,7 @@ class FakePage:
 
 class b_rs3(bench):
     BenchName = 'rs3'
-    BenchVersion = 'M1.0.1'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.4'          # runbench adds 1 to the last number on every run
     BenchHeader = 'the third report server: pages of blocks, through contactRS, HTTP and a page'
     sources = SOURCES
 
@@ -476,7 +476,7 @@ class b_rs3(bench):
             two.close()
         self.assertFalse(rs3.contactRS('hello', None, None, '/reportserver')['ok'])
 
-    def test_T13_open_gives_the_lines_and_methods_the_names_with_their_classes(self):
+    def test_T13_open_gives_the_lines_and_methods_the_rows_with_their_owner_kind_and_lines(self):
         page = FakePage(rs3.contactRS('view', self.rel, False)['path'])
         try:
             lines = page.ask({'do': 'open', 'hash': page.hash, 'path': self.rel})
@@ -485,10 +485,19 @@ class b_rs3(bench):
             self.assertRegex(lines['base'], r'^[0-9a-f]{40}$')
             got = page.ask({'do': 'methods', 'hash': page.hash, 'path': self.rel})
             self.assertTrue(got['ok'], got)
-            names = [m['name'] for m in got['methods']]
-            self.assertIn('Thing', names)
-            self.assertIn('Thing.method', names)
-            self.assertIn('free', names)
+            rows = {(m['owner'], m['name'], m['kind']): m for m in got['methods']}
+            self.assertEqual(sorted(rows), [('Thing', 'method', 'def'), ('sample', 'Thing', 'class'), ('sample', '__all__', 'const'), ('sample', 'free', 'def')])   # the note row: no __all__
+            thing, method = rows[('sample', 'Thing', 'class')], rows[('Thing', 'method', 'def')]
+            self.assertEqual((thing['line'], thing['top'], thing['last']), (4, 4, 6))          # a class runs to the end of its methods
+            self.assertEqual((method['line'], method['text']), (5, 'def method(self):'))
+            path = os.path.join(self.folder, 'consts.py')
+            with open(path, 'w', encoding='utf-8', newline='') as f:
+                f.write("__all__ = ['f']\nLIMIT = 5\nmax = 3\nNAME: str = 'x'\n\n\n@dec\ndef f():\n    return LIMIT\n")
+            more = page.ask({'do': 'methods', 'hash': page.hash, 'path': rel_of(path)})['methods']
+            self.assertEqual([(m['name'], m['kind'], m['line']) for m in more],
+                             [('__all__', 'const', 1), ('LIMIT', 'const', 2), ('max', 'const', 3), ('NAME', 'const', 4), ('f', 'def', 8)])   # three capitals, __all__, or a literal with too few
+            self.assertEqual((more[4]['top'], more[4]['last']), (7, 9))                          # the decorator is part of it
+            self.assertEqual(more[1]['text'], 'LIMIT = 5')
             for outside in ('./../x.py', './no/such.py', 'sample.py'):
                 self.assertFalse(page.ask({'do': 'open', 'hash': page.hash, 'path': outside})['ok'], outside)
         finally:
@@ -745,28 +754,8 @@ class b_rs3(bench):
         self.assertEqual([p for p in problems if p[-1]], [])
 
 
-    # ---- who gets a signal: the layout lists, the nearest block, the files (html/manager.js, run under node) ----
-    def route(self, cases):
-        node = 'C:/flmapps/nodejs/node.exe'
-        if not os.path.isfile(node):
-            self.skipTest('no node here')
-        harness = os.path.join(ROOT, 'tests', 'rs3route.js')
-        manager = os.path.join(ROOT, 'tools', 'primary', 'rs3', 'html', 'manager.js')
-        spec = os.path.join(self.folder, 'route.json')
-        with open(spec, 'w', encoding='utf-8') as f:
-            json.dump(cases, f)
-        done = subprocess.run([node, harness, manager, spec], capture_output=True, text=True, timeout=30)
-        self.assertEqual(done.returncode, 0, done.stderr)
-        return json.loads(done.stdout)
 
-    @staticmethod
-    def panes(layout, kinds=None, to=None, **flags):
-        """The panes of a layout the way build writes them: {loc, block, at, to, ...}; kinds {loc: block}, to {loc: [locs]}."""
-        tree = rs3layout.parse(layout)
-        at = rs3layout.places(tree)
-        return [{'loc': loc, 'block': (kinds or {}).get(loc, loc), 'at': at[loc], 'to': (to or {}).get(loc, []),
-                 'takes': False, 'holds': None, 'hosted': False, **flags.get(loc, {})} for loc in rs3layout.names(tree)]
-
+    # ---- the layout lists of who receives; the routing itself is tested in the page: tests/b_rs3page.py ----
     def test_T20_a_layout_lists_who_receives_and_says_where_each_block_sits(self):
         tree = rs3layout.parse('[cd0,ed{cd2},cd1,cd2]')
         self.assertEqual(rs3layout.receivers(tree), {'ed': ['cd2']})
@@ -799,76 +788,12 @@ class b_rs3(bench):
         for layout in ('[ftv{methods},code]', '[ftv,editbox{log},log]', '[code{ftv},ftv]'):      # a list must name blocks that take what is sent
             self.assertFalse(rs3.contactRS('load', layout, {}, 'bad', False)['ok'], layout)
 
-    def test_T21_a_signal_for_one_block_goes_to_the_nearest_of_each_kind_by_the_groups_they_share(self):
-        def case(layout, kinds, listens, sender, to=None):
-            return {'panes': self.panes(layout, kinds, to), 'listens': listens,
-                    'steps': [{'from': sender, 'name': 'commentline', 'data': {'path': 'p'}}]}
-        same = {'cd0': 'cd', 'cd1': 'cd', 'cd2': 'cd', 'cd3': 'cd'}
-        listen = {loc: ['commentline'] for loc in same}
-        got = self.route([
-            case('[cd1,[cd2,eb]]', same, listen, 'eb'),                                  # the group [cd2,eb] is the nearest
-            case('[[eb,cd1,cd2],cd3]', same, listen, 'eb'),                              # one group: the first after eb
-            case('[[cd0,eb,cd1,cd2],cd3]', same, listen, 'eb'),                          # the same: cd1, not cd0
-            case('[cd0,eb]', same, listen, 'eb'),                                        # none after: round the end
-            case('[[cd0,eb,cd1,cd2],cd3]', same, listen, 'eb', {'eb': ['cd2']}),         # a list in the layout string
-            case('[[cd0,eb,cd1,cd2],cd3]', same, listen, 'eb', {'eb': ['cd0', 'cd2']}),  # ... of two
-        ])
-        self.assertEqual([[row[0] for row in one['log']] for one in got],
-                         [['cd2'], ['cd1'], ['cd1'], ['cd0'], ['cd2'], ['cd0', 'cd2']])
-
-    def test_T21a_of_each_kind_of_block_that_listens_the_nearest_gets_it_and_a_to_in_the_data_wins(self):
-        kinds = {'cd1': 'code', 'cd2': 'code', 'ml1': 'methods', 'ml2': 'methods', 'eb': 'editbox'}
-        listens = {'cd1': ['saved'], 'cd2': ['saved'], 'ml1': ['saved'], 'ml2': ['saved'], 'selectfunk': []}
-        layout = '[ml1,[cd1;[ml2,cd2,eb]]]'
-        got = self.route([
-            {'panes': self.panes(layout, kinds), 'listens': listens, 'steps': [{'from': 'eb', 'name': 'saved', 'data': {'path': 'p'}}]},
-            {'panes': self.panes(layout, kinds), 'listens': {'cd1': ['selectfunk'], 'cd2': ['selectfunk']},
-             'steps': [{'from': 'ml2', 'name': 'selectfunk', 'data': {'lineno': 3, 'to': ['cd1']}}]},
-            {'panes': self.panes(layout, kinds), 'listens': {'cd1': ['selectfunk'], 'cd2': ['selectfunk']},
-             'steps': [{'from': 'ml2', 'name': 'selectfunk', 'data': {'lineno': 3}}]},
-        ])
-        self.assertEqual(sorted(row[0] for row in got[0]['log']), ['cd2', 'ml2'])         # one code, one methods: those nearest eb
-        self.assertEqual([row[0] for row in got[1]['log']], ['cd1'])                      # addressed
-        self.assertEqual(sorted(row[0] for row in got[2]['log']), ['cd1', 'cd2'])         # not routed, not addressed: everyone
-
-    def test_T22_a_file_goes_to_the_container_before_a_lone_block_else_to_a_new_tab_and_closes_where_it_is_shown(self):
-        take = {'takes': True}
-        both = self.panes('[ftv,[tt;cd]]', {'ftv': 'ftv', 'tt': 'toptabs', 'cd': 'code'},
-                          tt={'takes': True, 'holds': 'code'}, cd={'takes': True, 'hosted': True})
-        lone = self.panes('[ftv,[cd1;cd2]]', {'cd1': 'code', 'cd2': 'code'}, cd1=take, cd2=take)
-        bare = self.panes('[ftv,log]')
-        listens = {'tt': ['showfile'], 'cd1': ['showfile'], 'cd2': ['showfile']}
-        got = self.route([
-            {'panes': both, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}]},
-            {'panes': lone, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}]},
-            {'panes': lone, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True, 'to': ['cd2']}}]},
-            {'panes': bare, 'listens': {}, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}]},
-            {'panes': both, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './r.html', 'show': True, 'to': 'tab'}}]},
-            {'panes': both, 'listens': listens,
-             'steps': [{'from': 'tt', 'name': 'showcode', 'data': {'path': './a.py', 'loc': 'tt', 'on': True}},
-                       {'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': False}}]},
-            {'panes': lone, 'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}],
-             'note': 'the layout list of the sender'},
-        ])
-        self.assertEqual(got[0]['log'], [['tt', 'showfile', {'path': './a.py', 'show': True, 'to': ['tt']}]])     # the container, not the code
-        self.assertEqual([row[0] for row in got[1]['log']], ['cd1'])                                              # the first lone block
-        self.assertEqual([row[0] for row in got[2]['log']], ['cd2'])                                              # addressed
-        self.assertEqual((got[3]['log'], len(got[3]['tabs'])), ([], 1))                                           # nothing takes it: a tab
-        self.assertEqual((got[4]['log'], got[4]['tabs']), ([], ['/?layout=[doc]&doc=r.html']))                    # html: a tab
-        self.assertEqual(got[5]['log'], [['tt', 'showfile', {'path': './a.py', 'show': False, 'to': ['tt']}]])    # closed where it is shown
-        listed = self.route([{'panes': self.panes('[ftv{cd2},[cd1;cd2]]', {'cd1': 'code', 'cd2': 'code'}, to={'ftv': ['cd2']}, cd1=take, cd2=take),
-                              'listens': listens, 'steps': [{'from': 'ftv', 'name': 'mngshowfile', 'data': {'path': './a.py', 'show': True}}]}])
-        self.assertEqual([row[0] for row in listed[0]['log']], ['cd2'])                                           # ftv{cd2}
-
     def test_T22a_a_name_that_starts_with_mng_is_for_the_manager_only(self):
         folder = os.path.join(ROOT, 'tools', 'primary', 'rs3', 'panes')
         for name in sorted(os.listdir(folder)):
             if name.startswith('pane_') and name.endswith('.js'):
                 with open(os.path.join(folder, name), encoding='utf-8') as f:
                     self.assertEqual(re.findall(r'\bonMng\w*', f.read()), [], name)       # no block listens to one
-        got = self.route([{'panes': self.panes('[a,b]'), 'listens': {'a': ['mngshowfile'], 'b': ['mngshowfile']},
-                           'steps': [{'from': 'a', 'name': 'mngshowfile', 'data': {'path': './x.py', 'show': True}}]}])
-        self.assertEqual(len(got[0]['tabs']), 1)                      # the manager took it (no block takes files)
 
     def test_T5i_a_report_that_does_not_keep_the_rules_of_the_box_is_its_own_page_with_no_rs3_around_it(self):
         path = os.path.join(self.folder, 'old.html')
@@ -884,6 +809,92 @@ class b_rs3(bench):
         self.assertEqual(inside[0], 200)
         mixed = rs3.contactRS('load', '[doc,log]', {'doc': ['doc', './' + rel_of(path)[2:]]}, 'mixed', False)
         self.assertIn('this page cannot be shown', web('GET', mixed['path'])[2])     # in a page of blocks it is still refused there
+
+
+    def test_T23a_a_page_carries_the_table_engine_and_the_methods_block_is_a_table_with_a_status_pie(self):
+        text = web('GET', '/code/' + self.rel[2:])[2]
+        self.assertIn('RS.table = (function()', text)
+        self.assertIn('button.sortbtn', text)                                  # the css of the star
+        self.assertIn('RS.table.make(t, {initial: byName', text)
+        self.assertIn('function pie(shares, dot)', text)                       # the pie of an item, drawn as svg
+        self.assertNotIn('.methods.band-red{border-color', text)               # no frame round the pane
+        self.assertIn('.methods.band-red .mhead{background', text)             # the header takes a pale colour of the file's band
+        self.assertIn('class="fscore"', text)                                  # ... with the score of the file before its pie
+        self.assertIn('RS.pane(\'methods\'', text)
+
+
+    def test_T30_the_methods_of_a_file_carry_a_pie_a_dot_and_reasons_from_spaghettichk_and_a_changed_file_is_judged_again(self):
+        proj = os.path.join(self.folder, 'proj')
+        for sub in ('tools', 'tests'):
+            os.makedirs(os.path.join(proj, sub), exist_ok=True)
+        mod = os.path.join(proj, 'tools', 'mod.py')
+        good = ('"""mod -- a demo.\n\nExposes alpha and Beta.\n\nVERSION  M1 m01.v01 (2026-11-04): first version.\n"""\n'
+                '__all__ = [\'alpha\', \'Beta\']\n\n\n'
+                'def alpha(x, y):\n    """Add them because a sum is what the callers need.\n\n    More lines.\n    """\n    return x + y\n\n\n'
+                'def untested(v):\n    return getattr(other, \'a\')\n\n\n'
+                'class Beta:\n    def __init__(me):\n        me.size = 1\n        me._hidden = 2\n\n    def run(me):\n        return 1\n')
+        with open(mod, 'w', encoding='utf-8', newline='') as f:
+            f.write(good)
+        with open(os.path.join(proj, 'tools', 'bare.py'), 'w', encoding='utf-8', newline='') as f:
+            f.write('__all__ = [\'only\']\n\n\ndef only(a):\n    return a\n')
+        with open(os.path.join(proj, 'tools', 'consts.py'), 'w', encoding='utf-8', newline='') as f:
+            f.write("__all__ = ['SHOWN']\nSHOWN = 1\nLIMIT = 5\nINNER = 2\nLimit = 3\nSTYLEsheet = 4\nUNUSED = 9\n\n\n"
+                    "def f():\n    return INNER + STYLEsheet + SHOWN + Limit\n")
+        with open(os.path.join(proj, 'tools', 'user.py'), 'w', encoding='utf-8', newline='') as f:
+            f.write('x = LIMIT\n')
+        with open(os.path.join(proj, 'tools', 'noall.py'), 'w', encoding='utf-8', newline='') as f:
+            f.write('def x():\n    return 1\n')
+        with open(os.path.join(proj, 'tests', 'b_mod.py'), 'w', encoding='utf-8', newline='') as f:
+            f.write('from mod import alpha, untested\n\n\nclass b_mod:\n    def test_alpha(self):\n        assert alpha(1, 2) == 3\n')
+        page = FakePage(rs3.contactRS('view', rel_of(mod), False)['path'])
+        try:
+            got = page.ask({'do': 'methods', 'hash': page.hash, 'path': rel_of(mod)})
+            self.assertTrue(got['ok'], got)
+            rows = {m['name']: m for m in got['methods']}
+            for row in rows.values():
+                if row['kind'] != 'const':
+                    self.assertEqual(sum(row['pie']), 100 if any(row['pie']) else 0, row)           # the pie is percent
+            self.assertEqual((rows['__all__']['band'], rows['__all__']['pie']), ('green', [100, 0, 0, 0]))   # two names in __all__: green
+            many = os.path.join(proj, 'tools', 'many.py')
+            with open(many, 'w', encoding='utf-8', newline='') as f:
+                f.write('__all__ = [' + ', '.join(f"'n{k}'" for k in range(9)) + ']\n')
+            big = page.ask({'do': 'methods', 'hash': page.hash, 'path': rel_of(many)})
+            self.assertEqual([(m['band'], m['pie']) for m in big['methods']], [('red', [0, 0, 0, 100])])       # nine names: too many, red
+            self.assertGreater(rows['alpha']['pie'][0], 50)                                          # tested, documented: mostly green
+            self.assertEqual(rows['alpha']['dot'], 'green')                                          # a suite names it, nothing under it: green
+            self.assertEqual(rows['untested']['dot'], '')                                            # not in __all__: no dot
+            self.assertEqual(rows['Beta']['dot'], 'red')                                             # in __all__, no suite names it
+            self.assertTrue(any(w.startswith('tested: green') for w in rows['alpha']['why']), rows['alpha']['why'])
+            self.assertEqual(rows['untested']['band'], 'red')                                        # getattr on another object forces red
+            self.assertTrue(any('getattr' in w and 'another object' in w for w in rows['untested']['why']), rows['untested']['why'])
+            self.assertTrue(any(w.startswith('tested: orange') for w in rows['Beta']['why']), rows['Beta']['why'])   # a suite, none names it
+            self.assertGreaterEqual(rows['Beta']['pie'][3], 1)                                       # a private name of a class: red
+            self.assertEqual(got['file']['band'], 'red')                                             # the suite reaches `untested`, not in __all__
+            self.assertTrue(any(w.startswith('suitepeek: red') and 'untested' in w for w in got['file']['why']), got['file']['why'])
+            consts = page.ask({'do': 'methods', 'hash': page.hash, 'path': rel_of(os.path.join(proj, 'tools', 'consts.py'))})
+            by = {m['name']: m for m in consts['methods'] if m['kind'] == 'const'}
+            self.assertEqual({k: (v['band'], v['pie']) for k, v in by.items() if k != '__all__'},
+                             {'SHOWN': ('orange', [0, 0, 100, 0]),                                   # in __all__: a constant should not be exposed
+                              'LIMIT': ('red', [0, 0, 0, 100]),                                      # used by another module, not exposed
+                              'INNER': ('green', [100, 0, 0, 0]),                                    # all capitals, private to the module
+                              'Limit': ('orange', [0, 0, 100, 0]),                                   # a literal with too few capitals
+                              'STYLEsheet': ('', [0, 100, 0, 0]),                                    # only the first three letters
+                              'UNUSED': ('orange', [0, 0, 100, 0])})                                 # never used
+            noall = page.ask({'do': 'methods', 'hash': page.hash, 'path': rel_of(os.path.join(proj, 'tools', 'noall.py'))})
+            note = [m for m in noall['methods'] if m['name'] == '__all__']
+            self.assertEqual([(m['band'], m['pie'], m['line']) for m in note], [('red', [0, 0, 0, 100], 1)])      # a note row, red
+            self.assertIn('no __all__', note[0]['text'])
+            bare = page.ask({'do': 'methods', 'hash': page.hash, 'path': rel_of(os.path.join(proj, 'tools', 'bare.py'))})
+            self.assertEqual({m['name']: m['dot'] for m in bare['methods'] if m['kind'] != 'const'}, {'only': 'red'})      # in __all__, and no suite
+            with open(mod, 'w', encoding='utf-8', newline='') as f:
+                f.write(good.replace('def alpha(x, y):\n    """Add them because a sum is what the callers need.\n\n    More lines.\n    """\n',
+                                     'def alpha(x, y):\n'))
+            again = page.ask({'do': 'methods', 'hash': page.hash, 'path': rel_of(mod)})
+            rows = {m['name']: m for m in again['methods']}
+            self.assertTrue(any(w.startswith('docs: red') for w in rows['alpha']['why']), rows['alpha']['why'])   # the new text was read
+        finally:
+            page.close()
+
 
     def test_T16_pulse_gives_the_status_and_the_log_lines_after_a_row(self):
         page = FakePage('/reportserver')

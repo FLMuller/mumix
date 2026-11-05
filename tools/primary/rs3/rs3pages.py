@@ -30,7 +30,8 @@ Routes (HTTP GET)
 The page table is S['pages'] (rs3table). A page that is an address is put in it when it is served and when it says
 hello (register_url), so a page whose server restarted finds its place again.
 
-VERSION  M2 m01.v03 (2026-11-04): the block of a locator comes from rs3layout.blocks (kind.suffix, definitions at the end); the status bar is a row added by parse(below=).
+VERSION  M2 m01.v04 (2026-11-04): the viewer takes the methods block's own width; the page carries html/table.js and table.css.
+         M2 m01.v03 (2026-11-04): the block of a locator comes from rs3layout.blocks (kind.suffix, definitions at the end); the status bar is a row added by parse(below=).
          M2 m01.v02 (2026-11-04): the panes of a page say where they sit, their blk{} list, what they take and hold (no where/TARGETS); a blk{} list is checked; a report that breaks the doc rules is served as its own page.
          M2 m01.v01 (2026-11-04): the address code is rs3util's, the page table rs3table's, the path rules pathof's;
          no file pages (a report is a doc block: /?layout=[doc]&doc=...); a block's sizes come from its write().
@@ -54,13 +55,13 @@ __all__ = ['VERBS', 'ROUTES', 'register_url']
 HOST = '127.0.0.1'
 HERE = os.path.dirname(os.path.abspath(__file__))
 PANES = os.path.join(HERE, 'panes')
-PAGE = os.path.join(HERE, 'html')                 # the page itself: page.html, page.css, manager.js, selftest.js
+PAGE = os.path.join(HERE, 'html')                 # the page itself: page.html, page.css, manager.js, table.js, table.css, selftest.js
 if PANES not in sys.path:                   # the blocks are modules of that folder
     sys.path.insert(0, PANES)
 KEEP = 50                                   # built pages kept in memory, and specifications kept on disk
 PAGES = os.path.join(HERE, 'pages')         # what load was given, for each page: a page survives a restart
 MONITOR = ('[ftv, [serverstatus ; log]]', {})
-VIEWER = '[methods 50dxh, [code ; editbox wx35d]]'
+VIEWER = '[methods, [code ; editbox wx35d]]'
 ICON = 'data:image/svg+xml,' + quote(asset(os.path.join(PAGE, 'favicon.svg'), 'svg').strip(), safe='/:=,')   # the seven-dot ring, the tab icon of every page
 MAX_TABS = 500                              # the files one block's data may name, patterns opened
 ROUTED = ('commentline', 'commentselect', 'saved')   # the signals that go to one block, the nearest (manager.js), or the list of blk{a,b}
@@ -159,10 +160,10 @@ def build(S, page, layout, specs, title, selftest=False):
     info = {'hash': page['hash'], 'address': page['path'], 'title': title, 'port': S['port'],
             'admin': bool(page.get('admin')), 'panes': panes, 'routed': list(ROUTED),
             'config': S['verbs']['config']({}, S)['config']}
-    fill = {'title': title.replace('<', '&lt;'), 'icon': ICON, 'pagecss': asset(os.path.join(PAGE, 'page.css'), 'css'),
+    fill = {'title': title.replace('<', '&lt;'), 'icon': ICON, 'pagecss': asset(os.path.join(PAGE, 'page.css'), 'css') + '\n' + asset(os.path.join(PAGE, 'table.css'), 'css'),
             'css': css, 'body': rs3layout.render(tree, html_of, defaults=sizes),
             'page': script_safe(json.dumps(info)), 'manager': asset(os.path.join(PAGE, 'manager.js'),
-                                                                     'js'),
+                                                                     'js') + '\n' + asset(os.path.join(PAGE, 'table.js'), 'js'),
             'js': script_safe(js + ('\n' + asset(os.path.join(PAGE, 'selftest.js'), 'js')
                                     + '\nRS.selftest();' if selftest else ''))}
     template = asset(os.path.join(PAGE, 'page.html'), 'html')

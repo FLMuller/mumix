@@ -86,6 +86,19 @@ build(*items) -> ok
     Rebuild the .pyx of each item with the current Python: the one module when the item is a
     module, every .pyx of the folder when it is a folder.
 
+compile(files) -> 0
+    Compile .pyx file(s) (a path, or a list of paths) into <folder>/pyxfiles/ for this
+    Python: Cython, then gcc to compile and link, every program started with no console
+    window. Returns 0 when every file was built. Every file is tried; then CompileError is
+    raised, its message naming each file, the step that failed (gcc missing or a Cygwin
+    gcc, Cython, compile, link) and that step's messages, and its `.code` the return
+    code of the first failure. The commands and the meaning of every option are
+    written out at the head of `compile` in this file.
+
+CompileError(message, code=1)
+    The exception compile raises. build() and load() catch it: a build that fails is a
+    failure.
+
 locate(name, here=None) -> Path or None
     The file load('name') would run, found by the same search, without importing or
     building anything: the .pyx when there is one, else the .py. `here` is the folder the
@@ -114,7 +127,12 @@ TRAPS  (each one has cost an afternoon)
     * A module that defines no `__all__`, no function or class of its own and no name
       like its file binds nothing: give it an `__all__`.
 
-VERSION  use 2.10 (2026-10-31): locate(name, here): the file load would run, found without importing.
+VERSION  use 2.12 (2026-11-05): compile(files) and CompileError: a .pyx
+         is built by Cython and by two gcc commands that this file runs itself, with no
+         console window (setuptools, a second Python and BUILD_SRC are gone). The flags:
+         -shared -O1 -w, then -shared -s (was -O1 -Wall; -O2 and -O3 timed no faster).
+         Snapshot: prev/usesetuptools.py.
+         use 2.10 (2026-10-31): locate(name, here): the file load would run, found without importing.
          use 2.9 (2026-10-30): a .pyx is stale also when a .pxd or an include of its own folder that it
          needs is newer than its build (needs): the modules that cimport a changed .pxd are
          rebuilt, and fail if already imported, like the .pyx itself.
@@ -142,18 +160,21 @@ VERSION  use 2.10 (2026-10-31): locate(name, here): the file load would run, fou
          helpers are module functions. Before: tools/use.py 2.2 (kept in
          tools/prev/use_m22.py).
 """
+import contextlib
 import fnmatch
 import importlib
 import importlib.machinery
 import importlib.util
 import inspect
+import io
 import os
 import re
 import subprocess
 import sys
+import sysconfig
 from pathlib import Path
 
-__all__ = ['use', 'load', 'run', 'build', 'locate', 'exclude', 'anchor']
+__all__ = ['use', 'load', 'run', 'build', 'compile', 'CompileError', 'locate', 'exclude', 'anchor']
 
 HERE = Path(__file__).resolve().parent              # the folder run() reloads code of
 DEFAULTS = ('primary',)                             # use() and load() with no item
@@ -552,33 +573,126 @@ def pyx_stale(folder, name):
     return True
 
 
-#: Cythonize every *.pyx of a folder, sending all artefacts to pyxfiles/. Run in a
-#: subprocess so it is a fresh interpreter and no extension already imported is locked.
-BUILD_SRC = r'''
-import glob, os, sys
-os.chdir(sys.argv[1])
-out = sys.argv[2]
-os.makedirs(out, exist_ok=True)
-from setuptools import setup, Extension
-from Cython.Build import cythonize
-names = sys.argv[3:] or [os.path.splitext(f)[0] for f in sorted(glob.glob("*.pyx"))]
-exts = [Extension(name, [name + ".pyx"]) for name in names]
-tmp = os.path.join(out, "_tmp")
-setup(name="_use_cy", script_args=["build_ext", "--build-lib", out, "--build-temp", tmp],
-      ext_modules=cythonize(exts, language_level=3, annotate=False, build_dir=out))
-'''
+# ---- compile: a .pyx becomes a module -------------------------------------------
+# Why we run gcc ourselves: setuptools ran the same commands three layers down, where
+# they could not be given CREATE_NO_WINDOW, so a server (pythonw.exe, no console) showed
+# a window for each gcc. Here every program is started hidden. Windows and a MinGW gcc
+# on PATH only; a .pyd that a process has loaded is locked. Each step is explained where
+# it runs, each flag where it is set.
+
+COMPILER = 'gcc'                                    # found through PATH
+# Compile step (name.c -> name.o):
+#   -shared  the output is a library (a DLL), not a program.
+#   -O1      light optimisation for speed. On the lexer (z_sandbox/b_optlevel) -O0 took
+#            15.8 ms, -O1 11.2, -O2 11.6, -O3 11.2: the time is in calls into Python.
+#   -w       no warnings: Cython's C draws notes nobody can act on. Errors still stop.
+COMPILE_FLAGS = ['-shared', '-O1', '-w']
+# Link step (name.o -> name.pyd): -s strips the symbol table (smaller file, same speed;
+# a crash in the C shows addresses, not names).
+LINK_FLAGS = ['-shared', '-s']
+NO_WINDOW = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+NUMPY = re.compile(r'^[ \t]*(?:cimport[ \t]+numpy|from[ \t]+numpy[ \t]+cimport)', re.M)
 
 
-def build_ext(folder, names=()):
-    """Build the .pyx of `names` (every .pyx of the folder when there are none) with THIS
-    Python: (ok, the last of its messages). Only what is named is compiled, so a .pyx that
-    does not build cannot stop one that does."""
-    print(f'  use: building {", ".join(names) if names else "the extensions"} in {rel(folder)} for '
-          f'Python {sys.version_info.major}.{sys.version_info.minor} ...')
-    done = subprocess.run([sys.executable, '-c', BUILD_SRC, str(folder), PYXOUT, *names],
-                          capture_output=True, text=True)
-    importlib.invalidate_caches()                   # the finders listed the folder before
-    return done.returncode == 0, (done.stderr or done.stdout or '')[-600:]
+class CompileError(Exception):
+    """A .pyx that did not become a module: names the file, the step and its messages;
+    `code` is the step's return code (127: gcc or Cython missing)."""
+
+    def __init__(me, message, code=1):
+        super().__init__(message)
+        me.code = code
+
+
+def hidden(command):
+    """Run a program with no window: (return code, messages); 127 if not started."""
+    try:
+        done = subprocess.run(command, capture_output=True, text=True,
+                              creationflags=NO_WINDOW)
+    except OSError as error:
+        return 127, f'{command[0]}: {error}'
+    return done.returncode, (done.stderr or '') + (done.stdout or '')
+
+
+def compile_one(pyx):
+    """One .pyx to <folder>/pyxfiles/<name><suffix>: Cython, compile, link (.c in
+    pyxfiles, .o and .def in pyxfiles/_tmp). Raises CompileError."""
+    pyx = os.path.abspath(pyx)
+    folder, name = os.path.split(pyx)
+    name = os.path.splitext(name)[0]
+    if not os.path.isfile(pyx):
+        raise CompileError(f'{name}: {pyx} is not there')
+    out = os.path.join(folder, PYXOUT)
+    os.makedirs(os.path.join(out, '_tmp'), exist_ok=True)
+    c_file, obj = os.path.join(out, name + '.c'), os.path.join(out, '_tmp', name + '.o')
+    symbols = os.path.join(out, '_tmp', name + '.def')
+    pyd = os.path.join(out, name + sysconfig.get_config_var('EXT_SUFFIX'))
+
+    # gcc must be there, and not a Cygwin one (its binaries need cygwin1.dll).
+    code, text = hidden([COMPILER, '-dumpmachine'])
+    if code == 127:
+        raise CompileError(f'{name}: gcc was not found on PATH ({text.strip()})', 127)
+    if text.strip().endswith('cygwin'):
+        raise CompileError(f'{name}: gcc is a Cygwin build; a .pyd needs MinGW', code or 1)
+
+    # Step 1, Cython: name.pyx -> name.c, here. A cimport is found in the .pyx's folder.
+    try:
+        from Cython.Compiler import Main
+    except ImportError as error:
+        raise CompileError(f'{name}: Cython is not installed ({error})', 127)
+    messages = io.StringIO()
+    with contextlib.redirect_stderr(messages):
+        result = Main.compile(pyx, language_level=3, output_file=c_file,
+                              include_path=[folder], full_module_name=name)
+    if result.num_errors:
+        raise CompileError(f'{name}.pyx: Cython found {result.num_errors} error(s)\n'
+                           f'{messages.getvalue()[-800:]}', 1)
+
+    # Step 2, compile: the C text becomes machine code; the calls into Python are left
+    # as blanks. -I the header folders (numpy's too, for a .pyx that cimports it),
+    # -c stop before linking, -o the output.
+    includes = [sysconfig.get_paths()['include']]
+    with open(pyx, encoding='utf-8', errors='replace') as f:
+        if NUMPY.search(f.read()):
+            import numpy
+            includes.append(numpy.get_include())
+    compiling = [COMPILER, *COMPILE_FLAGS, *['-I' + d for d in includes],
+                 '-c', c_file, '-o', obj]
+
+    # Step 3, link: fills the blanks from the Python library (-L its folders, -l its
+    # name) and joins name.o and the .def file, which names the export PyInit_<name>,
+    # the function Python calls on import, into name.pyd.
+    with open(symbols, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(f'LIBRARY {os.path.basename(pyd)}\nEXPORTS\nPyInit_{name}\n')
+    base = sys.base_prefix
+    folders = [os.path.join(base, 'libs'), base, os.path.join(base, 'PCbuild', 'amd64')]
+    free = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
+    linking = [COMPILER, *LINK_FLAGS, obj, symbols, *['-L' + d for d in folders if os.path.isdir(d)],
+               f'-lpython{sys.version_info.major}{sys.version_info.minor}{free}', '-o', pyd]
+
+    for step, command in (('compile', compiling), ('link', linking)):
+        code, text = hidden(command)
+        if code:
+            raise CompileError(f'{name}.pyx: the {step} step failed (gcc returned '
+                               f'{code})\n{text[-800:]}', code)
+
+
+def compile(files):
+    """Compile .pyx file(s) (a path or a list) into <folder>/pyxfiles/ for this Python.
+    Returns 0 when all were built. Every file is tried; then CompileError names each
+    failure, its `code` that of the first."""
+    files = [str(f) for f in ([files] if isinstance(files, (str, os.PathLike)) else files)]
+    print(f'  use: compiling {", ".join(os.path.basename(f) for f in files)} ...')
+    failed, code = [], 0
+    for pyx in files:
+        try:
+            compile_one(pyx)
+        except CompileError as error:
+            failed.append(str(error))
+            code = code or error.code
+    importlib.invalidate_caches()           # the finders listed the folder before
+    if failed:
+        raise CompileError('\n'.join(failed), code)
+    return 0
 
 
 STAMPS = {}                                         # module name -> (mtime_ns, size) imported
@@ -699,11 +813,12 @@ class Loading:
         broken = set()
         if stale and folder not in me.built:
             me.built.add(folder)
-            ok, tail = build_ext(folder, stale)
-            if not ok:
+            try:
+                compile([os.path.join(folder, name + '.pyx') for name in stale])
+            except CompileError as error:
                 broken = set(stale)
                 for name in stale:
-                    me.fail(name, f'build failed: {tail}')
+                    me.fail(name, f'build failed: {str(error)[-600:]}')
         for name in pyx_names:
             if name in broken:
                 continue
@@ -822,9 +937,14 @@ def build(*items):
         if (folder, names) in seen:
             continue
         seen.add((folder, names))
-        ok, tail = build_ext(folder, names)
-        print(f'  use.build: {item} ' + ('done' if ok else 'FAILED\n' + tail))
-        ok_all = ok_all and ok
+        names = names or [os.path.splitext(f)[0] for f in sorted(os.listdir(folder))
+                          if f.endswith('.pyx')]
+        try:
+            compile([os.path.join(folder, name + '.pyx') for name in names])
+            print(f'  use.build: {item} done')
+        except CompileError as error:
+            print(f'  use.build: {item} FAILED\n{str(error)[-600:]}')
+            ok_all = False
     return ok_all
 
 

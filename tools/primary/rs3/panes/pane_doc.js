@@ -63,6 +63,9 @@ RS.pane('doc', function(ctx){
       box.insertBefore(note, box.firstChild);
     }
   }
+  Array.prototype.forEach.call(box.querySelectorAll('table'), function(t){      // a table with a header row gets the star and the hamburger (RS.table), unless its page made its own
+    if (t.tHead && t.tHead.rows.length && t.tBodies.length && !t.querySelector('.sortbtn')) RS.table.make(t);
+  });
 
   // ---- the search of the text of the box ----
   function clear(){

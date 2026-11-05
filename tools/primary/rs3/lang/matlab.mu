@@ -52,11 +52,11 @@ Class: ^\s*classdef\s+(?:\([^)]*\)\s*)?(\w+)
 | decorator | decorator | `@property` | #9A6700 | - | 400 | yes | no |
 | annotation | annotation | `x: int` | #6F42C1 | - | 400 | no | no |
 | number | number | `0x1F 3.5e-3` | #0000FF | - | 400 | no | no |
-| string | string | `"text"` | #1F2328 | - | 400 | no | no |
+| string | string | `"text"` | #1F2328 | #FFFEFA | 400 | no | no |
 | format code | format | `%4.1f !r :>5` | #808080 | - | 600 | no | no |
 | escape | escape | `\n {{ }}` | #808080 | - | 400 | no | no |
 | docstring | docstring | `"""Doc."""` | #0A7D0A | #D1E5F0 | 400 | yes | no |
-| other triple string | triple | `'''text'''` | #1F2328 | - | 400 | no | no |
+| other triple string | triple | `'''text'''` | #1F2328 | #FFFEFA | 400 | no | no |
 | operator | operator | `+ == ->` | #1F2328 | - | 400 | no | no |
 | punctuation | punct | `, ; : .` | #1F2328 | - | 400 | no | no |
 | bracket, outer pair | br0 | `( )` | #5A6472 | - | 500 | no | no |

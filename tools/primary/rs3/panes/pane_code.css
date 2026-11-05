@@ -14,6 +14,9 @@
 .mg{flex:none;width:18px;text-align:center;cursor:pointer}
 .ln .mg{cursor:default}
 .ln.flash,.cm.flash{background:#fff3c4}
+.clines .folded{display:none}
+.clines .dim{opacity:.3}
+.clines .gap{border-top:1px dashed #c8b8a8;margin-top:8px}      /* a gap where lines are folded away */
 .clines .ln.sel{background:#fdebd0}                       /* the line that was clicked: the soft orange of the number's hover (blue is for comments) */
 .cm{display:flex;background:#f4f9ff;border-left:3px solid #2f6fe0;font-family:Verdana,Arial,sans-serif;font-size:11px;cursor:pointer}
 .cm[data-who="user"]{background:#fff8f2;border-left-color:var(--usercolor,#e8650f)}

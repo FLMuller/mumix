@@ -53,6 +53,7 @@ VERSION  M1 m01.v07 (2026-10-31): the colours: green is exported and named by a 
          colour scheme files), not from lang/*.json.
          M1 m01.v01 (2026-10-28): first version.
 """
+import sys
 import ast
 import hashlib
 import html
@@ -61,6 +62,7 @@ import re
 
 from codelex import language, lex
 from htmlwriter import htmappend, htmwriteln
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/: the one use.py
 from use import load
 
 load('marked')                       # md2htm, compiled: use finds marked.pyx beside this file

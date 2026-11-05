@@ -19,17 +19,32 @@ RS.pane('code', function(ctx){
     document[row ? 'addEventListener' : 'removeEventListener']('click', away);       // (only while a line is chosen: every tab has a code pane)
   }
   lines.addEventListener('scroll', function(){ if (chosen) choose(null); });
-  function wipe(){ choose(null); lines.innerHTML = place; cpath.textContent = 'no file'; cur = {path: '', base: ''}; hits = []; }
+  var folding = null;                   // {ranges, focus} while the list of methods has the file folded to some of them
+  function fold(){                      // the lines outside the ranges are folded away (focus: greyed); a gap line shows where
+    var ranges = folding && folding.ranges, seen = false, hidden = false;
+    Array.prototype.forEach.call(lines.children, function(el){
+      var n = +(el.dataset.n || el.dataset.first || 0);
+      if (!n) return;
+      var inside = !ranges || ranges.some(function(r){ return n >= r[0] && n <= r[1]; });
+      el.classList.toggle('folded', !!ranges && !folding.focus && !inside);
+      el.classList.toggle('dim', !!ranges && !!folding.focus && !inside);
+      el.classList.toggle('gap', !!ranges && !folding.focus && inside && hidden && seen);
+      if (ranges && !folding.focus){ if (inside){ seen = true; hidden = false; } else hidden = true; }
+    });
+  }
+  function wipe(){ choose(null); folding = null; lines.innerHTML = place; cpath.textContent = 'no file'; cur = {path: '', base: ''}; hits = []; }
   function load(path, keep){
     var top = lines.scrollTop;
     return ctx.verb('open', {path: path}).then(function(r){
       if (!r.ok){ lines.innerHTML = '<p class="mute">' + (r.error || 'the server would not open it') + '</p>'; return; }
       choose(null);
+      if (!keep) folding = null;
       lines.innerHTML = r.html;
       cur = {path: path, base: r.base};
       cpath.textContent = path.replace(/^\.\//, '');      // direction:rtl would move a leading ./ to the end
       cpath.title = path;
       hits = []; at = -1;
+      fold();
       if (keep) lines.scrollTop = top;
     }).catch(function(e){ lines.innerHTML = '<p class="mute">' + e.message + '</p>'; });
   }
@@ -97,6 +112,11 @@ RS.pane('code', function(ctx){
       cur = {path: d.path, base: ''};
       load(d.path);
       say(true);
+    },
+    onShowmethods: function(d){
+      if (d.path !== cur.path) return;
+      folding = d.ranges ? {ranges: d.ranges, focus: !!d.focus} : null;
+      fold();
     },
     onSelectfunk: function(d){ var el = lineOf(d.lineno); if (el){ el.scrollIntoView({block: 'start'}); flash(el); } },
     onSaved: function(d){ if (d.path === cur.path) load(cur.path, true); },

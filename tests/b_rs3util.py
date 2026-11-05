@@ -42,7 +42,7 @@ def put(path, text='x'):
 
 class b_rs3util(bench):
     BenchName = 'rs3util'
-    BenchVersion = 'M1.0.1'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.2'          # runbench adds 1 to the last number on every run
     BenchHeader = 'pathof (paths, patterns, ignore rules) and address (a page as an address)'
     sources = SOURCES
 
@@ -177,7 +177,7 @@ class b_rs3util(bench):
     def test_T12_an_address_is_short_and_makes_the_page_again(self):
         blocks = {'toptabs': ['toptabs', './mumix/tools/primary/rs3.py', './mumix/tools/primary/rs3/rs3util.py', './mumix/tests/b_rs3.py']}
         url = address('[ftv wdxh, [toptabs ; [methods wdxh, [code ; editbox wxhd]]]]', blocks,
-                      sizes={'ftv': (75, None), 'methods': (50, None), 'editbox': (None, 42)})
+                      sizes={'ftv': (75, None), 'methods': (55, None), 'editbox': (None, 42)})
         self.assertEqual(url, '/?layout=[ftv,[toptabs;[methods,[code;editbox]]]]&toptabs=mumix/{tools/primary/rs3.py,tools/primary/rs3/rs3util.py,tests/b_rs3.py}')
         layout, specs, title, selftest = address(url)
         self.assertEqual((layout, selftest), ('[ftv,[toptabs;[methods,[code;editbox]]]]', False))

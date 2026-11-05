@@ -22,11 +22,13 @@ find_tests(root, path) -> [paths]   the b_<stem>.py suites in test/ or tests/ of
 
 VERSION  M1 m01.v01 (2026-11-01): first version, for vcomment.
 """
+import sys
 import hashlib
 import html
 import os
 import re
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/: the one use.py
 from use import load
 
 import vclang

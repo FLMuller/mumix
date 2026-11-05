@@ -1,0 +1,34 @@
+/* table.css -- the star and the hamburger of RS.table (table.js): the report pages' css for them (runbench.css), a table made with
+   RS.table has the class tbl. The icons take the colour of the header text. */
+.tbl .hd{display:flex;align-items:center}
+.tbl .hl{flex:1;overflow:hidden;text-overflow:ellipsis}
+.tbl button.sortbtn,.tbl details.bandmenu summary{color:inherit}
+.tbl button.sortbtn{margin-right:0;padding:0}
+.tbl details.bandmenu{margin-left:0}
+.tbl details.bandmenu summary{padding-left:3px}
+button.sortbtn{border:none;background:none;color:#fff;opacity:.85;cursor:pointer;font-size:10px;padding:0 2px;min-width:12px;vertical-align:middle;line-height:0}
+button.sortbtn:hover{opacity:1}
+button.sortbtn.on{opacity:1;text-shadow:0 0 3px #fff}
+button.sortbtn svg{display:block;width:13px;height:13px;fill:currentColor}
+button.sortbtn[data-dir="asc"] .dn,button.sortbtn[data-dir="desc"] .up{display:none}
+details.bandmenu{display:inline-block;position:relative;margin-left:4px;vertical-align:middle}
+details.bandmenu summary{list-style:none;cursor:pointer;font-size:11px;padding:2px 4px;line-height:0;color:#fff;border:none;border-radius:3px}
+details.bandmenu summary svg{display:block;width:12px;height:9px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+div.fx{display:flex;align-items:center;gap:2px;margin-bottom:3px}
+input.fbox{flex:1;min-width:160px;font:inherit;border:1px solid #e0a878;border-radius:3px;padding:1px 4px}
+input.fbox.bad{color:#c0392b;border-color:#c0392b}
+button.fclr{border:none;background:none;color:#8a4500;cursor:pointer;font-size:11px;padding:0 2px}
+div.ferr{color:#c0392b;font-size:11px;white-space:normal;max-width:240px;margin-bottom:3px}
+div.ferr b{text-decoration:underline}
+#fguide{position:fixed;z-index:9;max-width:380px;padding:8px 12px;background:#fff;color:#3a2a1c;border:1px solid #e0a878;border-radius:5px;box-shadow:0 3px 10px rgba(0,0,0,.35);font-size:11px;font-weight:normal;text-align:left}
+#fguide p{margin:6px 0}
+#fguide table{border-collapse:collapse}
+#fguide td{padding:1px 8px 1px 0;vertical-align:top}
+#fguide code{background:#fdebd0;padding:0 4px;border-radius:2px;white-space:nowrap}
+details.bandmenu summary::-webkit-details-marker{display:none}
+details.bandmenu.filtering summary{background:#fff;color:#8a4500;font-weight:bold}
+div.bandpop{position:absolute;top:100%;left:0;z-index:5;margin-top:3px;padding:4px 12px 4px 8px;background:#fff;color:#3a2a1c;border:1px solid #e0a878;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.3);text-align:left;font-weight:normal;white-space:nowrap;max-height:260px;overflow:auto}
+div.bandpop label{display:block;cursor:pointer;padding:1px 0}
+details.bandmenu.filtering label.all{color:#999}
+span.shown{margin-left:14px;color:#3a3a3a}
+tr.nomatch{display:none}

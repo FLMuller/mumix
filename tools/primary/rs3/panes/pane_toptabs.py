@@ -19,7 +19,7 @@ makes the pane that goes behind announce showcode off and the one now in front s
 Signals
     receives  onShowfile {path, show}     switch to the tab of that file, or make one; show false: remove the tab
               onSelectfunk, onSaved, onSearchtext, onSearchnext,
-              onSearchprev: handed on to the code pane of the tab that is shown
+              onSearchprev, onShowmethods: handed on to the code pane of the tab that is shown
     emits     mngshowfile {path, show, to}   for the files the page was made with; and what the code panes inside emit
               (showcode, linenoClicked, commentline, commentselect, searchcount): they speak as this block
 IN and OUT below are these names.
@@ -27,7 +27,8 @@ IN and OUT below are these names.
 The css and js of the code block ride along (the `also` of the dict write returns), so a
 page with tabs and no code block of its own still works.
 
-VERSION  M1 m01.v04 (2026-11-04): showfile in, showcode out (no more openfile/closefile, no where); takes and holds are declared.
+VERSION  M1 m01.v05 (2026-11-04): hands showmethods on to the code pane of the tab shown.
+         M1 m01.v04 (2026-11-04): showfile in, showcode out (no more openfile/closefile, no where); takes and holds are declared.
          M1 m01.v03 (2026-11-04): what it can find is returned by write().
          M1 m01.v02 (2026-11-05): sections of a static page as tabs (the report page), put away and brought back.
          M1 m01.v01 (2026-11-03): first version.
@@ -40,7 +41,7 @@ from rs3util import asset, done, split_package
 
 __all__ = ['write']
 
-IN = ['showfile', 'selectfunk', 'saved', 'searchtext',
+IN = ['showfile', 'selectfunk', 'showmethods', 'saved', 'searchtext',
       'searchnext', 'searchprev']
 OUT = ['mngshowfile', 'showcode', 'linenoClicked', 'commentline', 'commentselect', 'searchcount']
 

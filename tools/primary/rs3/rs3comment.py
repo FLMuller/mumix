@@ -7,11 +7,17 @@ Paths are ./ from HOME, like every path in a message)
     open     {do: 'open', hash, path}        -> {ok, html, base, path}
              the lines of one file under the page's root: colouring, comment threads. `base` is
              the sha1 the file had when it was read; an edit must send it back.
-    methods  {do: 'methods', hash, path}     -> {ok, path, methods: [{name, line, size, calls,
-             colour}]}
-             the functions and classes of the file as Class.method, with the colour of the rules
-             below: green exported and named by a test, red short or called under twice or not named,
-             amber red with a ###cld comment above, '' the rest
+    methods  {do: 'methods', hash, path}     -> {ok, path, file, methods: [{name, owner, kind, line, top, last, size,
+             calls, colour, text, band, pie, dot, score, why}]}
+             the functions, classes and (Python) constants of the file, by line: name is the short name, owner
+             the class (Outer.Inner) or the file's own name, kind def | class | const, top the line where its
+             decorators start and last its last line (a class runs to the end of its methods), text its def line or
+             the line that gives a constant its value (a constant is a module-level name that starts with three
+             capitals, or __all__; a module-level name set to a literal with fewer capitals is listed too, and judged). A Python function or class also has its spaghettichk colour: band (green, '' the
+             middle, orange, red), pie (percent of green, grey, orange and red), dot (for a name in __all__: red not
+             tested, orange some tested, grey all tested but the functions under it not shown to be reached, green all
+             tested and reached; '' for the others), score and why (the reasons), and colour, the band as the colour of its name (red, amber, green).
+             file is the same for the whole file (None for a language without facts).
     check    {do: 'check', hash, filename}   -> {ok}   may comments be added to that file?
     update   {do: 'update', hash, filename, first, last, base, tag, text}
                                              -> {ok, base, first, last, delta, html, removed}
@@ -31,13 +37,9 @@ A comment is a run of lines `<triplet><tag> text` of the file's language (### fo
 MATLAB ...): the tag says who wrote it (cld is Claude's, anything else a user's initials), the text is
 Markdown. A line of the triplet alone is a rule.
 
-The colours of the methods (Python and Cython; the other languages are listed uncoloured). A name is
-green when the module exports it (__all__; with none, every name not starting with an underscore) and a
-test names it; red when a test suite of the file exists and the name is not named by it, or is short
-(under SHORT lines), or is called less than twice in its own file; black otherwise, and always black
-for a file that is itself a suite (b_*.py) or has none. A red name with a comment right above it (the
-reason it is acceptable) is amber. A method goes with its class. The suites of a file are
-tests/b_STEM.py or test/b_STEM.py of the page's root.
+The colours of the methods (Python; the other languages are listed uncoloured) are spaghettichk's: see its header. The files
+it looks in are the files of the file's own folder, and the suites are b_STEM.py of the test or tests folder beside the
+tools folder; Source (rs3lex) keeps every file it reads, so a file that changed is read and judged again.
 
 An edit is written only if the file's sha1 is `base`, the text is under 30000 characters and does not
 hold what closes the comment, and the lines it changes are comment lines (for Python the syntax tree is the
@@ -46,7 +48,9 @@ inside a docstring, a string or a block comment: it is a line of that text then,
 string that is data changes, the code may break, and the reply says so: `note`). Nothing else is ever written. The marker is the file's language's,
 whatever the page sends. The file is written to a temporary name and renamed over the original.
 
-VERSION  M3 m01.v05 (2026-11-04): a comment may go inside a docstring or any string (the reply has a note); the syntax tree is compared with the comment lines taken out.
+VERSION  M3 m02.v01 (2026-11-04): the rows of methods come from Source.facts() and are judged by spaghettichk (pie, dot, score, why); the ast code of the list is gone (the edit guard keeps its ast.parse).
+         M3 m01.v06 (2026-11-04): the rows of methods carry the owner, the kind (def, class, const), the lines a fold keeps (top, last) and the def line; module-level constants (three capitals to start, or __all__) are rows.
+         M3 m01.v05 (2026-11-04): a comment may go inside a docstring or any string (the reply has a note); the syntax tree is compared with the comment lines taken out.
          M3 m01.v04 (2026-11-04): the file is a Source of rs3lex; located is here (pathof); markdown and escape are here; exports only VERBS.
          M3 m01.v03 (2026-11-04): a Markdown file opens as md2htm's page of it, in numbered blocks, its code blocks and the numbers of its text coloured, the columns of numbers centred; YAML front matter plain.
          M3 m01.v02 (2026-11-04): rs3lex is the language, the lexer and the comment marker: no vclang.
@@ -55,6 +59,7 @@ VERSION  M3 m01.v05 (2026-11-04): a comment may go inside a docstring or any str
          names from the syntax tree; the file is read once for open and methods (rs3lex's Source).
          (rs3vcomment M2 m01.v01: open gave the lines only. rs2 rsvcomment m02.v01: ./ paths in and out.)
 """
+import sys
 import ast
 import hashlib
 import html
@@ -62,10 +67,12 @@ import os
 import re
 
 from rs3util import pathof
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # tools/: the one use.py
 from use import load
 
 load('marked')           # marked.py: md2htm, rs3's own copy, found beside this file
 load('rs3lex')           # rs3lex.pyx: Source and css
+load('spaghettichk')     # spaghettichk.py: isspaghetti
 
 def escape(text):
     return html.escape(text, quote=False)
@@ -79,9 +86,6 @@ def markdown(text):
 
 MAX_BYTES = 4 * 1024 * 1024                                # a source file longer than this is not opened
 OPENABLE = ('code', 'md', 'text')
-SHORT = 5                                                  # fewer lines than this is a short function
-DEF = re.compile(r'^\s*(?:async\s+)?(?:cp?def|def)\s+(?:[\w\[\]\s*]+?\s+)?(\w+)\s*\(')
-SUITES = ('test', 'tests')
 FENCED = re.compile(r'<pre><code class="language-([\w+-]+)">(.*?)</code></pre>', re.S)       # as md2htm writes a fence
 FENCE = re.compile(r'^\s*(```|~~~)')
 HEADING = re.compile(r'^\s{0,3}#{1,6}(?:\s|$)')
@@ -329,127 +333,57 @@ def open_file(msg, S):
 
 
 # ---- methods: the functions and their colours ---------------------------------------------------
-def exports(text, tree):
-    """The names a module lists in __all__, or None when it lists none (a Python file read as a
-    tree, a Cython file by its text)."""
-    if tree is not None:
-        for node in tree.body:
-            if isinstance(node, ast.Assign) and any(
-                    isinstance(t, ast.Name) and t.id == '__all__' for t in node.targets):
-                try:
-                    return set(ast.literal_eval(node.value))
-                except (ValueError, TypeError):
-                    return None
-        return None
-    m = re.search(r'^__all__\s*=\s*[\[(](.*?)[\])]', text, re.M | re.S)
-    return set(re.findall(r'[\'"](\w+)[\'"]', m.group(1))) if m else None
+TEXT_MAX = 200                                          # the longest def line or value a row carries
+BANDS = {'red': 'red', 'orange': 'amber', 'green': 'green', '': ''}     # the colour of a name, from the band of its pie
 
 
-def colour(tested, exported, named, size, calls):
-    """'' black, 'green' or 'red': see the module header (red asks for a reason above the name)."""
-    if not tested:
-        return ''
-    if exported and named:
-        return 'green'
-    return 'red' if (not named or size < SHORT or calls < 2) else ''
+def areas(real):
+    """(area, testarea) of a file for spaghettichk: the files of its own folder, and the suites of the tests folder next to
+    its tools folder (tests live in ./test or ./tests beside ./tools); '' for what is outside HOME."""
+    here = os.path.dirname(real).replace('\\', '/')
+    short = pathof(here)
+    cut = (here + '/').find('/tools/')
+    tests = pathof(here[:cut]) if cut > 0 else None
+    return (short + '/*.{py,pyx}' if short else ''), (tests + '/{test,tests}/b_*.py' if tests else '')
 
 
-def find_tests(root, real):
-    """The b_<stem>.py suites of root's test and tests folders that test this file."""
-    stem = os.path.splitext(os.path.basename(real))[0]
-    found = []
-    for folder in SUITES:
-        suite = os.path.join(root, folder, 'b_' + stem + '.py')
-        if os.path.isfile(suite) and os.path.abspath(suite) != os.path.abspath(real):
-            found.append(suite)
-    return found
+def row_of(src, name, owner, kind, line, top, last, calls, colour=None):
+    """One row of the methods list: name is the short name, owner the class (Outer.Inner) or the file's own name, kind
+    def | class | const; top is where its decorators start, last its last line (the lines a fold of it keeps); text is its
+    def line, or for a constant the line that gives its value. colour is the spaghettichk colour of a function or class:
+    band, pie (percent of green, grey, orange, red), dot, score and why (the reasons)."""
+    row = {'name': name, 'owner': owner, 'kind': kind, 'line': line, 'top': top, 'last': last, 'size': last - line + 1,
+           'calls': calls, 'colour': '', 'text': src.lines[line - 1].strip()[:TEXT_MAX]}
+    if colour is not None:
+        row.update(colour='' if kind == 'const' else BANDS[str(colour)], band=str(colour), pie=list(colour.pie), dot=colour.dot,
+                   score=round(colour.score, 1), why=colour.why)
+    return row
 
 
-def top_of(node):
-    """The first line of a def or class, its decorators included."""
-    return min([d.lineno for d in node.decorator_list] + [node.lineno])
-
-
-def walk(node, classes, found, tree):
-    """Collect (name, word, first, last, top, kind, owner) of every function (as Class.method inside a
-    class) and every top-level class, depth first."""
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            found.append(('.'.join(classes + [child.name]), child.name, child.lineno, child.end_lineno,
-                          top_of(child), 'function', classes[0] if classes else child.name))
-            walk(child, classes, found, tree)
-        elif isinstance(child, ast.ClassDef):
-            if node is tree:
-                found.append((child.name, child.name, child.lineno, child.end_lineno, top_of(child),
-                              'class', child.name))
-            walk(child, classes + [child.name], found, tree)
-        else:
-            walk(child, classes, found, tree)
-
-
-def python_functions(src, tree):
-    """([(name, word, first, last, top, kind, owner)], {word: uses}) of a Python file read as a tree."""
-    found = []
-    walk(tree, [], found, tree)
-    found.sort(key=lambda f: f[2])
-    used = {}
-    for node in ast.walk(tree):
-        word = node.id if isinstance(node, ast.Name) else node.attr if isinstance(
-            node, ast.Attribute) else None
-        if word:
-            used[word] = used.get(word, 0) + 1
-    return found, used
-
-
-def text_functions(src):
-    """The same for a Cython file, or a Python one that does not parse: found by a line pattern, a
-    def counting as a use of its own name."""
-    starts = [(i + 1, DEF.match(x).group(1)) for i, x in enumerate(src.lines) if DEF.match(x)]
-    found = []
-    for k, (at, word) in enumerate(starts):
-        last = (starts[k + 1][0] - 1) if k + 1 < len(starts) else len(src.lines)
-        found.append((word, word, at, last, at, 'function', word))
-    used = {}
-    for word in re.findall(r'\w+', src.text):
-        used[word] = used.get(word, 0) + 1
-    return found, {w: n - (1 if w in {s[1] for s in found} else 0) for w, n in used.items()}
-
-
-def methods_of(src, root):
-    """[{name, line, size, calls, colour}] of a Source, by line."""
-    if src.lang.mode != 'python':                           # MATLAB, JS, CSS, notes: the lang file's Function and Class
+def methods_of(src):
+    """({the rows of the methods list, by line}, the colour of the file): see the module header. A Python file's rows come
+    from its facts and are judged by spaghettichk; the other languages are listed by their lang file's Function and Class
+    lines, uncoloured."""
+    facts = src.facts()
+    stem = os.path.splitext(os.path.basename(src.real))[0]
+    if facts is None:
         used = {}
         for word in re.findall(r'\w+', src.text):
             used[word] = used.get(word, 0) + 1
-        return [{'name': name, 'line': first, 'size': last - first + 1,
-                 'calls': max(0, used.get(name.rsplit('.', 1)[-1], 0) - 1), 'colour': ''}
-                for name, first, last, kind in src.functions()]
-    tree = None
-    if src.lang.name == 'python':
-        try:
-            tree = ast.parse(src.text)
-        except (SyntaxError, ValueError):
-            tree = None
-    found, used = python_functions(src, tree) if tree is not None else text_functions(src)
-    tests = None if os.path.basename(src.real).startswith('b_') else find_tests(root, src.real)
-    tested_text = ''
-    for test in tests or ():
-        with open(test, encoding='utf-8', errors='replace') as f:
-            tested_text += f.read() + '\n'
-    listed = exports(src.text, tree)
-    ended = {b[1] for b in src.comments().values()}          # the last line of each comment
-    out = []
-    for name, word, first, last, top, kind, owner in found:
-        size = last - first + 1
-        calls = max(0, used.get(word, 0))
-        named = len(re.findall(r'\b' + re.escape(word) + r'\b', tested_text)) if tests else 0
-        exported = (listed is None and not owner.startswith('_')) or (listed is not None
-                                                                      and owner in listed)
-        shade = colour(bool(tests), exported, named, size, calls)
-        if shade == 'red' and top - 1 in ended:
-            shade = 'amber'                                 # red, and a comment above says why that is fine
-        out.append({'name': name, 'line': first, 'size': size, 'calls': calls, 'colour': shade})
-    return out
+        return [row_of(src, name.rsplit('.', 1)[-1], name.rpartition('.')[0] or stem, 'class' if kind == 'class' else 'def',
+                       first, first, last, max(0, used.get(name.rsplit('.', 1)[-1], 0) - 1))
+                for name, first, last, kind in src.functions()], None
+    whole = isspaghetti(src, *areas(src.real))
+    out = [row_of(src, d.name, d.owner or stem, d.kind, d.first, d.top, d.last, facts.words.get(d.name, 0), whole.rows.get(d.first))
+           for d in facts.defs]
+    out += [row_of(src, name, stem, 'const', first, first, last, facts.words.get(name, 0), whole.rows.get(first))
+            for name, first, last in facts.consts + facts.literals]
+    if 0 in whole.rows:                                        # a file with no __all__: a red note row at the top
+        note = row_of(src, '__all__', stem, 'const', 1, 1, 1, 0, whole.rows[0])
+        note['text'] = 'no __all__ in this file: nothing is exposed, and nothing can be tested through it'
+        out.append(note)
+    out.sort(key=lambda row: row['line'])
+    return out, {'band': str(whole), 'pie': list(whole.pie), 'dot': whole.dot, 'score': round(whole.score, 1), 'why': whole.why}
 
 
 def methods(msg, S):
@@ -460,7 +394,8 @@ def methods(msg, S):
         src = Source.read(real)
     except (OSError, ValueError) as error:
         return refuse(f'{msg.get("path")}: {error}')
-    return {'path': msg.get('path'), 'methods': methods_of(src, pathof('./', start=page['root']))}
+    rows, whole = methods_of(src)
+    return {'path': msg.get('path'), 'methods': rows, 'file': whole}
 
 
 # ---- the edits ----------------------------------------------------------------------------------

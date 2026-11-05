@@ -1,13 +1,30 @@
-/* pane_methods.css */
+/* pane_methods.css -- the table of methods (the star and hamburger of its headers are table.css) */
 .methods{height:100%;display:flex;flex-direction:column;min-height:0;background:var(--paper,#fffaf5)}
 .mhead{display:flex;align-items:center;gap:6px;padding:2px 8px;background:#fdebd0;border-bottom:1px solid #e0a878;font-size:11px;color:#6b3a00}
 .mlist{flex:1;min-height:0;overflow:auto}
-.mrow{display:flex;justify-content:space-between;gap:8px;padding:1px 8px;border-bottom:1px solid #eedcd0;cursor:pointer;font-size:12px}
-.mrow:hover{background:#fdebd0}
-.mrow.cur{background:#ffe9c9;outline:1px solid #e67e22}
-.mrow[hidden]{display:none}
-.mname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mline{color:#999;font-size:11px}
-.mrow.green .mname{color:#1a7f37;font-weight:bold}
-.mrow.red .mname{color:#c0392b}
-.mrow.amber .mname{color:#d98200;font-weight:bold}
+.mlist .shown{display:block;padding:0 8px;font-size:11px;color:#6b3a00;min-height:0}
+.mlist .shown:empty{display:none}
+.mtab{border-collapse:collapse;min-width:100%;font-size:12px}
+.mtab th{background:#d35400;color:#fff;padding:2px 2px 2px 6px;text-align:left;font-size:11px;font-weight:normal;white-space:nowrap;position:sticky;top:0;z-index:3}
+.mtab th.st{min-width:46px}
+.mtab td{padding:1px 6px;border-bottom:1px solid #eedcd0;white-space:nowrap;cursor:pointer;user-select:none}      /* only a name can be selected as text */
+.mtab td.nm{user-select:text}
+.mtab td.ln{color:#999;font-size:11px;text-align:right}
+.mtab td.df{color:#6b3a00;max-width:48ch;overflow:hidden;text-overflow:ellipsis}
+.mtab td.ow{color:#8a6a4a}
+.mtab td.nm.class{font-weight:bold}
+.mtab td.nm.green{color:#1a7f37;font-weight:bold}
+.mtab td.nm.red{color:#c0392b}
+.mtab td.nm.amber{color:#d98200;font-weight:bold}
+.mtab td.st{text-align:center;width:46px}
+.mtab td.st .w{font-size:0}                                             /* the word is for the filter and the sort; the pie is drawn */
+.mtab td.st svg{vertical-align:middle}
+.mhead .fscore{margin-left:auto;margin-right:6px;font-weight:bold;cursor:help}
+.mhead .fpie{display:inline-flex;align-items:center;cursor:help}
+.methods.band-green .mhead{background:#dff1e3}                            /* the header is a pale colour of the file's band */
+.methods.band-grey .mhead{background:#ebebeb}
+.methods.band-orange .mhead{background:#fbe6c6}
+.methods.band-red .mhead{background:#f7d4cf}
+.mtab tr:hover td{background:#fdebd0}
+.mtab tr.pick td{background:#ffe0b8}
+.mtab tr.cur td{background:#ffe9c9}

@@ -6,11 +6,13 @@ read once. It reads lang/*.mu and nothing else.
     from use import load
     load('rs3lex')                               # builds rs3lex.pyx into pyxfiles/ if need be, binds Source and css
 
-    src = Source.read(real)               # a file read once (kept: the last 16, by path, size and time)
+    src = Source.read(real)               # a file read once (kept: the last 512, by path, size and time)
     src.raw, src.text, src.lines, src.base (the sha1 of raw: an edit sends it back), src.lang, src.mark
     src.tokens()                          # [[(role, text)]] for each line: the texts join back into the line
     src.lexed()                           # [(tokens, in_block, depth)] for each line, scanned once
     src.comments()                        # {first row: [first, last, tag]}: a run of review-comment lines of one tag
+    src.facts()                           # a Python file's defs, per-line facts, word counts, scopes: see Source.facts
+    src.derived(key, build)               # what a consumer built from this file, kept with it
     src.functions()                       # [(name, first, last, kind)] by the Function/Class lines
     src.inside(row)                       # is that row inside a block comment or a string?
     Source.coloured('py', text)           # the coloured pieces of some text read as that extension, or None
@@ -55,7 +57,8 @@ long (a string's prefix, a number, a Cython cast). It is a .pyx: plain Python th
 2026-11-04 on a 350-line Python file: codelex 8.5 ms, this as Python 5.7 ms, compiled 4.0 ms (JavaScript against
 vclang 1.4x, Markdown 2.5x faster). tests/b_rs3lex.py has the timings and the proof that the pieces are the same.
 
-VERSION  M2 m01.v02 (2026-11-04): css(): the text of a row that has the colour of its role has none of its own.
+VERSION  M2 m02.v01 (2026-11-04): Source keeps the last 512 files (was 16); facts() finds a Python file's defs, per-line facts, words and scopes in its token stream once; derived() keeps what a consumer built, for spaghettichk.
+         M2 m01.v02 (2026-11-04): css(): the text of a row that has the colour of its role has none of its own.
          M2 m01.v01 (2026-11-04): Source (the file read once, its tokens, comment runs and functions) is in here, from
          rs3source.py, which is gone: the language and the file are one unit; exports are Source and css.
          M1 m01.v02 (2026-11-04): a .pyx, loaded with use.load.
@@ -1109,15 +1112,251 @@ def functions(lines, lang, got=None):
 
 
 # ---- the file ------------------------------------------------------------------------------------------
-CACHED = 16
+CACHED = 512
 CACHE = {}
+
+
+
+# ---- facts: what the rules of spaghettichk read, found in the token stream once per file ---------------------
+IDENTS = {'default', 'self', 'module', 'imported', 'builtin', 'attribute', 'constant', 'special', 'exception',
+          'classname', 'defname', 'methodcall', 'localcall', 'classuse'}
+IDENT = re.compile(r'^[A-Za-z_]\w*$')
+ASSIGN = {'=', '+=', '-=', '*=', '/=', '//=', '%=', '**=', '|=', '&=', '^=', '>>=', '<<='}
+BRANCH = {'if', 'elif', 'for', 'while', 'except', 'and', 'or', 'case'}
+BLOCKS = {'if', 'elif', 'else', 'for', 'while', 'try', 'except', 'finally', 'with', 'match', 'case'}
+DOCROLES = {'docstring', 'triple', 'string'}
+CONSTANT = re.compile(r'^(?:[A-Z]{3}\w*|__all__)$')
+LITERAL = {'number', 'string', 'kwconst', 'punct', 'operator'}
+
+
+def logical(rows):
+    """[[first row, last row, [(role, text)] without blanks]]: a row that starts outside a string and outside brackets begins
+    a logical line; the rows after it that start inside brackets or inside a string belong to it. Rows count from 1."""
+    out, depth = [], 0
+    for n, (tokens, in_block, bd) in enumerate(rows, 1):
+        sig = [t for t in tokens if t[1].strip()]
+        if depth == 0 and not in_block or not out:
+            out.append([n, n, []])
+        out[-1][1] = n
+        out[-1][2].extend(sig)
+        for role, text in sig:
+            if role.startswith('br'):
+                depth += 1 if text in '([{' else -1
+        depth = max(depth, 0)
+    return out
+
+
+def chains(toks):
+    """[(names of a dotted chain, index of its first token, index after it)] for the names in a token list."""
+    out, i = [], 0
+    while i < len(toks):
+        role, text = toks[i]
+        def_before = i and toks[i - 1][0] == 'keyword' and toks[i - 1][1] in ('def', 'class', 'cdef', 'cpdef')
+        if role in IDENTS and IDENT.match(text) and not (i and toks[i - 1][1] == '.') and not def_before:
+            names, j = [text], i + 1
+            while j + 1 < len(toks) and toks[j][1] == '.' and toks[j + 1][0] in IDENTS and IDENT.match(toks[j + 1][1]):
+                names.append(toks[j + 1][1])
+                j += 2
+            out.append((names, i, j))
+            i = j
+        else:
+            i += 1
+    return out
+
+
+def first_arg(toks, k):
+    """The text of the first argument of a call whose '(' is just before token k (at most 40 characters)."""
+    depth, got = 0, []
+    while k < len(toks):
+        role, text = toks[k]
+        if role.startswith('br'):
+            if text in '([{':
+                depth += 1
+            elif depth == 0:
+                break
+            else:
+                depth -= 1
+        elif text == ',' and depth == 0:
+            break
+        got.append(text)
+        k += 1
+    return ''.join(got)[:40]
+
+
+def line_facts(toks, indent, first):
+    """{item: value} for one logical line: block, branch, global, calls, dots, sets, except, imports, exports, consts, returns."""
+    items = {}
+    kw = toks[0][1] if toks and toks[0][0] == 'keyword' else ''
+    if kw in BLOCKS:
+        items['block'] = kw
+    count = sum(1 for role, text in toks if role == 'keyword' and text in BRANCH)
+    if count:
+        items['branch'] = count
+    if any(role == 'keyword' and text in ('global', 'nonlocal') for role, text in toks):
+        items['global'] = True
+    calls, dots = [], []
+    for names, i, j in (chains(toks) if kw not in ('import', 'from') else ()):
+        for k in range(len(names) - 1):
+            dots.append((names[k], names[k + 1]))
+        if j < len(toks) and toks[j][0].startswith('br') and toks[j][1] == '(':
+            calls.append(('.'.join(names), first_arg(toks, j + 1)))
+        if i == 0 and len(names) > 1 and j < len(toks) and toks[j][1] in ASSIGN:
+            items['sets'] = (names[-2], names[-1])
+    if calls:
+        items['calls'] = calls
+    if dots:
+        items['dots'] = dots
+    if kw == 'except':
+        items['except'] = [text for role, text in toks[1:] if role == 'exception' or (role in IDENTS and IDENT.match(text))]
+    if kw == 'import':
+        parts = ''.join(text for role, text in toks[1:]).split(',')
+        items['imports'] = [(p.split('as')[0] if ' as ' in p else p, ()) for p in parts if p]
+    if kw in ('import', 'from') and toks:
+        words = [text for role, text in toks]
+        if kw == 'import':
+            clauses = []
+            k = 1
+            while k < len(toks):
+                name = ''
+                while k < len(toks) and toks[k][1] != ',' and toks[k][1] != 'as':
+                    name += toks[k][1]
+                    k += 1
+                alias = ''
+                if k < len(toks) and toks[k][1] == 'as':
+                    alias = toks[k + 1][1] if k + 1 < len(toks) else ''
+                    k += 2
+                clauses.append((name, (), alias or name.split('.')[0]))
+                k += 1
+            items['imports'] = clauses
+        elif 'import' in words:
+            at = words.index('import')
+            names = []
+            for k in range(at + 1, len(toks)):
+                role, text = toks[k]
+                if IDENT.match(text) and toks[k - 1][1] != 'as' and text != 'as' and not text.startswith('(') and role != 'keyword':
+                    names.append(text)
+            items['imports'] = [(''.join(words[1:at]), tuple(names), '')]
+    if toks and toks[0][1] == '__all__' and len(toks) > 1 and toks[1][1] in ('=', '+='):
+        items['exports'] = [text[1:-1] for role, text in toks[2:] if len(text) > 2 and text[0] in '\'"' and text[-1] == text[0]]
+    if toks and indent == 0 and toks[0][0] in ('default', 'constant', 'special') and len(toks) > 1 and toks[1][1] in ('=', ':') and CONSTANT.match(toks[0][1]):
+        items['consts'] = toks[0][1]
+    if (indent == 0 and len(toks) > 2 and toks[1][1] == '=' and IDENT.match(toks[0][1]) and toks[0][0] in ('default', 'constant', 'builtin')
+            and not CONSTANT.match(toks[0][1]) and not toks[0][1].startswith('__')
+            and all(role in LITERAL or role.startswith('br') for role, text in toks[2:])
+            and any(role in ('number', 'string', 'kwconst') for role, text in toks[2:])):
+        items['literal'] = toks[0][1]                       # a module-level name set to a literal: a constant with too few capitals
+    if kw == 'return':
+        rest = [text for role, text in toks[1:]]
+        if rest and all(IDENT.match(t) for t in rest[::2]) and all(t == ',' for t in rest[1::2]):
+            items['returns'] = rest[::2]
+    return items
+
+
+def params_of(toks, start):
+    """The parameter names of a def line (the names right after '(' or ',' and any '*', at depth 1), from token start."""
+    names, depth, prev = [], 0, ''
+    for role, text in toks[start:]:
+        if role.startswith('br'):
+            depth += 1 if text in '([{' else -1
+            if depth == 0:
+                break
+        elif depth == 1 and IDENT.match(text) and role != 'keyword' and prev in ('(', ',', '*', '**'):
+            names.append(text)
+        prev = text
+    return names
+
+
+def docstring_of(rows, after):
+    """(row count, text) of the docstring that starts on the first row with tokens after row `after` (rows count from 1)."""
+    n = after
+    while n < len(rows) and not any(t[1].strip() for t in rows[n][0]):
+        n += 1
+    if n >= len(rows):
+        return 0, ''
+    tokens = [t for t in rows[n][0] if t[1].strip()]
+    if not tokens or tokens[0][0] not in DOCROLES:
+        return 0, ''
+    count, text = 1, [t[1] for t in tokens]
+    while n + count < len(rows) and rows[n + count][1]:
+        text.extend(t[1] for t in rows[n + count][0])
+        count += 1
+    return count, ' '.join(text).replace('"""', '').strip()[:600]
+
+
+def build_facts(lines, rows):
+    """The facts of a Python or Cython file (see Source.facts): its defs are the logical lines that start with def, class, cdef
+    or cpdef and carry a name."""
+    marks = logical(rows)
+    indent = [len(x) - len(x.lstrip()) for x in lines]
+    per, words, imports, exports, consts, literals = {}, {}, [], None, [], []
+    for first, last, toks in marks:
+        if not toks or toks[0][0] == 'lcomment':
+            continue
+        items = line_facts(toks, indent[first - 1], first)
+        if items:
+            per[first] = items
+        for k, (role, text) in enumerate(toks):
+            if role in IDENTS and role != 'defname' and IDENT.match(text) and not (k and toks[k - 1][1] in ('def', 'class')):
+                words[text] = words.get(text, 0) + 1
+        for clause in items.get('imports', ()):
+            imports.append(clause + (first,))
+        if 'exports' in items:
+            exports = (exports or []) + items['exports']
+        if 'consts' in items:
+            consts.append((items['consts'], first, last))
+        if 'literal' in items:
+            literals.append((items['literal'], first, last))
+    at = {m[0]: m for m in marks}
+    found = []
+    for first, last, toks in marks:
+        if toks and toks[0][0] == 'keyword' and toks[0][1] in ('def', 'class', 'cdef', 'cpdef', 'async'):
+            named = next((t for t in toks if t[0] in ('defname', 'classname')), None)
+            if named:
+                found.append((named[1], first, 'class' if any(t[0] == 'keyword' and t[1] == 'class' for t in toks[:3]) else 'def'))
+    defs = []
+    for name, first, kind in found:
+        mark = at.get(first)
+        head = mark[2] if mark else []
+        end = mark[1] if mark else first
+        stop = last
+        for later in marks:
+            if later[0] > end and later[2] and later[2][0][0] != 'lcomment' and indent[later[0] - 1] <= indent[first - 1]:
+                break
+            if later[0] > end and later[2] and later[2][0][0] != 'lcomment':
+                stop = later[1]
+        top, decorators = first, []
+        k = marks.index(mark) - 1 if mark else -1
+        while k >= 0 and marks[k][2] and marks[k][2][0][0] == 'decorator':
+            top = marks[k][0]
+            decorators.append(marks[k][2][0][1][1:])
+            k -= 1
+        start = next((i for i, t in enumerate(head) if t[0] in ('defname', 'classname')), 0) + 1
+        short = name
+        docs, doc = docstring_of(rows, end)
+        defs.append(SimpleNamespace(name=short, dotted=name, kind=kind, top=top, first=first,
+                                    last=max(stop, end), params=params_of(head, start), decorators=decorators,
+                                    bases=params_of(head, start) if kind == 'class' else [], docs=docs, doc=doc,
+                                    indent=indent[first - 1], parent=-1, owner=''))
+    for i, d in enumerate(defs):
+        inside = [(e.last - e.first, j) for j, e in enumerate(defs) if j != i and e.first < d.first and e.last >= d.last]
+        if inside:
+            d.parent = min(inside)[1]
+            d.owner = defs[d.parent].name if defs[d.parent].kind == 'class' else ''
+            d.dotted = defs[d.parent].dotted + '.' + d.name
+    scope = [-1] * (len(lines) + 1)
+    for i, d in sorted(enumerate(defs), key=lambda p: p[1].first):
+        for n in range(d.first, min(d.last, len(lines)) + 1):
+            scope[n] = i
+    first_doc = docstring_of(rows, 0) if rows else (0, '')
+    return SimpleNamespace(defs=defs, lines=per, words=words, scope=scope, indent=indent, exports=exports, consts=consts,
+                           imports=imports, doc=first_doc, literals=literals)
 
 
 class Source:
     """One source file, read once for the blocks that show it (code, methods, editbox): the code pane and the methods
     pane ask for the same file one after the other, so it is read and coloured once. read keeps the last CACHED files,
     by path, and gives the same Source while the size and time of the file are unchanged."""
-    __slots__ = ('real', 'raw', 'text', 'lines', 'base', 'lang', 'mark', 'scanned', 'runs')
+    __slots__ = ('real', 'raw', 'text', 'lines', 'base', 'lang', 'mark', 'scanned', 'runs', 'noted')
 
     @classmethod
     def read(cls, real):
@@ -1143,6 +1382,7 @@ class Source:
         src.mark = review(lang)
         src.scanned = None
         src.runs = None
+        src.noted = None
         CACHE[real] = (key, src)
         for old in list(CACHE)[:-CACHED]:
             del CACHE[old]
@@ -1157,6 +1397,25 @@ class Source:
         except NoLanguage:
             return None
         return [got[0] for got in lex(text.split('\n'), lang)]
+
+    def derived(me, key, build):
+        """What a consumer worked out from this file, kept with it: build(me) runs once for a key; a changed file is a new
+        Source, so what was kept for the old one goes with it."""
+        if me.noted is None:
+            me.noted = {}
+        if key not in me.noted:
+            me.noted[key] = build(me)
+        return me.noted[key]
+
+    def facts(me):
+        """The facts of a Python file, found once in its token stream: defs (name, dotted, owner, parent, kind, top, first, last,
+        params, decorators, bases, docs, doc, indent), lines {first row of a logical line: {block, branch, global, calls,
+        dots, sets, except, imports, exports, consts, returns}}, words {name: uses}, scope (the def of each row, -1 none,
+        rows from 1), indent, exports (the __all__ names, or None), consts [(name, first, last)], imports, doc (rows, text of
+        the module docstring), literals [(name, first, last)] (module-level names set to a literal that are not CONSTANT names).
+        None for a file that is not Python. A logical line runs from a row outside brackets and
+        strings to the row before the next such row, so a def's parameters and a call's arguments are one line."""
+        return me.derived('facts', lambda s: build_facts(s.lines, s.lexed()) if s.lang.mode == 'python' else None)
 
     def lexed(me):
         """[(tokens, in_block, depth)] for each line, scanned once."""

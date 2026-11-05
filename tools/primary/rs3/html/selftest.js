@@ -19,10 +19,10 @@ RS.selftest = function(){
   async function viewer(){
     await bar();
     check('code shows lines', await until(function(){ return qa('.clines .ln').length > 0; }));
-    check('methods listed', await until(function(){ return qa('.mrow').length > 0; }));
-    var rows = qa('.mrow'), lastLine = rows.length ? +rows[rows.length - 1].querySelector('.mline').textContent : 1;
+    check('methods listed', await until(function(){ return qa('.mtab tbody tr').length > 0; }));
+    var rows = qa('.mtab tbody tr'), lastLine = rows.length ? +rows[rows.length - 1].querySelector('.ln').textContent : 1;
     RS.emit('linenoClicked', {lineno: lastLine + 1});
-    check('methods marks a method', await until(function(){ return q('.mrow.cur'); }));
+    check('methods marks a method', await until(function(){ return q('.mtab tr.cur'); }));
     RS.emit('selectfunk', {lineno: lastLine});
     await sleep(100);
     check('code scrolled', q('.clines').scrollTop > 0 || lastLine < 30);
@@ -61,7 +61,7 @@ RS.selftest = function(){
     check('tree marks the one in front', await until(function(){ return qa('.ftree a.ff.on').length === 1 && q('.ftree a.ff.on').dataset.p === p1; }));
     RS.emit('mngshowfile', {path: p0, show: true});
     check('switch back to the first', await until(function(){ return q('.ttab.on').title === p0 && q('.ftree a.ff.on').dataset.p === p0; }));
-    check('methods follow the tab', await until(function(){ return qa('.mrow').length > 0; }));
+    check('methods follow the tab', await until(function(){ return qa('.mtab tbody tr').length > 0; }));
     RS.emit('mngshowfile', {path: p0, show: false});
     check('tab removed', await until(function(){ return qa('.ttab').length === 1; }));
     check('tree marks the one left in front', await until(function(){ return qa('.ftree a.ff.on').length === 1 && q('.ftree a.ff.on').dataset.p === p1; }));

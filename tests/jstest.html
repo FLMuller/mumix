@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>rs3 js tests</title>
+</head>
+<body>
+<!--
+jstest.html -- the js test manager: ONE stand-alone page, kept open in its own tab of the browser, that runs the javascript of any test
+bundle. It is served as it is by the server (it uses WebSocket, so it is not a doc box) and carries its own access to the server, the
+subset the report pages of rs2 use: hello, the open verb, and the answers to trigger and snap. Nothing is added to the server.
+
+A test run is: the suite writes tests/z_sandbox/jstest/testfile.txt (JSON: {id, sources: [js text], test: js text, data: {...}}) and
+presses #get through the server (trigger). The page asks the server for that file (open), unpacks it, makes one function of the source
+texts and the test text (it gets `DATA`, and must define RUNS, an object of functions), runs each function of RUNS, and writes
+{id, results: {name: what it returned}} into #out and 'done' (or 'error: ...') into #state. The suite reads #state and #out with
+snap. A result is JSON text of at most about 60 KB (the server takes no longer message from a page).
+-->
+<h3>rs3 js tests</h3>
+<p>state: <span id="state">idle</span> &nbsp; page <span id="ver">1</span> &nbsp; <span id="alive">starting</span></p>
+<button id="get">get</button> <button id="reload">reload</button>
+<pre id="out"></pre>
+<script>
+var PATH = './mumix/tests/z_sandbox/jstest/testfile.txt';          // where the suite puts the bundle (a path from the root of the server)
+var ADDRESS = location.pathname + location.search;                // the address the server knows this page by
+var link = new WebSocket('ws://' + location.host + '/');
+var waiting = [], HASH = '';
+
+function ask(message){                                            // one request to the server: the answers come back in order
+  return new Promise(function(resolve){
+    waiting.push(resolve);
+    link.send(JSON.stringify(message));
+  });
+}
+function say(id, text){ document.getElementById(id).textContent = text; }
+
+link.onopen = function(){
+  ask({do: 'hello', url: ADDRESS}).then(function(r){ HASH = r.hash; say('alive', 'ready'); });
+};
+link.onmessage = function(e){
+  var m = JSON.parse(e.data), el, reply;
+  if (!(m.id && m.do)){                                           // the answer to a request of ours
+    var next = waiting.shift();
+    if (next) next(m);
+    return;
+  }
+  el = m.sel ? document.querySelector(m.sel) : null;              // a command from the server: trigger or snap
+  reply = {re: m.id, ok: false, error: 'no ' + m.do + ' of ' + m.sel};
+  if (el && m.do === 'trigger'){ el.click(); reply = {re: m.id, ok: true}; }
+  else if (el && m.do === 'snap'){ reply = {re: m.id, ok: true, text: el.textContent}; }
+  link.send(JSON.stringify(reply));
+};
+
+function textOf(html){                                            // the lines of a file as the open verb sends them: its text
+  var page = new DOMParser().parseFromString(html, 'text/html');
+  return Array.prototype.map.call(page.querySelectorAll('.ln code'), function(code){ return code.textContent; }).join('\n');
+}
+async function get(){
+  var bundle, runs, results = {}, body;
+  say('state', 'running');
+  say('out', '');
+  try {
+    var r = await ask({do: 'open', hash: HASH, path: PATH});
+    if (!r.ok) throw new Error(r.error || 'the server would not open the bundle');
+    bundle = JSON.parse(textOf(r.html));
+    body = bundle.sources.join('\n') + '\n' + bundle.test + '\n;return RUNS;';
+    runs = new Function('DATA', body)(bundle.data);
+    Object.keys(runs).forEach(function(name){
+      try { results[name] = runs[name](); } catch (e) { results[name] = {error: String(e)}; }
+    });
+    say('out', JSON.stringify({id: bundle.id, results: results}));
+    say('state', 'done');
+  } catch (e) {
+    say('out', JSON.stringify({error: String(e)}));
+    say('state', 'error: ' + e);
+  }
+}
+document.getElementById('get').addEventListener('click', get);
+document.getElementById('reload').addEventListener('click', function(){      // after the answer is sent
+  setTimeout(function(){ location.reload(); }, 300);
+});
+</script>
+</body>
+</html>
