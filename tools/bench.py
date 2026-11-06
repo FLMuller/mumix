@@ -114,17 +114,17 @@ import importlib.util
 import itertools
 import math
 import os
+import re
 import sys
 import time
 import traceback
 import unittest
 
-# the support modules (codelex, codemark, htmlwriter, cumulette) and the compiled
+# the support modules (codelex, htmlwriter, cumulette) and the compiled
 # ones (marked, mdwriter) are in primary/ below this file: use finds them there
 PRIMARY = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'primary')   # the page files
 from use import load, locate, use
 use('primary')
-from codemark import codemark
 from htmlwriter import htmappend, htmtemplate, htmwriteln
 load('marked', 'mdwriter')            # md2htm, mdwriteln: built by use into primary/pyxfiles
 from cumulette import Channel, ChannelError, Torn
@@ -1033,9 +1033,6 @@ modules those are. Add, in the class of <code>{name}</code>:</p>
 NOTE_MISSING = """<p><b>{names}: not found.</b> <code>sources</code> in <code>{name}</code> names the module;
 the search of <code>use</code> from the suite's folder ({here}) found no file for it. Until it is found there
 is no code tab for it.</p>"""
-CEDIT = ('<div class="cedit"><textarea rows="4" placeholder="click the margin of a line to write a '
-         'comment on it, or of a comment to change it (Markdown)"></textarea>'
-         '<span class="cstate"></span></div>')
 
 
 def source_names(classes):
@@ -1049,32 +1046,43 @@ def source_names(classes):
     return names
 
 
-def codetab(label, path, tests):
-    """One Code tab: the function list and the lines of a file (see codemark)."""
-    functions, code = codemark(path, tests)
-    tab = bytearray()
-    htmwriteln(tab, f'<div class="mk mk-tab" data-name="{html.escape(label)}">'
-                    f'<div class="codepane"><div class="funcs">')
-    htmappend(tab, functions)
-    htmwriteln(tab, '</div><div class="code">')
-    htmappend(tab, code)
-    htmwriteln(tab, CEDIT + '</div></div></div>')
-    return tab
+def home_of():
+    """The folder the report server's ./ paths start at (rs3util.HOME): the parent of the repository that holds this file."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    while not os.path.isdir(os.path.join(here, '.git')) and os.path.dirname(here) != here:
+        here = os.path.dirname(here)
+    return os.path.dirname(here)
 
 
-def notetab(label, text):
-    tab = bytearray()
-    htmwriteln(tab, f'<div class="mk mk-tab bad" data-name="{html.escape(label)}"><div class="note">'
-                    f'{text}</div></div>')
-    return tab
+def server_path(path):
+    """The ./ path the report server knows a file by, or None when the file is not under home_of()."""
+    try:
+        rel = os.path.relpath(os.path.abspath(path), home_of())
+    except ValueError:                          # another drive
+        return None
+    return None if rel.startswith('..') else './' + rel.replace(os.sep, '/')
 
 
-def codetabs(suite, names=()):
-    """The Code tabs of a unit: the suite itself, then the file use would load for each module in
-    `names` (see locate: the code that ran), each labelled with its file name less .py or .pyx
-    (the extension stays where two files would share a label). A suite that declares no module,
-    or a module that is not found, gets a red tab that says so."""
-    out = bytearray()
+def source_panel(path):
+    """The html of a source tab: a layout container, {{layout=[mt,[cd;eb]],PATH}}, that the report server makes the methods,
+    code and comment panes of that file in (rs3pages.unfold). The file the server cannot name gets a note instead."""
+    named = server_path(path)
+    if named is None:
+        return ('<div class="note"><p>' + html.escape(str(path)) + ' is not under the folder the report server reads '
+                'from, so it has no code tab.</p></div>'), True
+    return '{{layout=[mt,[cd;eb]],' + named + '}}', False
+
+
+def note_panel(text):
+    return '<div class="note">' + text + '</div>', True
+
+
+def sourcetabs(suite, names=()):
+    """[(label, panel html, bad)]: the source tabs of a unit: the suite itself, then the file use would load for each
+    module in `names` (see locate: the code that ran), each labelled with its file name less .py or .pyx (the extension
+    stays where two files would share a label). A suite that declares no module, or a module that is not found, gets a
+    red tab that says so."""
+    out = []
     name = os.path.basename(suite)
     here = os.path.dirname(os.path.abspath(suite))
     found = {}
@@ -1088,29 +1096,35 @@ def codetabs(suite, names=()):
     stems = [os.path.splitext(n)[0] for n in [name] + [os.path.basename(p) for p in found.values()]]
     label = lambda n: (os.path.splitext(n)[0] if stems.count(os.path.splitext(n)[0]) == 1
                        else n)
-    htmappend(out, codetab(label(name), suite, None))
+    out.append((label(name),) + source_panel(suite))
     if not names:
-        htmappend(out, notetab('No sources', NOTE_SOURCES.format(name=html.escape(name))))
+        out.append(('No sources',) + note_panel(NOTE_SOURCES.format(name=html.escape(name))))
     for path in found.values():
-        htmappend(out, codetab(label(os.path.basename(path)), path, [suite]))
+        out.append((label(os.path.basename(path)),) + source_panel(path))
     if lost:
-        htmappend(out, notetab('Missing sources', NOTE_MISSING.format(
+        out.append(('Missing sources',) + note_panel(NOTE_MISSING.format(
             names=html.escape(', '.join(lost)), name=html.escape(name), here=html.escape(here))))
     return out
 
 
 def unithtm(result):
-    """The unit's page: its Markdown, converted and pasted into bench.html. The place for the
-    machine is left as {{machine}} for the hub to fill."""
+    """The unit's page: its Markdown, converted and pasted into bench.html, which gives it the tab bar (Speed, Tests, the
+    sources) and the script that shows one panel at a time. The id of a unit's tabs and panels starts with its group, so
+    several units share a page. The place for the machine is left as {{machine}} for the hub to fill."""
     htm = md2htm(unitmd(result))
-    try:
-        tabs = codetabs(result['path'], result.get('sources') or [])
-    except (KeyError, OSError):                 # no source to show
-        tabs = notetab('No sources', '<p>no source</p>')
-    htmwriteln(htm, '<!--SECTION codetabs-->')
-    htmappend(htm, tabs)
+    group = 'u' + re.sub(r'\W', '_', os.path.splitext(os.path.basename(str(result.get('path') or 'unit')))[0])
     bench = result.get('bench') or {}
     failing = any(r[1] == 'FAIL' for r in (result.get('tests') or {}).get('records', []))
-    return htmtemplate(TEMPLATE, htm, MACHINE='{{machine}}',
-                       SPEEDCLASS=' bad' if bench.get('killed') or bench.get('errors') else '',
-                       TESTSCLASS=' bad' if failing or result.get('crash') else '')
+    tabs = [('Speed', bool(bench.get('killed') or bench.get('errors')), None),
+            ('Tests', bool(failing or result.get('crash')), None)]
+    try:
+        tabs += [(label, bad, panel) for label, panel, bad in sourcetabs(result['path'], result.get('sources') or [])]
+    except (KeyError, OSError):                 # no source to show
+        tabs.append(('No sources', True, note_panel('<p>no source</p>')[0]))
+    buttons = ''.join(f'<button class="btab{" on" if i == 0 else ""}{" bad" if bad else ""}" data-group="{group}" '
+                      f'data-tab="{group}{i}">{html.escape(label)}</button>' for i, (label, bad, panel) in enumerate(tabs))
+    panels = ''.join(f'<div class="bpanel{" bad" if bad else ""}" data-group="{group}" id="{group}{i}" hidden>' + chr(10) + f'{panel}' + chr(10) + '</div>' + chr(10)
+                     for i, (label, bad, panel) in enumerate(tabs) if panel is not None)
+    htmwriteln(htm, '<!--SECTION codetabs-->')
+    htmappend(htm, panels.encode('utf-8'))
+    return htmtemplate(TEMPLATE, htm, MACHINE='{{machine}}', TABBAR=buttons, GROUP=group)

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>b_checker</title>
+<style>
+body{font-family:Consolas,monospace;font-size:12px;padding:10px;color:#222}
+.bmeta{color:#6b3a00;margin:0 0 8px}
+.bbar{display:flex;gap:4px;border-bottom:2px solid #d35400;margin-bottom:8px}
+.btab{font:inherit;font-size:11px;font-weight:bold;padding:4px 12px;border:1px solid #e0a878;border-radius:8px 8px 0 0;background:#fdebd0;color:#8a4500;cursor:pointer}
+.btab.on{background:#e67e22;border-color:#b34700;color:#fff}
+table{border-collapse:collapse}
+th,td{border:1px solid #e0a878;padding:2px 8px;text-align:left}
+th{background:#fdebd0}
+.bok{color:#2e7d32}
+.bbad{color:#c0392b;font-weight:bold}
+</style>
+</head>
+<body>
+<div class="bmeta">b_checker -- 6 tests, 3 variants -- AC power, clock 3.41 GHz, speed 97%</div>
+<div class="bbar"><button class="btab on" data-group="b" data-tab="b0">Tests</button><button class="btab" data-group="b" data-tab="b1">Bench</button><button class="btab" data-group="b" data-tab="b2">spaghettichk.py</button><button class="btab" data-group="b" data-tab="b3">use.py</button></div>
+<div>
+<div class="bpanel" data-group="b" id="b0"><table><tr><th>test</th><th>result</th><th>ms</th></tr><tr><td>T1 one line def</td><td class="bok">pass</td><td>2.48</td></tr><tr><td>T2 cython def</td><td class="bok">pass</td><td>9.72</td></tr><tr><td>T3 decorators</td><td class="bok">pass</td><td>8.96</td></tr><tr><td>T4 nested class</td><td class="bok">pass</td><td>6.81</td></tr><tr><td>T5 async def</td><td class="bok">pass</td><td>3.18</td></tr><tr><td>T6 empty file</td><td class="bok">pass</td><td>11.14</td></tr></table></div><div class="bpanel" data-group="b" id="b1" hidden><table><tr><th>variant</th><th>ms</th><th>vs best</th></tr><tr><td>scan</td><td>20.60</td><td>1.00x</td></tr><tr><td>scan2</td><td>20.89</td><td>1.01x</td></tr><tr><td>regex</td><td>32.47</td><td>1.58x</td></tr></table></div><div class="bpanel" data-group="b" id="b2" hidden>
+{{layout=[mt,[cd;eb]],./mumix/tools/spaghettichk.py}}
+</div><div class="bpanel" data-group="b" id="b3" hidden>
+{{layout=[mt,[cd;eb]],./mumix/tools/use.py}}
+</div>
+</div>
+<script>
+document.addEventListener('click', function(event){
+  var button = event.target;
+  var group = button.getAttribute ? button.getAttribute('data-group') : null;
+  if (!group || !button.getAttribute('data-tab')) return;
+  var buttons = document.querySelectorAll('.btab'), panels = document.querySelectorAll('.bpanel');
+  for (var i = 0; i < buttons.length; i++) if (buttons[i].getAttribute('data-group') === group) buttons[i].className = 'btab';
+  for (var j = 0; j < panels.length; j++) if (panels[j].getAttribute('data-group') === group) panels[j].hidden = true;
+  button.className = 'btab on';
+  document.getElementById(button.getAttribute('data-tab')).hidden = false;
+});
+</script>
+</body>
+</html>

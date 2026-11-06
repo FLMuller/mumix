@@ -15,4 +15,4 @@
 .ttab.bad{background:#f4c7c0;border-color:#c0392b;color:#8e2a20}
 .ttab.bad.on{background:#c0392b;color:#fff}
 .ttab[hidden]{display:none}
-.ttpane.sec{overflow:auto;padding:10px 16px;box-sizing:border-box}
+.ttpane.sec{overflow:auto;box-sizing:border-box}

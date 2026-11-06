@@ -68,17 +68,18 @@ RS.pane('doc', function(ctx){
     if (own(t) && t.tHead && t.tHead.rows.length && t.tBodies.length && !t.querySelector('.sortbtn')) RS.table.make(t);
   });
 
-  // ---- the layouts of blocks the html holds fill the box down to its bottom ----
+  // ---- the layouts of blocks that the html holds (div.rslayout, made by the server) fill the element the doc scrolls in ----
   function fit(){
-    var room = cell.getBoundingClientRect();
     Array.prototype.forEach.call(box.querySelectorAll('.rslayout'), function(place){
-      if (!place.offsetParent) return;                         // in a tab that is not shown: measured when it is
-      var top = place.getBoundingClientRect().top - room.top + cell.scrollTop;
-      place.style.height = Math.max(200, cell.clientHeight - top - 4) + 'px';
+      if (!place.offsetParent) return;                       // in a part of the html that is not shown: measured when it is
+      var top = place.getBoundingClientRect().top - cell.getBoundingClientRect().top + cell.scrollTop;
+      place.style.height = Math.max(200, cell.clientHeight - top) + 'px';
+      var over = cell.scrollHeight - cell.clientHeight;      // what the html has below the layout (margins) pushes the cell past its bottom
+      if (over > 0) place.style.height = Math.max(200, place.offsetHeight - over) + 'px';
     });
   }
   box.addEventListener('click', function(){ window.setTimeout(fit, 0); });     // a tab of the html shows or hides a layout
-  window.addEventListener('resize', fit);
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(cell);            // the window changes, or the doc's tab is shown
   window.setTimeout(fit, 0);
 
   // ---- the search of the text of the box ----
@@ -125,6 +126,7 @@ RS.pane('doc', function(ctx){
     ctx.emit('searchcount', {index: at + 1, total: hits.length});
   }
   return {
+    fit: fit,
     onSearchtext: function(d){
       if (d.mode !== 'text') return;
       if (home === null) home = cell.scrollTop;      // where the box was before the search: the star goes back here

@@ -55,7 +55,7 @@ RS.pane('toptabs', function(ctx){
       t.pane.style.display = t === tab ? '' : 'none';
       t.button.classList.toggle('on', t === tab);
     });
-    if (tab){ tab.button.scrollIntoView({block: 'nearest', inline: 'nearest'}); tab.code && tab.code.shown && tab.code.shown(); }
+    if (tab){ tab.button.scrollIntoView({block: 'nearest', inline: 'nearest'}); tab.code && tab.code.shown && tab.code.shown(); tab.doc && tab.doc.fit(); }
   }
   function lastShown(){ return tabs.filter(function(t){ return !t.hidden; }).pop() || null; }
   function find(path){ return tabs.filter(function(t){ return !t.section && t.path === path; })[0]; }
@@ -87,10 +87,11 @@ RS.pane('toptabs', function(ctx){
     tab.code.open(path);                // loads; the pane announces nothing for a file it was just given
     return tab;
   }
-  function addSection(title, html, bad, hidden){          // a section of a static page: its html, as it was written
+  function addSection(title, html, bad, hidden, docLoc){  // a section of a static page: a doc made by the server (pane_doc), shown or hidden by its tab
     var pane = document.createElement('div'), button = document.createElement('span');
     pane.className = 'ttpane sec'; pane.innerHTML = html; pane.style.display = 'none'; body.appendChild(pane);
     var tab = {section: true, title: title, path: 'section:' + title, pane: pane, button: button, hidden: hidden};
+    tab.doc = ctx.make('doc', pane, {loc: docLoc});
     button.className = 'ttab' + (bad ? ' bad' : ''); button.title = title; button.hidden = hidden;
     button.innerHTML = '<span class="ttn"></span><button class="ttx" title="put this tab away (the tabs list brings it back)">&times;</button>';
     button.querySelector('.ttn').textContent = title;
@@ -99,7 +100,7 @@ RS.pane('toptabs', function(ctx){
     bar.appendChild(button); tabs.push(tab);
     return tab;
   }
-  function active_(name){ return function(d){ var h = active && active.code && active.code[name]; if (h) h.call(active.code, d); }; }
+  function active_(name){ return function(d){ var to = active && (active.code || active.doc), h = to && to[name]; if (h) h.call(to, d); }; }
   var h = {
     onShowfile: function(d){
       var tab = find(d.path);
@@ -107,12 +108,12 @@ RS.pane('toptabs', function(ctx){
       if (tab) { if (active !== tab) show(tab); } else add(d.path);
     }
   };
-  ['onSelectfunk', 'onShowmethods', 'onSaved', 'onSearchtext', 'onSearchnext', 'onSearchprev']
+  ['onSelectfunk', 'onShowmethods', 'onSaved', 'onSearchtext', 'onSearchnext', 'onSearchprev', 'onSearchhome']
     .forEach(function(n){ h[n] = active_(n); });
   // the sections the page was made with, in their order: the first that is not put away shows
   var away = hiddenSet();
   Array.prototype.forEach.call(ctx.el.querySelectorAll('template.ttsec'), function(t){
-    addSection(t.dataset.title, t.innerHTML, !!t.dataset.bad, away.has(t.dataset.title));
+    addSection(t.dataset.title, t.innerHTML, !!t.dataset.bad, away.has(t.dataset.title), t.dataset.doc);
   });
   if (tabs.length){ rebuild(); show(tabs.filter(function(t){ return !t.hidden; })[0] || null); }
   var first = [];

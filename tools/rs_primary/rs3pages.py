@@ -30,7 +30,8 @@ Routes (HTTP GET)
 The page table is S['pages'] (rs3table). A page that is an address is put in it when it is served and when it says
 hello (register_url), so a page whose server restarted finds its place again.
 
-VERSION  M2 m01.v06 (2026-11-06): showcode is routed (nearest), so a methods pane and an editbox follow the code pane of their own container.
+VERSION  M2 m01.v07 (2026-11-06): the code pane of a container is its own pane, not the place a tab strip shows its files (hosted is for the blocks of the layout string).
+         M2 m01.v06 (2026-11-06): showcode is routed (nearest), so a methods pane and an editbox follow the code pane of their own container.
          M2 m01.v05 (2026-11-06): a {{layout=[...], source, ...}} token in a block's html becomes a layout of blocks of its own (unfold: <div class="rslayout">, locators suffixed .cN).
          M2 m01.v04 (2026-11-04): the viewer takes the methods block's own width; the page carries html/table.js and table.css.
          M2 m01.v03 (2026-11-04): the block of a locator comes from rs3layout.blocks (kind.suffix, definitions at the end); the status bar is a row added by parse(below=).
@@ -247,7 +248,7 @@ def build(S, page, layout, specs, title, selftest=False):
         parts.append((got['label'] or block, got['css'], got['js']))
         parts.extend(got.get('also', []))        # blocks this one makes inside itself (toptabs: code)
         panes.append({'loc': loc, 'block': block, 'at': places[loc], 'to': wanted.get(loc, []), 'takes': got['takes'],
-                      'holds': got['holds'], 'hosted': block in held, 'search': got['search']})
+                      'holds': got['holds'], 'hosted': loc in top and block in held, 'search': got['search']})
     page['sizes'] = sizes
     css, js = collate(parts)
     info = {'hash': page['hash'], 'address': page['path'], 'title': title, 'port': S['port'],

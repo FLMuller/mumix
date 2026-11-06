@@ -605,7 +605,7 @@ class b_rs3(bench):
         finally:
             page.close()
 
-    def test_T5a_a_tab_strip_holds_the_sections_of_a_static_page_and_collates_their_style(self):
+    def test_T5a_a_tab_strip_holds_the_sections_of_a_static_page_as_docs_and_collates_their_style(self):
         sections = [['Summary', '<style>.sum{color:red}</style><p class="sum">all well</p>'], ['Failures', '<table><tr><td>x</td></tr></table>', True]]
         got = reportserver.contactRS('load', '[toptabs wxh]', {'toptabs': ['toptabs', *sections]}, 'report', False)
         self.assertTrue(got['ok'], got)
@@ -613,10 +613,26 @@ class b_rs3(bench):
         self.assertEqual((text.count('<style'), text.count('<script')), (1, 1))      # still one of each
         self.assertIn('.sum{color:red}', text)                                       # the section's style, collated
         self.assertEqual(text.count('<template class="ttsec"'), 2)
-        self.assertIn('data-title="Summary">', text)
-        self.assertIn('data-title="Failures" data-bad="1">', text)                   # the red one
+        self.assertIn('data-title="Summary" data-doc="toptabs.s1">', text)            # each section is a doc of its own
+        self.assertIn('data-title="Failures" data-doc="toptabs.s2" data-bad="1">', text)   # the red one
+        self.assertIn('<div class="doc" data-doc="toptabs.s1">', text)
         self.assertIn('<p class="sum">all well</p>', text)
         self.assertNotIn('<style>.sum', text.split('<template', 1)[1])               # (taken out of the section itself)
+
+    def test_T5j_a_layout_token_in_a_tab_becomes_panes_of_its_own_with_their_own_locators(self):
+        one = '<p>one</p>{{layout=[mt,[cd;eb]],./mumix/tools/use.py}}'
+        two = '<p>two</p>{{layout=[mt,[cd;eb]],./mumix/tools/bench.py}}'
+        got = reportserver.contactRS('load', '[toptabs]', {'toptabs': ['toptabs', ['One', one], ['Two', two]]}, 'tokens', False)
+        self.assertTrue(got['ok'], got)
+        text = web('GET', got['path'])[2]
+        self.assertEqual((text.count('class="rslayout"'), text.count('{{layout=')), (2, 0))      # a place for each, no token left
+        info = json.loads(re.search(r'var PAGE = (\{.*?\});', text, re.S).group(1))
+        panes = {p['loc']: p for p in info['panes']}
+        for loc in ('mt.c1', 'cd.c1', 'eb.c1', 'mt.c2', 'cd.c2', 'eb.c2'):
+            self.assertIn(loc, panes)
+        self.assertFalse(panes['cd.c1']['hosted'])                    # a tab strip does not make a container's code pane its place
+        self.assertEqual(panes['cd.c1']['at'][:-2], panes['eb.c1']['at'][:-2])      # one container: the same path down to its own group
+        self.assertNotEqual(panes['cd.c1']['at'][:-2], panes['cd.c2']['at'][:-2])   # two containers: not the same
 
     def test_T13a_a_markdown_file_is_shown_as_md2htm_formats_it_headings_and_tables(self):
         rel = './mumix/tools/rs_primary/SIGNALS.md'

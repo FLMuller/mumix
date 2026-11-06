@@ -884,6 +884,40 @@ def open_server(by):
     return (done.stdout.strip().splitlines() or ['report server: no answer'])[-1]
 
 
+def serve_layout(rows, stamp, wall, machine, report):
+    """The run as one page of the report server (contactRS 'load'): a toptabs with a Summary tab and one tab for each suite,
+    red where it failed. A tab is the html of that unit (bench.unithtm) with the run's css, written to a file in a folder
+    beside the report (one message to the server is at most 64 KB, so the page is given by the paths of the files); the
+    server makes the panes of its source tabs (the {{layout=...}} containers) itself. Returns one line saying what happened."""
+    from bench import server_path
+    from reportserver import ReportServerError, contactRS
+    folder = os.path.splitext(report)[0]
+    os.makedirs(folder, exist_ok=True)
+    suites = [s for s, total, notes in rows]
+    broken = [s['name'] for s in suites if isbroken(s)]
+    with open(CSS, encoding='utf-8') as f:
+        style = '<style>' + chr(10) + f.read() + codelex.css() + chr(10) + '</style>' + chr(10)
+    pages = [('Summary', style + bytes(md2htm(summary_md(rows, stamp, wall, machine, broken))).decode('utf-8'), bool(broken))]
+    for suite in suites:
+        unit = suite['htm']
+        if unit is None:                                    # the spoke left none
+            page = bytes(md2htm(fallback_md(suite))).split(b'-->' + bytes([10]), 1)[1].decode('utf-8')
+        else:
+            page = unit.replace('{{machine}}', machine_htm((suite['bench'] or {}).get('machine')).decode('utf-8'))
+        pages.append((suite['name'], style + page, isbroken(suite)))
+    sections = []
+    for title, page, bad in pages:
+        name = os.path.join(folder, title + '.html')
+        with open(name, 'w', encoding='utf-8') as f:
+            f.write(page)
+        sections.append([title, server_path(name), bad])
+    try:
+        got = contactRS('load', '[tt]', {'tt': ['toptabs'] + sections}, f'runbench {stamp}', True)
+    except ReportServerError as error:
+        return f'report server: the run was not shown ({error})'
+    return 'report server: ' + got['url']
+
+
 def write_report(rows, results, stem, stamp, wall, machine, server):
     """The page of the run, written to a new file in results. Returns its path."""
     suites = [s for s, total, notes in rows]
@@ -973,8 +1007,9 @@ def finish_run(suites, results, stem, budget, wall, server):
     if server:
         try:
             print(open_server('runbench'))
+            print(serve_layout(rows, stamp, wall, machine, path))
         except Exception as error:                  # the server is a convenience: never fail
-            print(f'report server: could not start ({error!r})')
+            print(f'report server: could not show the run ({error!r})')
     with open(os.path.join(results, 'last_run.json'), 'w', encoding='utf-8') as f:
         json.dump({'when': stamp, 'wall': wall, 'failed': failed, 'report': path,
                    'suites': [{'name': s['name'], 'tests': len(s['records']),

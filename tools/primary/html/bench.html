@@ -1,7 +1,28 @@
 <div class="meta">{{_\main/_}}</div>
 {{MACHINE}}
-<div class="mk mk-tab{{SPEEDCLASS}}" data-name="Speed">
+<div class="bbar">{{TABBAR}}</div>
+<div class="bpanel" data-group="{{GROUP}}" id="{{GROUP}}0">
 {{speed}}</div>
-<div class="mk mk-tab{{TESTSCLASS}}" data-name="Tests">
+<div class="bpanel" data-group="{{GROUP}}" id="{{GROUP}}1" hidden>
 {{tests}}</div>
-{{codetabs}}
+{{codetabs}}<style>
+.bbar{display:flex;flex-wrap:wrap;gap:4px;border-bottom:2px solid #d35400;margin:0 0 10px}
+.btab{font:inherit;font-size:11px;font-weight:bold;padding:4px 12px;border:1px solid #e0a878;border-radius:8px 8px 0 0;background:#fdebd0;color:#8a4500;cursor:pointer}
+.btab.on{background:#e67e22;border-color:#b34700;color:#fff}
+.btab.bad{background:#f4c7c0;border-color:#c0392b;color:#8e2a20}
+.btab.bad.on{background:#c0392b;color:#fff}
+.note{padding:8px 12px}
+</style>
+<script>
+// a click on a tab shows its panel and hides the others of its unit; one listener, so the page may make the html later
+document.addEventListener('click', function(event){
+  var button = event.target;
+  var group = button.getAttribute ? button.getAttribute('data-group') : null;
+  if (!group || !button.getAttribute('data-tab')) return;
+  var buttons = document.querySelectorAll('.btab'), panels = document.querySelectorAll('.bpanel');
+  for (var i = 0; i < buttons.length; i++) if (buttons[i].getAttribute('data-group') === group) buttons[i].classList.remove('on');
+  for (var j = 0; j < panels.length; j++) if (panels[j].getAttribute('data-group') === group) panels[j].hidden = true;
+  button.classList.add('on');
+  document.getElementById(button.getAttribute('data-tab')).hidden = false;
+});
+</script>
