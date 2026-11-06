@@ -55,7 +55,7 @@ RS.pane('toptabs', function(ctx){
       t.pane.style.display = t === tab ? '' : 'none';
       t.button.classList.toggle('on', t === tab);
     });
-    if (tab){ tab.button.scrollIntoView({block: 'nearest', inline: 'nearest'}); tab.code && tab.code.shown && tab.code.shown(); tab.doc && tab.doc.fit(); }
+    if (tab){ tab.button.scrollIntoView({block: 'nearest', inline: 'nearest'}); tab.code && tab.code.shown && tab.code.shown(); }
   }
   function lastShown(){ return tabs.filter(function(t){ return !t.hidden; }).pop() || null; }
   function find(path){ return tabs.filter(function(t){ return !t.section && t.path === path; })[0]; }

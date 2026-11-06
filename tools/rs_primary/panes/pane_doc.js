@@ -68,19 +68,21 @@ RS.pane('doc', function(ctx){
     if (own(t) && t.tHead && t.tHead.rows.length && t.tBodies.length && !t.querySelector('.sortbtn')) RS.table.make(t);
   });
 
-  // ---- the layouts of blocks that the html holds (div.rslayout, made by the server) fill the element the doc scrolls in ----
-  function fit(){
-    Array.prototype.forEach.call(box.querySelectorAll('.rslayout'), function(place){
-      if (!place.offsetParent) return;                       // in a part of the html that is not shown: measured when it is
-      var top = place.getBoundingClientRect().top - cell.getBoundingClientRect().top + cell.scrollTop;
-      place.style.height = Math.max(200, cell.clientHeight - top) + 'px';
-      var over = cell.scrollHeight - cell.clientHeight;      // what the html has below the layout (margins) pushes the cell past its bottom
-      if (over > 0) place.style.height = Math.max(200, place.offsetHeight - over) + 'px';
-    });
-  }
-  box.addEventListener('click', function(){ window.setTimeout(fit, 0); });     // a tab of the html shows or hides a layout
-  if (window.ResizeObserver) new ResizeObserver(fit).observe(cell);            // the window changes, or the doc's tab is shown
-  window.setTimeout(fit, 0);
+  // ---- the layouts of blocks that the html holds (div.rslayout, made by the server) fill what the box has left ----
+  // The box is a flex column at least as high as its cell. The elements between the box and a layout are marked, by what
+  // they are, so that the layout takes the height the html leaves it and nothing changes shape: a plain block becomes a
+  // flex column (rsfill), a flex box keeps its direction (rsflex), a table part gets a height (rstable); a grid or an inline
+  // element is left alone, and the layout then keeps its least height.
+  var TABLE_TAGS = {TABLE: 1, THEAD: 1, TBODY: 1, TFOOT: 1, TR: 1, TD: 1, TH: 1};
+  Array.prototype.forEach.call(box.querySelectorAll('.rslayout'), function(place){
+    for (var el = place.parentNode; el && el !== box; el = el.parentNode){
+      var shown = window.getComputedStyle(el).display;           // none: a part of the html that is not shown yet, a block
+      if (TABLE_TAGS[el.tagName]) el.classList.add('rstable');
+      else if (shown === 'flex' || shown === 'inline-flex') el.classList.add('rsflex');
+      else if (shown === 'block' || shown === 'none') el.classList.add('rsfill');
+      else console.warn('rs3: a layout in a ' + shown + ' element keeps its least height');
+    }
+  });
 
   // ---- the search of the text of the box ----
   function clear(){
@@ -126,7 +128,6 @@ RS.pane('doc', function(ctx){
     ctx.emit('searchcount', {index: at + 1, total: hits.length});
   }
   return {
-    fit: fit,
     onSearchtext: function(d){
       if (d.mode !== 'text') return;
       if (home === null) home = cell.scrollTop;      // where the box was before the search: the star goes back here

@@ -244,6 +244,19 @@ class b_rs3(bench):
             self.assertIn(why, text, script)
             self.assertNotIn('(RS.docs = RS.docs', text, script)          # nothing of it runs
 
+    def test_T6c_a_rule_on_the_box_can_only_dress_it_and_a_bare_outer_div_is_taken_off(self):
+        hostile = 'body{position:fixed;width:99999px;margin:-500px;all:unset;display:none;transform:scale(9);color:#222}'
+        dressed = 'body{margin:20px 20px 40px;background:#fffaf5}'
+        markup = '<style>' + hostile + dressed + 'h1{margin:0}</style><div> <div><div class="keep"><h1>t</h1></div></div> </div>'
+        got = reportserver.contactRS('load', '[doc]', {'doc': ['doc', '', '', markup]}, 'box', False)
+        self.assertTrue(got['ok'], got)
+        text = web('GET', got['path'])[2]
+        rules = re.findall(r'\[data-doc="doc"\]\{([^}]*)\}', text)
+        self.assertEqual(rules, ['color:#222', 'padding:20px 20px 40px;background:#fffaf5'])    # no size, place, display, transform, all; margin as padding
+        self.assertIn('[data-doc="doc"] h1{margin:0}', text)                                    # a rule below the box is the page's own
+        box = re.search(r'<div class="doc" data-doc="doc">(.*?)</div></div>', text, re.S).group(1)
+        self.assertTrue(box.startswith('<div class="keep">'), box)                              # the bare wrappers are off, the one with a class stays
+
     def test_T6b_inline_handlers_become_functions_of_the_box_and_javascript_links_are_refused(self):
         page = '<p>t</p><button onclick="go(this.value)" id="b">x</button><script>function go(v){ var n = v; }</script>'
         got = reportserver.contactRS('load', '[doc wxh]', {'doc': ['doc', '', '', page]}, 'handler', False)

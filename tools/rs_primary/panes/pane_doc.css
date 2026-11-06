@@ -1,5 +1,13 @@
 /* pane_doc.css -- the doc block: the marks of its search, and the box that says why a page was refused */
-.doc{box-sizing:border-box;min-height:100%}
+.doc{box-sizing:border-box;min-height:100%;display:flex;flex-direction:column}
+.doc>:only-child{flex:1 1 auto;min-height:0}
+/* a layout of blocks the html holds fills what is left: the doc marks the elements between the box and the layout (pane_doc.js) */
+.rslayout{flex:1 1 auto;min-height:200px;display:flex;flex-direction:column}
+.rsfill{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.rsfill[hidden]{display:none}
+.rsflex{flex:1 1 auto;min-height:0;min-width:0}
+.rstable{height:100%}
+td>.rsfill,th>.rsfill{height:100%}
 .dochit{background:#ffe08a;color:inherit;border-radius:2px}
 .dochit.cur{background:#e67e22;color:#fff}
 .docerr{padding:12px 16px;color:#7a2a00}

@@ -26,7 +26,8 @@ Signals
     emits     searchcount {index, total}   the count of the marks, for the status bar
 IN and OUT below are these names.
 
-VERSION  M2 m02.v02 (2026-11-06): a layout of blocks that a page's html holds (<div class="rslayout">, made by rs3pages.unfold) is not the doc's own: its text is not searched, its tables get no star, aDOM does not look into it.
+VERSION  M2 m02.v03 (2026-11-06): the box's size and place are the layout's: a page's rule on html, body or :root keeps only type, colour, background and padding (a margin becomes padding); bare outer <div>s are unwrapped.
+         M2 m02.v02 (2026-11-06): a layout of blocks that a page's html holds (<div class="rslayout">, made by rs3pages.unfold) is not the doc's own: its text is not searched, its tables get no star, aDOM does not look into it.
          M2 m02.v01 (2026-11-04): every table of the box that has a header row and no sort of its own gets the star and the hamburger (RS.table).
          M2 m01.v02 (2026-11-04): prepare() gives the parts and the problems of a doc's data (the server uses it to serve a report that breaks the rules as its own page).
          M2 m01.v01 (2026-11-04): rebuilt: the script runs as aDOM in a box (checked first), the css is scoped to the box, a
@@ -53,6 +54,15 @@ HANDLER = re.compile(r'''\son([a-z]+)\s*=\s*(?:"([^"]*)"|'([^']*)')''', re.I)
 JAVASCRIPT_URL = re.compile(r'''\b(?:href|src|action|formaction|xlink:href)\s*=\s*["']?\s*javascript:''', re.I)
 TOP_SELECTOR = re.compile(r'(?:html|body|:root)(?![\w-])\s*', re.I)
 OWN_BODY = re.compile(r'body(?![\w-])\s*', re.I)
+# what a rule on the box (html, body, :root) may say: the layout gives the box its size and place, so a page's css can only
+# dress it (type, colour, background, padding); everything else it writes there is dropped, and a margin becomes padding
+BOX_KEEP = {'color', 'background', 'font', 'line-height', 'letter-spacing', 'word-spacing', 'white-space', 'tab-size',
+            'cursor', 'accent-color', 'caret-color', 'color-scheme', 'direction', 'quotes', 'hyphens', 'word-break',
+            'overflow-wrap', 'padding'}
+BOX_PREFIXES = ('font-', 'text-', 'background-', 'padding-')
+MARGIN_AS_PADDING = {'margin': 'padding', 'margin-top': 'padding-top', 'margin-right': 'padding-right',
+                     'margin-bottom': 'padding-bottom', 'margin-left': 'padding-left'}
+DIV_TAG = re.compile(r'<(/?)div(?=[\s>/])[^>]*>', re.I)
 # the names the box passes to a script, in order (pane_doc.js calls the script with the first five and the timers)
 PARAMETERS = ('aDOM, document, window, location, localStorage, setTimeout, clearTimeout, setInterval, clearInterval, '
               'self, top, parent, frames, globalThis, fetch, XMLHttpRequest, WebSocket, Reflect, Proxy')
@@ -77,6 +87,66 @@ def scope_selector(selector, scope):
         rest = rest[again.end():] if again else rest
         return scope + ((' ' + rest) if rest and rest[0] not in '.:[#' else rest)
     return scope + ' ' + selector
+
+
+def declarations(body):
+    """[(name, value)] of a rule's body, split at the ; that is outside brackets and quotes."""
+    items, level, quote, last = [], 0, '', 0
+    for pos, c in enumerate(body):
+        if quote:
+            quote = '' if c == quote else quote
+        elif c in ('"', "'"):
+            quote = c
+        elif c == '(':
+            level += 1
+        elif c == ')':
+            level -= 1
+        elif c == ';' and level == 0:
+            items.append(body[last:pos])
+            last = pos + 1
+    items.append(body[last:])
+    out = []
+    for item in items:
+        name, colon, value = item.partition(':')
+        if colon and name.strip():
+            out.append((name.strip().lower(), value.strip()))
+    return out
+
+
+def box_body(body):
+    """The body of a rule on the box as the box takes it: only BOX_KEEP, the BOX_PREFIXES and custom properties (--x) are
+    kept, so a page's css cannot size, place, hide or move the box (an allow-list: a property that is not named is
+    dropped, `all` and !important too); a margin is kept as the padding of the same side (not auto or negative)."""
+    kept = []
+    for name, value in declarations(body):
+        value = re.sub(r'\s*!important\s*$', '', value, flags=re.I)
+        if name in MARGIN_AS_PADDING:
+            if 'auto' in value.lower() or re.search(r'(^|\s)-', value):
+                continue
+            name = MARGIN_AS_PADDING[name]
+        elif not (name.startswith('--') or name in BOX_KEEP or name.startswith(BOX_PREFIXES)):
+            continue
+        kept.append(f'{name}:{value}')
+    return ';'.join(kept)
+
+
+def unwrap(markup):
+    """The markup without outermost <div>s that carry nothing (no id, class or style: a bare wrapper round all of it),
+    taken off one after another; a wrapper with an attribute is kept, as the page's css or script may address it."""
+    while True:
+        text = markup.strip()
+        first = re.match(r'<div\s*>', text, re.I)
+        if not first:
+            return markup
+        depth, last = 0, None
+        for tag in DIV_TAG.finditer(text):
+            depth += -1 if tag.group(1) else 1
+            if depth == 0:
+                last = tag
+                break
+        if last is None or last.end() != len(text):
+            return markup
+        markup = text[first.end():last.start()]
 
 
 def scoped(css, scope):
@@ -114,7 +184,14 @@ def scoped(css, scope):
                     parts.append(head[last:pos])
                     last = pos + 1
             parts.append(head[last:])
-            out.append(','.join(scope_selector(part, scope) for part in parts) + '{' + body + '}')
+            box = [part for part in parts if scope_selector(part, scope) == scope]
+            if box:                                     # a rule on the box: what the box may take, and the rest of its selectors as they were
+                dressing = box_body(body)
+                if dressing:
+                    out.append(scope + '{' + dressing + '}')
+                parts = [part for part in parts if part not in box]
+            if parts:
+                out.append(','.join(scope_selector(part, scope) for part in parts) + '{' + body + '}')
         i = end
     return '\n'.join(out)
 
@@ -150,6 +227,7 @@ def prepare(*data):
     body = BODY.search(markup)
     if body:                                              # a whole page: the inside of its body
         markup = body.group(1)
+    markup = unwrap(markup)
     if JAVASCRIPT_URL.search(markup):
         return js, css, markup, [], ['a javascript: link or source is not allowed']
     markup, handlers = take_handlers(markup)

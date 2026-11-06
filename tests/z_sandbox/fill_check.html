@@ -1,0 +1,34 @@
+<div class="head">fill_check -- one layout of blocks in three kinds of html: plain divs, a flex row, a table cell. Each should fill the page down to its bottom.</div>
+<div class="bar"><button class="ctab on" data-group="f" data-tab="f0">plain divs</button><button class="ctab" data-group="f" data-tab="f1">flex row</button><button class="ctab" data-group="f" data-tab="f2">table cell</button></div>
+<div class="cpanel" data-group="f" id="f0"><div><div>
+{{layout=[mt,[cd;eb]],./mumix/tools/use.py}}
+</div></div></div>
+<div class="cpanel" data-group="f" id="f1" hidden><div class="row"><div class="side">a side column</div><div class="main">
+{{layout=[mt,[cd;eb]],./mumix/tools/bench.py}}
+</div></div></div>
+<div class="cpanel" data-group="f" id="f2" hidden><table class="grid"><tr><td class="side">a side cell</td><td>
+{{layout=[mt,[cd;eb]],./mumix/tools/runbench.py}}
+</td></tr></table></div>
+<style>
+.head{color:#6b3a00;margin:0 0 8px}
+.bar{display:flex;gap:4px;border-bottom:2px solid #d35400;margin-bottom:8px}
+.ctab{font:inherit;font-size:11px;font-weight:bold;padding:4px 12px;border:1px solid #e0a878;border-radius:8px 8px 0 0;background:#fdebd0;color:#8a4500;cursor:pointer}
+.ctab.on{background:#e67e22;border-color:#b34700;color:#fff}
+.row{display:flex;gap:8px}
+.main{flex:1;min-width:0}
+.side{width:120px;background:#fdebd0;padding:4px}
+.grid{width:100%;border-collapse:collapse}
+.grid td{vertical-align:top}
+</style>
+<script>
+document.addEventListener('click', function(event){
+  var button = event.target;
+  var group = button.getAttribute ? button.getAttribute('data-group') : null;
+  if (!group || !button.getAttribute('data-tab')) return;
+  var buttons = document.querySelectorAll('.ctab'), panels = document.querySelectorAll('.cpanel');
+  for (var i = 0; i < buttons.length; i++) if (buttons[i].getAttribute('data-group') === group) buttons[i].classList.remove('on');
+  for (var j = 0; j < panels.length; j++) if (panels[j].getAttribute('data-group') === group) panels[j].hidden = true;
+  button.classList.add('on');
+  document.getElementById(button.getAttribute('data-tab')).hidden = false;
+});
+</script>
