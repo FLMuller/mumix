@@ -165,8 +165,8 @@ such a file is the file itself, its own page with no rs3 around it (no status ba
 server the way the old reports do.
 
 `[doc]&doc=code.py/results/b_str2int.html` is a report file; `{'doc': ['doc', js, css, html]}` is html given whole. The doc
-shows it in a box it cannot get out of (pane_doc.py has the rules): its css is scoped to the box (`body{margin:20px}` is the
-box's margin), its script runs with `document` meaning the box (`aDOM`, with `aDOM.currentdiv` the box element) and is
+shows it in a box it cannot get out of (pane_doc.py has the rules): its css is scoped to the box (a rule on `body` can only dress it: type, colour, background and padding, a margin
+becomes padding; the layout gives the box its size and place), its script runs with `document` meaning the box (`aDOM`, with `aDOM.currentdiv` the box element) and is
 read first (rs3jsguard): no `this`, no arrow function, no `.constructor`, `.parentNode` or `.closest`, no computed names,
 no names outside the script's own and a short list. A script that says more is not run; the box lists why. The status bar's
 Find searches the text of a doc (every place marked, ▲ ▼ to step, ★ to go back to where it was).
