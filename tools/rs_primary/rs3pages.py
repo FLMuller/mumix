@@ -30,7 +30,9 @@ Routes (HTTP GET)
 The page table is S['pages'] (rs3table). A page that is an address is put in it when it is served and when it says
 hello (register_url), so a page whose server restarted finds its place again.
 
-VERSION  M2 m01.v04 (2026-11-04): the viewer takes the methods block's own width; the page carries html/table.js and table.css.
+VERSION  M2 m01.v06 (2026-11-06): showcode is routed (nearest), so a methods pane and an editbox follow the code pane of their own container.
+         M2 m01.v05 (2026-11-06): a {{layout=[...], source, ...}} token in a block's html becomes a layout of blocks of its own (unfold: <div class="rslayout">, locators suffixed .cN).
+         M2 m01.v04 (2026-11-04): the viewer takes the methods block's own width; the page carries html/table.js and table.css.
          M2 m01.v03 (2026-11-04): the block of a locator comes from rs3layout.blocks (kind.suffix, definitions at the end); the status bar is a row added by parse(below=).
          M2 m01.v02 (2026-11-04): the panes of a page say where they sit, their blk{} list, what they take and hold (no where/TARGETS); a blk{} list is checked; a report that breaks the doc rules is served as its own page.
          M2 m01.v01 (2026-11-04): the address code is rs3util's, the page table rs3table's, the path rules pathof's;
@@ -64,7 +66,7 @@ MONITOR = ('[ftv, [serverstatus ; log]]', {})
 VIEWER = '[methods, [code ; editbox wx35d]]'
 ICON = 'data:image/svg+xml,' + quote(asset(os.path.join(PAGE, 'favicon.svg'), 'svg').strip(), safe='/:=,')   # the seven-dot ring, the tab icon of every page
 MAX_TABS = 500                              # the files one block's data may name, patterns opened
-ROUTED = ('commentline', 'commentselect', 'saved')   # the signals that go to one block, the nearest (manager.js), or the list of blk{a,b}
+ROUTED = ('commentline', 'commentselect', 'saved', 'showcode')   # the signals that go to one block, the nearest (manager.js), or the list of blk{a,b}
 STATUSBAR = 'statusbar wx7'                 # added as the last row of every page that does not name its own
 BLOCK = re.compile(r'^[a-z]{1,20}$')
 TOKEN = re.compile(r'@@(\w+)@@')
@@ -122,6 +124,87 @@ def listed(loc, to, specs_of, gave):
             raise ValueError(f'{loc}{{{",".join(to)}}}: {target} takes nothing that {loc} sends to one block')
 
 
+LAYOUT_OPEN = '{{layout='
+
+
+def containers(markup):
+    """[(start, end, layout text, [sources])] of the {{layout=[...], source, ...}} tokens of a block's html: a layout
+    in brackets (nested brackets counted) and after it the sources, ./ paths, up to the closing }}. A token that does
+    not have this form is left as text."""
+    found, at = [], 0
+    while True:
+        start = markup.find(LAYOUT_OPEN, at)
+        if start < 0:
+            return found
+        first = start + len(LAYOUT_OPEN)
+        depth, k = 0, first
+        while k < len(markup) and markup[first] == '[':
+            depth += (markup[k] == '[') - (markup[k] == ']')
+            if depth == 0:
+                break
+            k += 1
+        end = markup.find('}}', k)
+        if markup[first:first + 1] != '[' or k >= len(markup) or end < 0:
+            at = first
+            continue
+        found.append((start, end + 2, markup[first:k + 1], [s.strip() for s in markup[k + 1:end].split(',') if s.strip()]))
+        at = end + 2
+
+
+def suffixed(tree, suffix, block_of):
+    """(tree, {new loc: block}) with every locator of a container's layout given `.suffix`, so that it is its own on the
+    page; the `blk{...}` lists follow the new names."""
+    new = {loc: f'{loc}.{suffix}' for loc in block_of}
+
+    def again(node):
+        if node['kind'] == 'cell':
+            return {**node, 'loc': new[node['loc']], 'to': [new[t] for t in node.get('to', [])]}
+        return {**node, 'items': [again(sub) for sub in node['items']]}
+    return again(tree), {new[loc]: block for loc, block in block_of.items()}
+
+
+def unfold(S, page, here, markup, count):
+    """(markup, extra): the html of a block with each {{layout=...}} token made the place of a layout of blocks, and the
+    blocks of those layouts as dicts {loc, block, got, at, to}. The place is <div class="rslayout"> (a block that
+    searches its own text leaves it out); its blocks are made as those of the page are, their locators suffixed .cN
+    (count[0] numbers the containers of the page) and their group path `at` that of the host block, the container's number
+    and their place in the container, so a signal finds the nearest block of its own container first."""
+    extra, out, from_at = [], [], 0
+    for start, end, text, sources in containers(markup):
+        count[0] += 1
+        tree = rs3layout.parse(text)
+        block_of = rs3layout.blocks(tree)
+        tree, block_of = suffixed(tree, f'c{count[0]}', block_of)
+        inside = rs3layout.places(tree)
+        taken, got_of, sizes = 0, {}, {}
+        for loc, block in block_of.items():
+            data = []
+            if sources and block == 'methods':
+                data = [sources[0]]
+            elif sources and block == 'code':
+                data = [sources[min(taken, len(sources) - 1)]]
+                taken += 1
+            got = module_of(block).write(*data, S=S, page=page, loc=loc)
+            got_of[loc] = got
+            if got['width'] or got['height']:
+                sizes[loc] = (got['width'], got['height'])
+            extra.append({'loc': loc, 'block': block, 'got': got, 'at': list(here) + [count[0]] + inside[loc],
+                          'to': next((c['to'] for c in cells(tree) if c['loc'] == loc), [])})
+        body = rs3layout.render(tree, {loc: got['html'] for loc, got in got_of.items()}, defaults=sizes)
+        out.append(markup[from_at:start])
+        out.append(f'<div class="rslayout" data-n="{count[0]}" style="display:flex;flex-direction:column;min-height:200px">{body}</div>')
+        from_at = end
+    out.append(markup[from_at:])
+    return ''.join(out), extra
+
+
+def cells(tree):
+    """The cell dicts of a layout tree, in order."""
+    if tree['kind'] == 'cell':
+        return [tree]
+    return [cell for sub in tree['items'] for cell in cells(sub)]
+
+
 def build(S, page, layout, specs, title, selftest=False):
     """The html of a page: see the module header. ValueError says what is wrong with the layout
     or a block. The sizes the blocks gave are left in page['sizes'] ({locator: (width, height)})."""
@@ -143,12 +226,22 @@ def build(S, page, layout, specs, title, selftest=False):
         except ValueError as error:
             raise ValueError(f'{loc!r}: {error}' + (f' (define it at the end of the layout, like {{{loc}=code}})' if block == loc else ''))
         gave[loc] = module.write(*data, S=S, page=page, loc=loc)
+    top, count = list(locs), [0]
+    for loc in top:                                     # the layouts a block's html has as {{layout=...}}
+        gave[loc]['html'], more = unfold(S, page, places[loc], gave[loc]['html'], count)
+        for one in more:
+            locs.append(one['loc'])
+            specs_of[one['loc']] = [one['block']]
+            gave[one['loc']] = one['got']
+            places[one['loc']] = one['at']
+            if one['to']:
+                wanted[one['loc']] = one['to']
     held = {got['holds'] for got in gave.values() if got['holds']}      # blocks that another takes over: only a place to show
     for loc, to in wanted.items():
         listed(loc, to, specs_of, gave)
     for loc in locs:
         block, got = specs_of[loc][0], gave[loc]
-        if got['width'] or got['height']:                # its own size, where the layout gives none
+        if loc in top and (got['width'] or got['height']):   # its own size, where the layout gives none
             sizes[loc] = (got['width'], got['height'])
         html_of[loc] = got['html']
         parts.append((got['label'] or block, got['css'], got['js']))

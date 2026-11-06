@@ -13,8 +13,9 @@ RS.pane('doc', function(ctx){
     Object.defineProperty(aDOM, name, shut('aDOM.' + name));
   });
   aDOM.getElementById = function(id){ return box.querySelector('[id="' + String(id).replace(/(["\\])/g, '\\$1') + '"]'); };
-  aDOM.querySelector = function(sel){ return box.querySelector(sel); };
-  aDOM.querySelectorAll = function(sel){ return box.querySelectorAll(sel); };
+  function own(el){ return !el.closest('.rslayout'); };         // the layouts of blocks a page's html holds are not the doc's own
+  aDOM.querySelector = function(sel){ return Array.prototype.filter.call(box.querySelectorAll(sel), own)[0] || null; };
+  aDOM.querySelectorAll = function(sel){ return Array.prototype.filter.call(box.querySelectorAll(sel), own); };
   aDOM.getElementsByClassName = function(name){ return box.getElementsByClassName(name); };
   aDOM.getElementsByTagName = function(name){ return box.getElementsByTagName(name); };
   aDOM.createElement = function(tag){ return document.createElement(tag); };
@@ -64,8 +65,21 @@ RS.pane('doc', function(ctx){
     }
   }
   Array.prototype.forEach.call(box.querySelectorAll('table'), function(t){      // a table with a header row gets the star and the hamburger (RS.table), unless its page made its own
-    if (t.tHead && t.tHead.rows.length && t.tBodies.length && !t.querySelector('.sortbtn')) RS.table.make(t);
+    if (own(t) && t.tHead && t.tHead.rows.length && t.tBodies.length && !t.querySelector('.sortbtn')) RS.table.make(t);
   });
+
+  // ---- the layouts of blocks the html holds fill the box down to its bottom ----
+  function fit(){
+    var room = cell.getBoundingClientRect();
+    Array.prototype.forEach.call(box.querySelectorAll('.rslayout'), function(place){
+      if (!place.offsetParent) return;                         // in a tab that is not shown: measured when it is
+      var top = place.getBoundingClientRect().top - room.top + cell.scrollTop;
+      place.style.height = Math.max(200, cell.clientHeight - top - 4) + 'px';
+    });
+  }
+  box.addEventListener('click', function(){ window.setTimeout(fit, 0); });     // a tab of the html shows or hides a layout
+  window.addEventListener('resize', fit);
+  window.setTimeout(fit, 0);
 
   // ---- the search of the text of the box ----
   function clear(){
@@ -80,7 +94,7 @@ RS.pane('doc', function(ctx){
     var out = [], w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null);
     for (var n = w.nextNode(); n; n = w.nextNode()){
       var tag = n.parentNode.nodeName;
-      if (tag !== 'SCRIPT' && tag !== 'STYLE' && tag !== 'TEMPLATE' && n.nodeValue.trim()) out.push(n);
+      if (tag !== 'SCRIPT' && tag !== 'STYLE' && tag !== 'TEMPLATE' && n.nodeValue.trim() && own(n.parentNode)) out.push(n);
     }
     return out;
   }

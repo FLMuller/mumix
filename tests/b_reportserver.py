@@ -814,8 +814,8 @@ class b_rs3(bench):
         self.assertEqual((panes['toptabs']['takes'], panes['toptabs']['holds']), (True, 'code'))
         self.assertEqual(panes['ftv']['takes'], False)
         self.assertEqual(panes['editbox']['at'], [0, 1, 1, 1, 1])      # the status bar's row is the outer group
-        self.assertEqual(info['routed'], ['commentline', 'commentselect', 'saved'])
-        for layout in ('[ftv{methods},code]', '[ftv,editbox{log},log]', '[code{ftv},ftv]'):      # a list must name blocks that take what is sent
+        self.assertEqual(info['routed'], ['commentline', 'commentselect', 'saved', 'showcode'])
+        for layout in ('[ftv{methods},code]', '[ftv,editbox{log},log]', '[log{ftv},ftv]'):      # a list must name blocks that take what is sent
             with self.assertRaises(reportserver.ReportServerError, msg=layout):
                 reportserver.contactRS('load', layout, {}, 'bad', False)
 

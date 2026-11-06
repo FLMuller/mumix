@@ -13,7 +13,7 @@
 // Signals sent while another is being delivered wait their turn, so every block sees them in order.
 // Who gets a signal. Three ways (SIGNALS.md says which a signal uses):
 //   to           the data holds  to: [locators]  : only those blocks (a selectfunk goes back to the code that was shown)
-//   nearest      the names in PAGE.routed (commentline, commentselect, saved): of each kind of block that listens, the
+//   nearest      the names in PAGE.routed (commentline, commentselect, saved, showcode): of each kind of block that listens, the
 //                one nearest the sender in the layout: the most groups [...] shared with it; of those the first after
 //                the sender, round the end; or the blocks of the sender's  blk{a,b}  list in the layout string
 //   everyone     all the others: every block with the handler
@@ -54,8 +54,8 @@ var RS = (function(){
   }
   function receivers(name, data, from){
     var list = listeners(name), to = data.to, own = paneOf(from);
-    if (!to && (PAGE.routed || []).indexOf(name) >= 0){
-      if (!own || !own.to.length) return nearest(list, from);
+    if (!to && (PAGE.routed || []).indexOf(name) >= 0 && own){       // a signal of the manager itself (no sender) goes to everyone
+      if (!own.to.length) return nearest(list, from);
       to = own.to;                      // the sender's  blk{a,b}  in the layout string
     }
     return to ? list.filter(function(it){ return to.indexOf(it.loc) >= 0; }) : list;

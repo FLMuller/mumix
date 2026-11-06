@@ -26,7 +26,8 @@ Signals
     emits     searchcount {index, total}   the count of the marks, for the status bar
 IN and OUT below are these names.
 
-VERSION  M2 m02.v01 (2026-11-04): every table of the box that has a header row and no sort of its own gets the star and the hamburger (RS.table).
+VERSION  M2 m02.v02 (2026-11-06): a layout of blocks that a page's html holds (<div class="rslayout">, made by rs3pages.unfold) is not the doc's own: its text is not searched, its tables get no star, aDOM does not look into it.
+         M2 m02.v01 (2026-11-04): every table of the box that has a header row and no sort of its own gets the star and the hamburger (RS.table).
          M2 m01.v02 (2026-11-04): prepare() gives the parts and the problems of a doc's data (the server uses it to serve a report that breaks the rules as its own page).
          M2 m01.v01 (2026-11-04): rebuilt: the script runs as aDOM in a box (checked first), the css is scoped to the box, a
          file is a source like any other, and the box answers the status bar's search. Replaces the doc that took a file's

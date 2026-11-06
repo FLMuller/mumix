@@ -5,38 +5,38 @@
 <title>bench mockup</title>
 <style>
 body{font-family:Consolas,monospace;font-size:12px;margin:10px;color:#222}
-.meta{color:#6b3a00;margin:0 0 8px}
-.mbar{display:flex;gap:4px;border-bottom:2px solid #d35400;margin-bottom:8px}
-.mtab{font:inherit;font-size:11px;font-weight:bold;padding:4px 12px;border:1px solid #e0a878;border-radius:8px 8px 0 0;background:#fdebd0;color:#8a4500;cursor:pointer}
-.mtab.on{background:#e67e22;border-color:#b34700;color:#fff}
+.bmeta{color:#6b3a00;margin:0 0 8px}
+.bbar{display:flex;gap:4px;border-bottom:2px solid #d35400;margin-bottom:8px}
+.btab{font:inherit;font-size:11px;font-weight:bold;padding:4px 12px;border:1px solid #e0a878;border-radius:8px 8px 0 0;background:#fdebd0;color:#8a4500;cursor:pointer}
+.btab.on{background:#e67e22;border-color:#b34700;color:#fff}
 table{border-collapse:collapse}
 th,td{border:1px solid #e0a878;padding:2px 8px;text-align:left}
 th{background:#fdebd0}
-.ok{color:#2e7d32}
-.bad{color:#c0392b;font-weight:bold}
+.bok{color:#2e7d32}
+.bbad{color:#c0392b;font-weight:bold}
 </style>
 </head>
 <body>
-<div class="meta">b_mockup -- 8 tests, 5 variants -- AC power, clock 3.41 GHz, speed 97%</div>
-<div class="mbar" id="mbar"><button class="mtab on" data-tab="t0">Tests</button><button class="mtab" data-tab="t1">Bench</button><button class="mtab" data-tab="t2">rs3util.py</button><button class="mtab" data-tab="t3">rs3layout.py</button><button class="mtab" data-tab="t4">rs3pages.py</button></div>
-<div id="mpanels">
-<div class="mpanel" id="t0"><table><tr><th>test</th><th>result</th><th>ms</th></tr><tr><td>T1 empty input</td><td class="ok">pass</td><td>9.18</td></tr><tr><td>T2 one row</td><td class="bad">FAIL</td><td>5.25</td></tr><tr><td>T3 unicode names</td><td class="bad">pass</td><td>0.72</td></tr><tr><td>T4 long line</td><td class="ok">pass</td><td>1.45</td></tr><tr><td>T5 tabs and spaces</td><td class="ok">pass</td><td>1.91</td></tr><tr><td>T6 nested groups</td><td class="ok">pass</td><td>13.28</td></tr><tr><td>T7 bad suffix</td><td class="ok">pass</td><td>13.67</td></tr><tr><td>T8 round trip</td><td class="bad">pass</td><td>4.20</td></tr></table></div><div class="mpanel" id="t1" hidden><table><tr><th>variant</th><th>ms</th><th>vs best</th></tr><tr><td>base</td><td>5.42</td><td>1.00x</td></tr><tr><td>dict</td><td>6.45</td><td>1.19x</td></tr><tr><td>cell</td><td>7.88</td><td>1.46x</td></tr><tr><td>array</td><td>12.89</td><td>2.38x</td></tr><tr><td>cython</td><td>32.79</td><td>6.05x</td></tr></table></div><div class="mpanel" id="t2" hidden>
+<div class="bmeta">b_mockup -- 8 tests, 5 variants -- AC power, clock 3.41 GHz, speed 97%</div>
+<div class="bbar" id="bbar"><button class="btab on" data-tab="t0">Tests</button><button class="btab" data-tab="t1">Bench</button><button class="btab" data-tab="t2">rs3util.py</button><button class="btab" data-tab="t3">rs3layout.py</button><button class="btab" data-tab="t4">rs3pages.py</button></div>
+<div id="bpanels">
+<div class="bpanel" id="t0"><table><tr><th>test</th><th>result</th><th>ms</th></tr><tr><td>T1 empty input</td><td class="bok">pass</td><td>9.18</td></tr><tr><td>T2 one row</td><td class="bbad">FAIL</td><td>5.25</td></tr><tr><td>T3 unicode names</td><td class="bbad">pass</td><td>0.72</td></tr><tr><td>T4 long line</td><td class="bok">pass</td><td>1.45</td></tr><tr><td>T5 tabs and spaces</td><td class="bok">pass</td><td>1.91</td></tr><tr><td>T6 nested groups</td><td class="bok">pass</td><td>13.28</td></tr><tr><td>T7 bad suffix</td><td class="bok">pass</td><td>13.67</td></tr><tr><td>T8 round trip</td><td class="bbad">pass</td><td>4.20</td></tr></table></div><div class="bpanel" id="t1" hidden><table><tr><th>variant</th><th>ms</th><th>vs best</th></tr><tr><td>base</td><td>5.42</td><td>1.00x</td></tr><tr><td>dict</td><td>6.45</td><td>1.19x</td></tr><tr><td>cell</td><td>7.88</td><td>1.46x</td></tr><tr><td>array</td><td>12.89</td><td>2.38x</td></tr><tr><td>cython</td><td>32.79</td><td>6.05x</td></tr></table></div><div class="bpanel" id="t2" hidden>
 {{layout=[mt,[cd;eb]],./mumix/tools/rs_primary/rs3util.py}}
-</div><div class="mpanel" id="t3" hidden>
+</div><div class="bpanel" id="t3" hidden>
 {{layout=[mt,[cd;eb]],./mumix/tools/rs_primary/rs3layout.py}}
-</div><div class="mpanel" id="t4" hidden>
+</div><div class="bpanel" id="t4" hidden>
 {{layout=[mt,[cd;eb]],./mumix/tools/rs_primary/rs3pages.py}}
 </div>
 </div>
 <script>
 // the tab bar: one listener on the bar, finds the button the click came from, shows its panel and hides the others
-document.getElementById('mbar').addEventListener('click', function(event){
+document.getElementById('bbar').addEventListener('click', function(event){
   var button = event.target;
   if (!button.getAttribute('data-tab')) return;
-  var buttons = document.querySelectorAll('.mtab'), panels = document.querySelectorAll('.mpanel');
-  for (var i = 0; i < buttons.length; i++) buttons[i].className = 'mtab';
+  var buttons = document.querySelectorAll('.btab'), panels = document.querySelectorAll('.bpanel');
+  for (var i = 0; i < buttons.length; i++) buttons[i].className = 'btab';
   for (var j = 0; j < panels.length; j++) panels[j].hidden = true;
-  button.className = 'mtab on';
+  button.className = 'btab on';
   document.getElementById(button.getAttribute('data-tab')).hidden = false;
 });
 </script>
