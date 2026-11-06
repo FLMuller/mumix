@@ -6,8 +6,13 @@
 .rsfill{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
 .rsfill[hidden]{display:none}
 .rsflex{flex:1 1 auto;min-height:0;min-width:0}
-.rstable{height:100%}
-td>.rsfill,th>.rsfill{height:100%}
+table.rstable{flex:1 1 auto}
+table.rstable tr{height:1px}                              /* the rows round the one that holds a layout keep their own height; it takes what is left */
+table.rstable tr.rstable{height:100%}
+/* a layout in a table cell fills the cell's box whatever height the table gave it (a percentage height would need the cell's height to
+   be known, and its long lines would widen the table): the cell is the place, the layout is laid in it */
+.rscell{position:relative;min-height:200px}
+.rscell>.rslayout{position:absolute;top:0;right:0;bottom:0;left:0;min-height:0}
 .dochit{background:#ffe08a;color:inherit;border-radius:2px}
 .dochit.cur{background:#e67e22;color:#fff}
 .docerr{padding:12px 16px;color:#7a2a00}

@@ -77,7 +77,10 @@ RS.pane('doc', function(ctx){
   Array.prototype.forEach.call(box.querySelectorAll('.rslayout'), function(place){
     for (var el = place.parentNode; el && el !== box; el = el.parentNode){
       var shown = window.getComputedStyle(el).display;           // none: a part of the html that is not shown yet, a block
-      if (TABLE_TAGS[el.tagName]) el.classList.add('rstable');
+      if (TABLE_TAGS[el.tagName]){
+        el.classList.add('rstable');
+        if (el === place.parentNode && (el.tagName === 'TD' || el.tagName === 'TH')) el.classList.add('rscell');
+      }
       else if (shown === 'flex' || shown === 'inline-flex') el.classList.add('rsflex');
       else if (shown === 'block' || shown === 'none') el.classList.add('rsfill');
       else console.warn('rs3: a layout in a ' + shown + ' element keeps its least height');
