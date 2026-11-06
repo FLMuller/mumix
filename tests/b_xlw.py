@@ -35,11 +35,12 @@ from use import load
 from bench import bench
 
 SOURCES = ['xlw', 'xlstyle', 'xlparts']
-globals().update(load('xlw', into={}))          # xlw, XlwError, XlwNoBook, ...
+load('xlw')          # xlw, XlwError, XlwNoBook, ...
 import xlsheet
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gridcheck import Cell, at, ncells, cell_table
-BOUND = load('xlstyle', into={})                # the style helpers the tests probe
+load(asmodule=['xlstyle'])
+BOUND = xlstyle                # the style helpers the tests probe
 
 NS = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
 NSR = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
@@ -88,7 +89,7 @@ def partext(filename, part):
 
 class b_xlw(bench):
     BenchName = 'xlw'
-    BenchVersion = 'M1.0.17'
+    BenchVersion = 'M1.0.18'
     BenchHeader = ''
     sources = SOURCES
 
@@ -356,7 +357,7 @@ class b_xlw(bench):
         self.assertEqual(at(xl.data.S1, 1, 2).kvr('numfmt'), '0')
 
     def test_T39_auto_numfmt_ranges(self):
-        auto = BOUND['auto_numfmt']
+        auto = BOUND.auto_numfmt
         self.assertEqual(auto(0.0), '')
         self.assertEqual(auto(float('nan')), '')
         self.assertEqual(auto(1234.0), '0')
@@ -438,7 +439,7 @@ class b_xlw(bench):
         self.assertEqual(at(xl.data.S1, 1, 1).kvr('fill'), 'FFCC99')
 
     def test_T49_colour_forms(self):
-        color2hex = BOUND['color2hex']
+        color2hex = BOUND.color2hex
         self.assertEqual(color2hex('#ff0080'), 'FF0080')
         self.assertEqual(color2hex('f08'), 'FF0088')
         self.assertEqual(color2hex((1, 0.5, 0)), 'FF8000')
@@ -732,11 +733,11 @@ class b_xlw(bench):
         self.assertEqual(names, ['A&B', 'C<D'])
 
     def test_T86_xlstyle_helpers(self):
-        safe = BOUND['safe_name']
+        safe = BOUND.safe_name
         self.assertEqual(safe('my book'), 'my_book')
         self.assertEqual(safe('1abc'), 's_1abc')
         self.assertEqual(safe(''), 's_')
-        border = BOUND['normalise_border']
+        border = BOUND.normalise_border
         self.assertEqual(border(''), ())
         self.assertEqual(len(border('all:medium')), 4)
         self.assertEqual(border('n:thin,s:double', 'FF0000')[1], ('s', 'double', 'FF0000'))

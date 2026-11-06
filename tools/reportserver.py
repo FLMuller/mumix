@@ -1,15 +1,15 @@
-r"""rs3.py -- the report server, third build: pages made of blocks, one function to ask.
+r"""reportserver.py -- the report server (third build: pages made of blocks), one function to ask.
 
-    import rs3                                # starts the server, hidden, if nothing answers a ping
-    rs3.contactRS('ping')                     # {'ok': True, 'pong': 1, ...}
-    rs3.contactRS('view', './mumix/tools/primary/rs3.py')    # a file as a commentable page
-    rs3.contactRS('load', '[doc wxh]', {'doc': ['doc', js, css, html]}, 'title')   # a page of blocks
+    import reportserver   # starts the server, hidden, if nothing answers a ping
+    reportserver.contactRS('ping')                     # {'ok': True, 'pong': 1, ...}
+    reportserver.contactRS('view', './mumix/tools/reportserver.py')    # a file as a commentable page
+    reportserver.contactRS('load', '[doc wxh]', {'doc': ['doc', js, css, html]}, 'title')   # a page of blocks
 
-contactRS is the only public name (__all__). It opens a websocket to the server, sends one
-message and returns the one reply, a dict. It never raises: a failure is
-{'ok': False, 'error': ...}, and "no answer in 3 s" is one of them. The one other answer is
-None: snap and trigger name a page by its path and None says no page has that path loaded. The
-server is started by the import itself, once: every program that imports rs3 shares the one.
+contactRS and ReportServerError are the public names (__all__). contactRS opens a websocket to the server, sends one
+message and returns the one reply, a dict. A failure raises ReportServerError: a refused request (its text is the
+server's reason, .reply the whole reply), no server running, or "no answer in 3 s" (.reply is None). The one other
+answer is None: snap and trigger name a page by its path and None says no page has that path loaded. The
+server is started by the import itself, once: every program that imports reportserver shares the one.
 
 The server (what the daemon runs)
     One process, no threads, asleep in a selector until a byte arrives. It binds PORT on
@@ -17,16 +17,16 @@ The server (what the daemon runs)
     name this server as its Host, and send no Origin (a program) or this server's own (a page).
     Websocket: a message is JSON {"do": VERB, ...fields} and the reply is a JSON object with
     "ok". HTTP: GET and POST only, one request per connection.
-    Every verb and route is run by a handler named in HANDLERS, in the folder rs3/ beside this
+    Every verb and route is run by a handler named in HANDLERS, in the folder rs_primary/ beside this
     file (rs3core, rs3pages, rs3comment). Each defines VERBS = {verb: function} with
     function(msg, S) -> dict, and may define ROUTES = {'GET': function, 'POST': function} with
     function(request, S) -> (code, bytes, type); S is the server's state. A verb or route
     claimed by two handlers stops the server at start.
     A verb may return {'relay': payload, 'to_hash': hash}: the server then sends the payload to
     the page connections that said hello with that hash and replies when one answers {re: id}.
-    Pages are made of blocks (rs3/pane_NAME.py, each with write()), laid out by a layout string
+    Pages are made of blocks (rs_primary/panes/pane_NAME.py, each with write()), laid out by a layout string
     (rs3layout.py), collated into one style and one script (rs3pages.py), and run by the
-    manager (rs3/html/manager.js), which routes the signals between the blocks (rs3/SIGNALS.md).
+    manager (rs_primary/html/manager.js), which routes the signals between the blocks (rs_primary/SIGNALS.md).
     The server keeps its last LOG_ROWS log lines in memory for the monitor page (verb pulse).
 
 Speed: a new connection and its upgrade cost about 10 ms here, the question itself about 1 ms,
@@ -35,13 +35,19 @@ after 120 s: contactRS then makes a new one, once, and carries on). It is not fo
 threads at once. It connects with a bare socket, not socket.create_connection, whose name
 lookup (getaddrinfo) cost 8 ms a call here against 0.2 ms for the connect (measured 2026-11-03).
 
-Command line     python rs3.py [--serve] [--wait] | --start --by NAME | --stop --by NAME | --status
-Files            rs3/logs/rs3.log (about 100 KB, then rs3.log.old), rs3/rs3.pid, rs3/rs3.config
-Folders          rs3/ the handlers and the page files, rs3/panes/ the blocks (pane_NAME.py, .js, .css),
-                 rs3/html/ the page (page.html, page.css, manager.js, selftest.js), rs3/logs/
-Port             47653 while reportserver.py (47651) and rs2.py (47652) still run.
+Command line     python reportserver.py [--serve] [--wait] | --start --by NAME | --stop --by NAME | --restart --by NAME | --status
+                 | --show [FILE ...]
+                 --restart closes the running server and starts a new one the open pages reconnect to; it opens no page
+                 --show starts the server if it is not running, shows its own page unless one is open, and opens each FILE
+                 through it (a report as a doc page, other files as viewer pages); a line for each; exit 1 if one failed
+Files            rs_primary/logs/rs3.log (about 100 KB, then rs3.log.old), rs_primary/rs3.pid, rs_primary/rs3.config
+Folders          rs_primary/ the handlers and the page files, rs_primary/panes/ the blocks (pane_NAME.py, .js, .css),
+                 rs_primary/html/ the page (page.html, page.css, manager.js, selftest.js), rs_primary/logs/
+Port             47653.
 
-VERSION  M2 m01.v01 (2026-11-03): rebuilt from rs2 for blocks: pages built from a layout string,
+VERSION  M3 m01.v01 (2026-11-05): renamed from rs3.py and moved from tools/primary to tools; its folder rs3/ is rs_primary/ beside it
+         (the modules in it keep their rs3 names); the old reportserver.py, rs2.py and vcserver.py are in tools/zprev.
+         M2 m01.v01 (2026-11-03): rebuilt from rs2 for blocks: pages built from a layout string,
          the pulse of status and log, stop and restart from the monitor page, --wait.
          (rs2 m02.v01: HTTP GET and POST, the route table, the relay, the kept connection.)
 """
@@ -62,15 +68,15 @@ import sys
 import time
 import traceback
 
-__all__ = ['contactRS']
+__all__ = ['contactRS', 'ReportServerError']
 
 PORT = 47653
 if os.name != 'nt':                 # the server binds exclusively (SO_EXCLUSIVEADDRUSE), ctypes.windll sets its priority
-    raise OSError('rs3 is written for Windows: the exclusive socket and the process priority need the Windows api. '
+    raise OSError('reportserver is written for Windows: the exclusive socket and the process priority need the Windows api. '
                   'Port bind() and the priority call before running it on another system.')
 HOST = '127.0.0.1'
 HERE = os.path.dirname(os.path.abspath(__file__))
-FOLDER = os.path.join(HERE, 'rs3')                  # the handlers, and the server's own files
+FOLDER = os.path.join(HERE, 'rs_primary')                  # the handlers, and the server's own files
 PANES = os.path.join(FOLDER, 'panes')              # the blocks
 LOGS = os.path.join(FOLDER, 'logs')
 LOG_FILE = os.path.join(LOGS, 'rs3.log')
@@ -98,8 +104,17 @@ SHAPES = {'ping': (), 'config': ('change',), 'tree': ('hash',), 'list': ('hash',
           'methods': ('hash', 'path'), 'update': ('**',), 'insert': ('**',),   # ('**',): a dict
           'load': ('layout', 'blocks', 'title', 'show', 'selftest'), 'view': ('path', 'show'),
           'hello': ('hash', 'path', 'url'), 'pulse': ('since',), 'status': (),
-          'stop': (), 'restart': (),
+          'stop': (), 'restart': (), 'monitor': (),
           'snap': ('to', 'sel'), 'trigger': ('to', 'sel')}
+
+
+class ReportServerError(Exception):
+    """A request the report server did not carry out. str() is the reason; .reply is the server's whole reply (a dict with
+    ok false), or None when there was none (no server running, no answer in time)."""
+
+    def __init__(me, why, reply=None):
+        super().__init__(why)
+        me.reply = reply
 
 
 def fail(why):
@@ -223,10 +238,11 @@ def ask(msg, timeout):
     return client_read(sock, LINK['buf'], deadline)
 
 
-def contactRS(*args, timeout=3.0):
+def request(*args, timeout=3.0):
     """Send one message to the report server and return its one reply as a dict. The first
-    argument is the verb, the rest are that verb's fields (see SHAPES): contactRS('ping'),
-    contactRS('config', {'size': 14}). Never raises: a failure is {'ok': False, 'error': ...}."""
+    argument is the verb, the rest are that verb's fields (see SHAPES): request('ping'),
+    request('config', {'size': 14}). Never raises: a failure is {'ok': False, 'error': ...}. It is what contactRS
+    asks with; the server's own checks of whether it runs use it, as a missing server is no error there."""
     if not args or not isinstance(args[0], str):
         return fail('contactRS needs a verb, for example contactRS("ping")')
     fields = SHAPES.get(args[0])
@@ -265,6 +281,17 @@ def contactRS(*args, timeout=3.0):
     return None if got.get('loaded') is False else got      # None: that page is not loaded
 
 
+def contactRS(*args, timeout=3.0):
+    """Send one message to the report server and return its one reply as a dict: contactRS('ping'),
+    contactRS('config', {'size': 14}). The first argument is the verb, the rest are that verb's fields (see SHAPES).
+    None says no page has that path loaded (snap, trigger). Raises ReportServerError for a refused request, no server
+    running, and no answer in `timeout` seconds."""
+    got = request(*args, timeout=timeout)
+    if got is not None and got.get('ok') is False:
+        raise ReportServerError(str(got.get('error', 'refused')), got)
+    return got
+
+
 # ---- the log, the dispatcher ----------------------------------------------------------------
 def log(text):
     """One line (or more) in the log file, and in the ring the monitor page reads (pulse)."""
@@ -284,7 +311,7 @@ def log(text):
 
 def load_handlers(S):
     """Fill S['verbs'] from the handlers named in HANDLERS. Their folder is put on the path
-    here, in the daemon only, so that importing rs3 as a client loads none of them. A verb
+    here, in the daemon only, so that importing reportserver as a client loads none of them. A verb
     claimed twice, or a handler that will not load, stops the server."""
     sys.path.insert(0, os.path.dirname(HERE))      # tools/: use.py loads rs3lex.pyx
     sys.path.insert(0, PANES)
@@ -740,8 +767,8 @@ def check_by(by):
 def start(by):
     """Start the daemon, hidden, unless one answers. One line saying what happened."""
     check_by(by)
-    if contactRS('ping', timeout=1.0).get('ok'):
-        return 'rs3: running'
+    if request('ping', timeout=1.0).get('ok'):
+        return 'reportserver: running'
     args = [os.path.abspath(__file__), '--serve', '--by', by]
     exe = sys.executable
     flags = 0
@@ -754,12 +781,12 @@ def start(by):
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                 creationflags=flags, close_fds=True)
     except OSError as error:
-        return f'rs3: could not start ({error})'
+        return f'reportserver: could not start ({error})'
     for _ in range(25):
         time.sleep(0.1)
-        if contactRS('ping', timeout=1.0).get('ok'):
-            return f'rs3: started (pid {proc.pid})'
-    return 'rs3: started, but not answering yet (see rs3/logs/rs3.log)'
+        if request('ping', timeout=1.0).get('ok'):
+            return f'reportserver: started (pid {proc.pid})'
+    return 'reportserver: started, but not answering yet (see rs_primary/logs/rs3.log)'
 
 
 def stop(by):
@@ -770,16 +797,35 @@ def stop(by):
         with open(PID_FILE) as f:
             pid = int(f.read().strip())
     except (OSError, ValueError):
-        return 'rs3: no pid file, nothing to stop'
-    if not contactRS('ping', timeout=1.0).get('ok'):
+        return 'reportserver: no pid file, nothing to stop'
+    if not request('ping', timeout=1.0).get('ok'):
         os.remove(PID_FILE)
-        return 'rs3: not running (stale pid file removed)'
+        return 'reportserver: not running (stale pid file removed)'
     log(f'stop requested by {by}, pid {pid}')
     try:
         os.kill(pid, signal.SIGTERM)
     except OSError as error:
-        return f'rs3: could not stop pid {pid} ({error})'
-    return f'rs3: stopped (pid {pid})'
+        return f'reportserver: could not stop pid {pid} ({error})'
+    return f'reportserver: stopped (pid {pid})'
+
+
+def restart(by):
+    """Close the running daemon and start a new one that the open pages reconnect to: the server tells its pages it is
+    restarting, and they ask again until it answers (a new boot id reloads a page in its own tab). No page is opened. A
+    server that is not running is only started. One line."""
+    check_by(by)
+    was = request('ping', timeout=1.0)
+    if not was.get('ok'):
+        return start(by)
+    got = request('restart', timeout=5.0)
+    if not got.get('ok'):
+        return f'reportserver: could not restart ({got.get("error", "no answer")})'
+    for _ in range(100):                                    # up to 10 s for the new one to answer with a new boot id
+        time.sleep(0.1)
+        now = request('ping', timeout=1.0)
+        if now.get('ok') and now.get('boot') != was.get('boot'):
+            return f'reportserver: restarted (pid {status()["pid"]})'
+    return 'reportserver: restart asked, but the new server is not answering yet (see rs_primary/logs/rs3.log)'
 
 
 def status():
@@ -791,7 +837,7 @@ def status():
         since = os.path.getmtime(PID_FILE)
     except (OSError, ValueError):
         pass
-    return {'running': bool(contactRS('ping', timeout=1.0).get('ok')), 'pid': pid,
+    return {'running': bool(request('ping', timeout=1.0).get('ok')), 'pid': pid,
             'since': since, 'port': PORT}
 
 
@@ -801,38 +847,74 @@ def by_name():
     return name if BY.match(name) else 'python'
 
 
+def open_files(files, by=None):
+    """--show: the server runs (started by `by`, the label the log keeps), its page is shown, and each file is opened
+    through it. One line for the server, the page and each file; returns 1 when anything failed, else 0."""
+    print(start(by or by_name()))
+    code = 0
+    try:
+        print('reportserver: page ' + ('opened' if contactRS('monitor')['opened'] else 'already open'))
+    except ReportServerError as error:
+        print(f'reportserver: the page did not open ({error})')
+        code = 1
+    sys.path.insert(0, FOLDER)                                   # rs3util: the path rules, in this client only
+    from rs3util import pathof
+    for name in files:
+        rel = pathof(os.path.abspath(name))
+        try:
+            if rel is None or pathof(rel) is None:
+                raise ReportServerError(f'{name} is not a file inside the home of the report server')
+            if rel.lower().endswith(('.html', '.htm', '.result')):
+                got = contactRS('load', '[doc]', {'doc': ['doc', rel]}, os.path.basename(name))
+            else:
+                got = contactRS('view', rel)
+            print(f'reportserver: opened {rel}   {got.get("url", "")}')
+        except ReportServerError as error:
+            print(f'reportserver: {name}: {error}')
+            code = 1
+    return code
+
+
 def main(argv=None):
     args = list(sys.argv[1:] if argv is None else argv)
     mode = 'serve'
     by = None
     wait = False
+    files = []
     while args:
         word = args.pop(0)
         if word == '--wait':
             wait = True
-        elif word in ('--serve', '--start', '--stop', '--status'):
+        elif word in ('--serve', '--start', '--stop', '--status', '--show', '--restart'):
             mode = word[2:]
+        elif mode == 'show' and not word.startswith('--'):
+            files.append(word)
         elif word == '--by' and args:
             by = args.pop(0)
         else:
-            raise SystemExit(f'rs3: unknown argument {word}')
-    if mode in ('start', 'stop') and by is None:
-        raise SystemExit(f'rs3: --{mode} needs --by NAME (who is asking)')
+            raise SystemExit(f'reportserver: unknown argument {word}')
+    if mode in ('start', 'stop', 'restart') and by is None:
+        raise SystemExit(f'reportserver: --{mode} needs --by NAME (who is asking)')
     if by is not None:
         try:
             check_by(by)
         except ValueError as error:
-            raise SystemExit(f'rs3: {error}')
+            raise SystemExit(f'reportserver: {error}')
     if mode == 'start':
         print(start(by))
         return 0
     if mode == 'stop':
         print(stop(by))
         return 0
+    if mode == 'restart':
+        print(restart(by))
+        return 0
     if mode == 'status':
         for key, value in status().items():
             print(f'{key}={"" if value is None else value}')
         return 0
+    if mode == 'show':
+        return open_files(files, by)
     return run(by or 'foreground', wait)
 
 

@@ -5,14 +5,20 @@ r"""use2.py -- find project code by NAME, put its folder on the path, import it.
     use('vaults', '+subs') the folder and its subfolders (2 deep)
     use('data', '+mkdir')  create ./data if there is none, and put it on the path
     use('.results')        create ./results (not put on the path)
-    load('slot')           use('slot'), build slot.pyx if it is stale, import slot
+    load('slot')           use('slot'), build slot.pyx if it is stale, import it, and
+                           bind the names of its __all__ in the caller: the same as
+                           `from slot import *`
+    load(asmodule=['slot'])  the same, but bind one name, `slot`, a namespace of the
+                           __all__ names and of __name__, __file__, __doc__ and
+                           __all__: `slot.f()` works, `slot._helper` does not
     locate('slot')         the file load('slot') would import, as a Path, or None
 
-    No item means `primary`. Nothing is bound and nothing is returned: after
-    load('slot') write `import slot` or `from slot import f`. The first item that
-    cannot be found, built or imported raises (a failed build is a CompileError,
-    an ImportError that carries the messages of the step that failed; a gcc that
-    is not there fails as Python reports it).
+    use with no item means `primary`; load with nothing to load does nothing. Nothing
+    is returned. A module to load needs an __all__ (no __all__ is an ImportError). The
+    first item that cannot be found, built or imported raises (a failed build is a
+    CompileError, an ImportError that carries the messages of the step that failed; a
+    gcc that is not there fails as Python reports it). There is no into= and no
+    'silent': a name that is neither a module nor a folder is not found.
 
     Importing use puts its own folder on sys.path, so a module imported after that
     can write `import use`. The first import still needs the folder on the path:
@@ -39,8 +45,17 @@ TRAPS
     * A compiled module cannot be rebuilt while a process has it loaded: run again.
     * A module that imports a sibling needs it on the path: use() its folder, or
       load() the sibling first.
+    * asmodule binds a namespace, a snapshot of the __all__ names as they were when
+      load ran; it is not the module. A name the module rebinds later is not seen
+      through it, and mock.patch must patch sys.modules['slot'], not the namespace.
+    * load binds into the globals of the module that calls it: call it at the top
+      of a module, not from a function that is meant to bind into its own caller.
 
-VERSION  use2 3.0 (2026-11-05): use and load rebuilt on one search (caller, closest)
+VERSION  use2 3.1 (2026-11-05): load(*items, asmodule=()) binds the __all__ names of its
+         items in the caller, and a namespace of them (with __name__, __file__,
+         __doc__, __all__) for each asmodule item; caller() returns the places and
+         the globals of the calling frame, the one frame read; units takes the places.
+         use2 3.0 (2026-11-05): use and load rebuilt on one search (caller, closest)
          and one walk (units, the one generator). load imports, binds nothing,
          returns nothing and stops at the first error; compile is one private
          function and one gcc command. Gone: run, build, exclude, anchor, into=,
@@ -107,22 +122,28 @@ class CompileError(ImportError):
 
 # ---- where a search looks ---------------------------------------------------
 def caller(here=None):
-    """The places the search looks in for the file that called use, load or locate:
-    [(folder, depth)] in order, the caller's own folder first. That folder is the
-    first frame above this module with a file of its own outside Python's
-    installation (none in a console, python -c or stdin; a `here` given replaces
-    the frame). For each folder met: its own files (depth 0), its primary/, then its
-    subfolders (the depth that folder gets); each folder once, a bare drive and a
-    missing one not at all. A big parent (BIG_PARENT entries) gives its own files
-    and primary/ only. Last, the folders already on sys.path. This is the one frame
-    read: the caller does not pass its own location, so no call site has to."""
+    """(places, scope) for the file that called use, load or locate. places: where
+    the search looks, [(folder, depth)] in order, the caller's own folder first. That
+    folder is the first frame above this module with a file of its own outside
+    Python's installation (none in a console, python -c or stdin; a `here` given
+    replaces the frame). For each folder met: its own files (depth 0), its primary/,
+    then its subfolders (the depth that folder gets); each folder once, a bare drive
+    and a missing one not at all. A big parent (BIG_PARENT entries) gives its own
+    files and primary/ only. Last, the folders already on sys.path. scope: the
+    globals of the first frame above this module that is not Python's own (a console
+    has no file but has scope), which is where load binds names; None when `here` is
+    given. This is the one frame read: the caller does not pass its own location, so
+    no call site has to."""
     python = os.path.abspath(sys.base_prefix).lower() + os.sep
     frame = sys._getframe(1) if here is None else None
+    scope = None
     while frame is not None:
         name = frame.f_globals.get('__name__', '')
         file = frame.f_globals.get('__file__')
-        if file and name != __name__ and 'importlib' not in name:
-            if not os.path.abspath(file).lower().startswith(python):
+        own = not file or not os.path.abspath(file).lower().startswith(python)
+        if own and name != __name__ and 'importlib' not in name:
+            scope = scope or frame.f_globals
+            if file:
                 here = Path(os.path.abspath(file)).parent
                 break
         frame = frame.f_back
@@ -155,7 +176,7 @@ def caller(here=None):
                 and not str(root).lower().startswith(python)):
             seen.add(root)
             places.append((root, 0))
-    return places
+    return places, scope
 
 
 def tree(root, depth):
@@ -197,7 +218,7 @@ def locate(name, here=None):
     """The file load('name') would import (the .pyx when there is one, else the
     .py), found by the same search, or None. `here` is the folder to search from;
     the default is the folder of the caller."""
-    return closest(name, caller(None if here is None else Path(here)), folders=False)
+    return closest(name, caller(None if here is None else Path(here))[0], folders=False)
 
 
 # ---- the walk both verbs make -----------------------------------------------
@@ -236,12 +257,12 @@ def flags(items):
     return entries
 
 
-def units(items):
-    """The one walk, of use and load. For each item: find it, create it if asked,
-    put its folder on sys.path, and yield (folder, module names): the one name of a
-    module item, or the importable names of a folder (not _private, not setup.py;
-    a .pyx and a .py of one name are one module). ImportError if not found."""
-    places = caller()                               # the same for every item
+def units(items, places):
+    """The one walk, of use and load, over the `places` caller() found. For each
+    item: find it, create it if asked, put its folder on sys.path, and yield
+    (folder, module names): the one name of a module item, or the importable names
+    of a folder (not _private, not setup.py; a .pyx and a .py of one name are one
+    module). ImportError if not found."""
     for item, subs, mkdir in flags(items):
         if item.startswith('.'):               # create ./item, nothing on the path
             create(item[1:])
@@ -265,14 +286,14 @@ def units(items):
 def use(*items):
     """Put the folder of each item on sys.path (see the header); create the
     folders asked for."""
-    list(units(items))                  # the walk does the work as it is iterated
+    list(units(items, caller()[0]))     # the walk does the work as it is iterated
 
 
-def load(*items):
-    """use() each item, bring its .pyx up to date, and import its modules. Binds
-    nothing and returns nothing; the first failure raises (a failed build is a
-    CompileError, an ImportError)."""
-    for folder, names in units(items):
+def imported(items, places):
+    """Each module the items name: found and put on the path (units), its .pyx built
+    when it is stale, and imported. Warns when a module came from another folder
+    than the one the search found."""
+    for folder, names in units(items, places):
         for name in names:
             if (folder / (name + '.pyx')).is_file():
                 if stale(folder, name):
@@ -285,6 +306,35 @@ def load(*items):
             if os.path.normcase(str(there)) != os.path.normcase(str(folder)):
                 print(f'  use: WARNING {name} was imported from {there}, not from '
                       f'{folder}, which was found.')
+            yield module
+
+
+def load(*items, asmodule=()):
+    """use() each item, bring its .pyx up to date, import its modules and bind them
+    in the caller (see the header). An item binds the names of its __all__, as
+    `from x import *` does; an asmodule item binds one name, x, a namespace of those
+    names and of __name__, __file__, __doc__ and __all__. Returns nothing; the first
+    failure raises (a failed build is a CompileError, an ImportError)."""
+    places, scope = caller()
+    for source, as_namespace in ((items, False), (asmodule, True)):
+        if not source:                  # an empty list is nothing to load, not `primary`
+            continue
+        for module in imported(source, places):
+            names = vars(module).get('__all__')
+            if names is None:
+                raise ImportError(f'use: {module.__name__} has no __all__')
+            missing = [name for name in names if name not in vars(module)]
+            if missing:
+                raise ImportError(f'use: {module.__name__}.__all__ names {missing[0]}, '
+                                  f'which the module does not define')
+            got = {name: vars(module)[name] for name in names}
+            if as_namespace:
+                got.update(__name__=module.__name__,
+                           __file__=vars(module).get('__file__'),
+                           __doc__=module.__doc__, __all__=list(names))
+                scope[module.__name__] = types.SimpleNamespace(**got)
+            else:
+                scope.update(got)
 
 
 # ---- a .pyx becomes a module --------------------------------------------------

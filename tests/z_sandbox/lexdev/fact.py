@@ -4,7 +4,7 @@ root = r'C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix'
 for p in ('tools', 'tools/primary', 'tools/primary/rs3'):
     sys.path.insert(0, os.path.join(root, p))
 from use import load
-Source = load('rs3lex', into={})['Source']
+load('rs3lex')
 
 target = sys.argv[1] if len(sys.argv) > 1 else None
 text = '''"""Module doc.
@@ -13,7 +13,7 @@ more
 import os, sys as system
 from a.b import c, d as e
 from use import load
-load('rs3util', into={})
+load('rs3util')
 __all__ = ['f',
            'G']
 LIMIT = 5

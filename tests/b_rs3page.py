@@ -36,13 +36,13 @@ def findtools():                      # walk up to the folder that holds tools/
 ROOT = findtools()
 from bench import bench
 
-SOURCES = ['rs3']
-import rs3                          # starts the server if nothing answers
-sys.path.insert(0, os.path.join(ROOT, 'tools', 'primary', 'rs3'))
+SOURCES = ['reportserver']
+import reportserver                          # starts the server if nothing answers
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'rs_primary'))
 import rs3layout
 
 CLAUDE = os.path.dirname(ROOT)      # the folder that holds .claude and mumix
-RS3 = os.path.join(ROOT, 'tools', 'primary', 'rs3')
+RS3 = os.path.join(ROOT, 'tools', 'rs_primary')
 WAIT = 25                           # seconds to wait for the page to say hello
 
 
@@ -141,17 +141,17 @@ class b_rs3page(bench):
         os.makedirs(os.path.dirname(BUNDLE), exist_ok=True)
         atexit.register(shutil.rmtree, os.path.dirname(BUNDLE), True)
         cls.address = '/?layout=[doc]&doc=' + os.path.relpath(PAGE, CLAUDE).replace(os.sep, '/')
-        port = rs3.contactRS('status')['status']['port']
-        there = rs3.contactRS('snap', cls.address, '#ver')
+        port = reportserver.contactRS('status')['status']['port']
+        there = reportserver.contactRS('snap', cls.address, '#ver')
         if there and there.get('ok') and there.get('text') != PAGE_VERSION:      # an old tab: load the page again
-            rs3.contactRS('trigger', cls.address, '#reload')
+            reportserver.contactRS('trigger', cls.address, '#reload')
             time.sleep(1.5)
         elif not (there and there.get('ok')):
             webbrowser.open(f'http://127.0.0.1:{port}{cls.address}')
         cls.alive = False
         end = time.time() + WAIT
         while time.time() < end and not cls.alive:
-            got = rs3.contactRS('snap', cls.address, '#alive')
+            got = reportserver.contactRS('snap', cls.address, '#alive')
             cls.alive = bool(got and got.get('ok') and got.get('text') == 'ready')
             time.sleep(0.5)
         cls.parts = (pieces(), text_of(ROOT, 'tests', 'b_rs3page.js'), {'CASES': cases(), 'MANAGER': text_of(RS3, 'html', 'manager.js')})
@@ -163,16 +163,16 @@ class b_rs3page(bench):
         text = bundle(sources, test, data)
         with open(BUNDLE, 'w', encoding='utf-8', newline='') as f:
             f.write(text)
-        sent = rs3.contactRS('trigger', cls.address, '#get')
+        sent = reportserver.contactRS('trigger', cls.address, '#get')
         assert sent and sent.get('ok'), sent
         end = time.time() + WAIT
         while time.time() < end:
-            state = rs3.contactRS('snap', cls.address, '#state')
+            state = reportserver.contactRS('snap', cls.address, '#state')
             if state and state.get('text') != 'running':
                 break
             time.sleep(0.2)
         assert state and state.get('text') == 'done', state
-        got = json.loads(rs3.contactRS('snap', cls.address, '#out')['text'])
+        got = json.loads(reportserver.contactRS('snap', cls.address, '#out')['text'])
         assert got['id'] == json.loads(text)['id'], 'the page answered for another bundle'
         return got['results']
 

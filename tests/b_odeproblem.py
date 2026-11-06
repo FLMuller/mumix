@@ -33,8 +33,8 @@ from use import load
 from bench import bench
 
 SOURCES = ['odeproblem', 'fields']
-globals().update(load('odeproblem', into={}))      # ODEproblem, ODEproblemError, SOLVERS ...
-globals().update(load('fields', into={}))          # Fields
+load('odeproblem')      # ODEproblem, ODEproblemError, SOLVERS ...
+load('fields')          # Fields
 
 
 def robertson(v, p, ddt):
@@ -56,7 +56,7 @@ def grow(v, p, ddt):
 
 class b_odeproblem(bench):
     BenchName = 'odeproblem'
-    BenchVersion = 'M1.0.5'
+    BenchVersion = 'M1.0.6'
     BenchHeader = ''
     sources = SOURCES
 

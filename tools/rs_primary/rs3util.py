@@ -43,7 +43,7 @@ hides can still be named); a pattern that names nothing gives an empty Paths. Th
 says so (.truncated), so the server can tell the user that the list is not whole.
 
 ADDRESS. A page whose blocks take './' paths (or nothing) is written as an address that makes it again:
-    /?layout=[ftv,[toptabs;[methods,[code;editbox]]]]&toptabs=mumix/tools/primary/{rs3.py,rs3/**}
+    /?layout=[ftv,[toptabs;[methods,[code;editbox]]]]&toptabs=mumix/tools/{reportserver.py,rs_primary/**}
     address(layout, blocks, title, selftest, sizes)  -> that string, or None when the page cannot be written so (a
                        block holds html, a name has a comma, or the address passes 6000 characters). blocks is
                        {locator: [block, *data]}; sizes {locator: (width, height)} is what the blocks said they are
@@ -56,7 +56,9 @@ ADDRESS. A page whose blocks take './' paths (or nothing) is written as an addre
                        data as written (patterns still patterns: the page builder opens them with pathof).
                        ValueError says what is wrong.
 
-VERSION  M2 m02.v01 (2026-11-04): locators written by rs3layout.normal, locators written by rs3layout.normal (eb.1), no &block.X=.
+VERSION  M2 m02.v02 (2026-11-05): INCLUDE: a folder whose name matches one of its patterns (result*) is entered although a .gitignore or
+         .ignore hides it, so the reports of a project can be listed and opened; its files keep the other hiding rules (junk, dot folders).
+         M2 m02.v01 (2026-11-04): locators written by rs3layout.normal, locators written by rs3layout.normal (eb.1), no &block.X=.
          M2 m01.v02 (2026-11-04): done() says what a block takes (files) and holds.
          M2 m01.v01 (2026-11-04): five names: pathof (the path rules of rs3files, the wildcard walk, the ignore rules,
          HOME) and address (rs3pages' page_url and query_page) join asset, done and split_package.
@@ -80,6 +82,7 @@ MAX_PATH = 400
 HIDDEN = {'__pycache__', 'venv', '.venv', 'env', 'node_modules', '.git', '.mypy_cache', '.pytest_cache', '.idea',
           '.vscode', 'site-packages', '_tmp', 'zprev'}         # folders the walk never enters (and every dot folder but .claude)
 SHOWN_DOT = {'.claude'}
+INCLUDE = ['result*']                       # folder names that the ignore rules (.gitignore, .ignore) never hide: reports are written there
 JUNK = ('.pyc', '.pyo', '.tmp')
 JUNK_NAMES = ('thumbs.db', 'desktop.ini', '.ds_store')
 KINDS = {'.html': 'html', '.htm': 'html', '.result': 'html', '.md': 'md', '.mu': 'md', '.txt': 'text'}
@@ -371,7 +374,7 @@ def _walk(folder, rel, segments, got):
                     and (head == '**' or _match(entry.name, head)):
                 path = rel + '/' + entry.name if rel else entry.name
                 nested = os.path.exists(os.path.join(entry.path, '.git'))     # a repository of its own: its own rules, not the outer one's
-                if nested or not _ignored(got.stack, path, True):
+                if nested or any(_match(entry.name, pattern) for pattern in INCLUDE) or not _ignored(got.stack, path, True):
                     outer = got.stack
                     got.stack = [] if nested else outer
                     try:
@@ -475,7 +478,7 @@ def _factor(names):
 
 def _compact(data):
     """The ./ paths of a block as one value, the common folder once and the rest in braces:
-    ./mumix/tools/primary/{rs3.py,rs3/{SIGNALS.md,pane_{code,ftv}.{css,js}}}. Their order is kept. The paths one by one,
+    ./mumix/tools/{reportserver.py,rs_primary/{SIGNALS.md,pane_{code,ftv}.{css,js}}}. Their order is kept. The paths one by one,
     comma separated, when a name has a character braces use."""
     if len(data) == 1:
         return data[0]

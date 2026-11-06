@@ -11,8 +11,8 @@ Desktop.ini
 results/
 tools/primary/reportserver/
 
-# rs3 runtime files
-tools/primary/rs3/logs/
-tools/primary/rs3/pages/
-tools/primary/rs3/rs3.pid
-tools/primary/rs3/rs3.config
+# the report server's runtime files
+tools/rs_primary/logs/
+tools/rs_primary/pages/
+tools/rs_primary/rs3.pid
+tools/rs_primary/rs3.config

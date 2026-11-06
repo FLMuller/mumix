@@ -69,8 +69,8 @@ from types import SimpleNamespace
 
 from use import load
 
-load('rs3util')
-from rs3util import pathof
+load(asmodule=['rs3util'])
+pathof = rs3util.pathof
 
 __all__ = ['isspaghetti', 'main']
 
@@ -233,17 +233,20 @@ def userhome(path):
 
 
 def projectof(real):
-    """The widest folder a check may look at: the folder one below the nearest folder that holds .claude, on
-    the way up from real (the user's home folder does not count). '' when real is that folder or above it, a
-    file straight in it, outside any such folder, or in a dot folder (.claude, .git): a check never works on
-    the whole Claude area."""
+    """The widest folder a check may look at: the folder one below the outermost folder that holds .claude, on
+    the way up from real (a repo inside the Claude folder has a .claude of its own, and the user's home folder
+    has one: neither moves the limit). '' when real is that outer folder or above it, a file straight in it,
+    outside any such folder, or in a dot folder (.claude, .git): a check never works on the whole Claude area."""
     here = os.path.abspath(real)
     below = ''
+    found = ''
     while here != os.path.dirname(here):
         if os.path.isdir(os.path.join(here, '.claude')) and not userhome(here):
-            return below if os.path.isdir(below) and not os.path.basename(below).startswith('.') else ''
+            found = below                             # the walk goes on up: the outermost one wins
         below = here
         here = os.path.dirname(here)
+    if os.path.isdir(found) and not os.path.basename(found).startswith('.'):
+        return found
     return ''
 
 
@@ -856,9 +859,8 @@ def main(argv=None):
     if args.verb == 'rule' and not args.word:
         parser.error('rule needs the name of a rule after the path')
     args.real, args.project = target(args.path)
-    load('rs3lex')
-    from rs3lex import Source
-    args.Source = Source
+    load(asmodule=['rs3lex'])
+    args.Source = rs3lex.Source
     args.area, args.testarea = areas(args.real, args.project, args.tests)
     VERBS[args.verb](args)
 

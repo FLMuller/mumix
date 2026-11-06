@@ -32,8 +32,9 @@ from use import load
 from bench import bench
 
 SOURCES = ['xlchart', 'xlw']
-globals().update(load('xlw', into={}))
-CH = load('xlchart', into={})
+load('xlw')
+load(asmodule=['xlchart'])
+CH = xlchart
 
 OUTDIR = os.path.join(ROOT, 'results', 'b_xlchart')
 REFERENCE = os.path.join(ROOT, 'results', 'reference')
@@ -43,12 +44,12 @@ from chartcheck import ORDER, local, order_errors, package_errors
 
 
 def chart_root(chart, values=None):
-    return ET.fromstring(CH['chart_part'](chart, values))
+    return ET.fromstring(CH.chart_part(chart, values))
 
 
 class b_xlchart(bench):
     BenchName = 'xlchart'
-    BenchVersion = 'M1.0.10'
+    BenchVersion = 'M1.0.11'
     BenchHeader = ''
     sources = SOURCES
 
@@ -69,9 +70,9 @@ class b_xlchart(bench):
         chart.xaxis.title.text = [('time (s', {}), (')', {})]
         chart.yaxis.title.text = 'conc'
         chart.legend.pos = 'r'
-        first = CH['add_series'](chart, 'Data!$A$2:$A$12', 'Data!$B$2:$B$12', label='A',
+        first = CH.add_series(chart, 'Data!$A$2:$A$12', 'Data!$B$2:$B$12', label='A',
                                  marker=dict(symbol='diamond', size=6))
-        CH['add_series'](chart, 'Data!$A$2:$A$12', 'Data!$C$2:$C$12',
+        CH.add_series(chart, 'Data!$A$2:$A$12', 'Data!$C$2:$C$12',
                          labelref='Data!$C$1', axis=2,
                          line=dict(color='C00000', dash='dash'))
         first.trend.fit = 'linear'
@@ -89,7 +90,7 @@ class b_xlchart(bench):
         xl.newbook(os.path.join(OUTDIR, 'plain'), 'Data')
         xl.write([[1, 2, 3], [2, 4, 8], [3, 6, 27], [4, 8, 64], [5, 10, 125]])
         chart = xl.chart('c1')
-        CH['add_series'](chart, 'Data!$A$1:$A$5', 'Data!$B$1:$B$5', label='B')
+        CH.add_series(chart, 'Data!$A$1:$A$5', 'Data!$B$1:$B$5', label='B')
         return xl, chart
 
     # ---- building ----------------------------------------------------------------
@@ -109,7 +110,7 @@ class b_xlchart(bench):
 
     def test_T03_series_keep_their_order_and_leaves(self):
         xl, chart = self.plain()
-        CH['add_series'](chart, [1, 2, 3], [4, 5, 6], smooth=True)
+        CH.add_series(chart, [1, 2, 3], [4, 5, 6], smooth=True)
         names = chart.kvr('series').names()
         self.assertEqual(names, ['s1', 's2'])
         self.assertEqual(chart.series.s2.kvr('y'), [4, 5, 6])
@@ -117,28 +118,28 @@ class b_xlchart(bench):
 
     def test_T04_series_options_given_as_dicts_become_records(self):
         xl, chart = self.plain()
-        node = CH['add_series'](chart, 'Data!$A$1:$A$5', 'Data!$C$1:$C$5',
+        node = CH.add_series(chart, 'Data!$A$1:$A$5', 'Data!$C$1:$C$5',
                                 line=dict(color='FF0000', width=3))
         self.assertEqual(node.kvr('line').kvr('color'), 'FF0000')
         self.assertEqual(node.kvr('line').kvr('width'), 3)
 
     def test_T05_rec_leaves_out_none(self):
-        record = CH['rec'](name='Calibri', height=None, bold=False)
+        record = CH.rec(name='Calibri', height=None, bold=False)
         self.assertEqual(sorted(record.keys()), ['bold', 'name'])
 
     def test_T06_place_sets_the_anchor(self):
         xl, chart = self.plain()
-        CH['place'](chart, 4, 2, ncols=6, nrows=10)
-        self.assertEqual(CH['anchor_of'](chart), (4, 0, 2, 0, 10, 0, 12, 0))
+        CH.place(chart, 4, 2, ncols=6, nrows=10)
+        self.assertEqual(CH.anchor_of(chart), (4, 0, 2, 0, 10, 0, 12, 0))
 
     def test_T07_default_anchor_is_beside_the_data_and_below_earlier_charts(self):
         xl, chart = self.plain()
-        self.assertEqual(CH['anchor_of'](chart, 3, 0)[0], 4)
-        self.assertEqual(CH['anchor_of'](chart, 3, 1)[2], 21)
+        self.assertEqual(CH.anchor_of(chart, 3, 0)[0], 4)
+        self.assertEqual(CH.anchor_of(chart, 3, 1)[2], 21)
 
     def test_T08_ref_and_parse_ref(self):
-        ref = CH['ref']
-        parse = CH['parse_ref']
+        ref = CH.ref
+        parse = CH.parse_ref
         self.assertEqual(ref('Data', 2, 1, 100, 1), 'Data!$A$2:$A$100')
         self.assertEqual(ref('Data', 3, 28), 'Data!$AB$3')
         self.assertEqual(ref("It's here", 1, 2, 4, 2), "'It''s here'!$B$1:$B$4")
@@ -223,8 +224,8 @@ class b_xlchart(bench):
 
     def test_T16_gridlines_default_off_and_switch(self):
         xl, chart = self.plain()
-        chart.yaxis.gridmajor = CH['rec'](none=True)
-        chart.xaxis.gridminor = CH['rec'](color='EEEEEE')
+        chart.yaxis.gridmajor = CH.rec(none=True)
+        chart.xaxis.gridminor = CH.rec(color='EEEEEE')
         axes = chart_root(chart).findall('.//{*}valAx')
         self.assertIsNotNone(axes[0].find('{*}majorGridlines'))
         self.assertIsNone(axes[1].find('{*}majorGridlines'))
@@ -283,14 +284,14 @@ class b_xlchart(bench):
         xl = xlw()
         xl.newbook(os.path.join(OUTDIR, 'lit'), 'S')
         chart = xl.chart('c')
-        CH['add_series'](chart, [1, 2, 3], [4.5, 5.5, 6.5])
+        CH.add_series(chart, [1, 2, 3], [4.5, 5.5, 6.5])
         root = chart_root(chart)
         self.assertIsNotNone(root.find('.//{*}xVal/{*}numLit'))
         self.assertEqual(order_errors(root), [])
 
     def test_T24_palette_cycles_and_marker_none_has_no_size(self):
         xl, chart = self.plain()
-        CH['add_series'](chart, [1], [2], marker=dict(symbol='none'))
+        CH.add_series(chart, [1], [2], marker=dict(symbol='none'))
         series = chart_root(chart).findall('.//{*}ser')
         self.assertEqual(series[0].find('.//{*}ln//{*}srgbClr').get('val'), '4472C4')
         self.assertEqual(series[1].find('.//{*}ln//{*}srgbClr').get('val'), 'ED7D31')
@@ -359,7 +360,7 @@ class b_xlchart(bench):
         xl, chart = self.build()                  # its own chart: this test changes it
         chart.legend.pos = 'b'
         chart.legend.hide = [2]
-        chart.legend.layout = CH['rec'](x=0.1, y=0.2, w=0.3, h=0.1)
+        chart.legend.layout = CH.rec(x=0.1, y=0.2, w=0.3, h=0.1)
         root = chart_root(chart)
         legend = root.find('.//{*}legend')
         self.assertEqual(legend.find('{*}legendPos').get('val'), 'b')
@@ -375,8 +376,8 @@ class b_xlchart(bench):
 
     def test_T31_colours_theme_and_system_forms(self):
         xl, chart = self.plain()
-        chart.series.s1['line'] = CH['rec'](color='theme:tx1:65000:35000', width=1)
-        chart.xaxis['line'] = CH['rec'](color='sys:windowText:000000')
+        chart.series.s1['line'] = CH.rec(color='theme:tx1:65000:35000', width=1)
+        chart.xaxis['line'] = CH.rec(color='sys:windowText:000000')
         root = chart_root(chart)
         scheme = root.find('.//{*}ser/{*}spPr//{*}schemeClr')
         self.assertEqual(scheme.get('val'), 'tx1')
@@ -387,8 +388,8 @@ class b_xlchart(bench):
 
     def test_T32_chart_and_plot_area_fills(self):
         xl, chart = self.plain()
-        chart.plotarea['fill'] = CH['rec'](color='F2F2F2')
-        chart.chartarea['fill'] = CH['rec'](none=True)
+        chart.plotarea['fill'] = CH.rec(color='F2F2F2')
+        chart.chartarea['fill'] = CH.rec(none=True)
         root = chart_root(chart)
         self.assertEqual(root.find('.//{*}plotArea/{*}spPr//{*}srgbClr').get('val'), 'F2F2F2')
         self.assertIsNotNone(root.find('{*}spPr/{*}noFill'))
@@ -440,7 +441,7 @@ class b_xlchart(bench):
         for sheet, count in ((sheet1, 2), (sheet2, 1)):
             for n in range(count):
                 chart = sheet.chart(f'c{n}')
-                CH['add_series'](chart, 'One!$A$1:$A$2', 'One!$B$1:$B$2')
+                CH.add_series(chart, 'One!$A$1:$A$2', 'One!$B$1:$B$2')
         xl.save()
         fname = xl.many.kvr('priv').kvr('fname')
         self.assertEqual(package_errors(fname), [])
@@ -465,8 +466,8 @@ class b_xlchart(bench):
         xl.newbook(os.path.join(OUTDIR, 'quoted'), 'My Data')
         xl.write([[1, 2], [3, 4], [5, 6]])
         chart = xl.chart('c')
-        CH['add_series'](chart, CH['ref']('My Data', 1, 1, 3, 1),
-                         CH['ref']('My Data', 1, 2, 3, 2))
+        CH.add_series(chart, CH.ref('My Data', 1, 1, 3, 1),
+                         CH.ref('My Data', 1, 2, 3, 2))
         xl.save()
         archive = zipfile.ZipFile(os.path.join(OUTDIR, 'quoted.xlsx'))
         root = ET.fromstring(archive.read('xl/charts/chart1.xml'))
@@ -496,7 +497,7 @@ class b_xlchart(bench):
 
     def test_T41_the_order_tables_reject_a_wrongly_ordered_chart(self):
         xl, chart = self.plain()
-        text = CH['chart_part'](chart)
+        text = CH.chart_part(chart)
         wrong = text.replace('<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/>',
                              '<c:dispBlanksAs val="gap"/><c:plotVisOnly val="1"/>')
         self.assertNotEqual(text, wrong)
@@ -505,7 +506,7 @@ class b_xlchart(bench):
     # ---- benchmarks --------------------------------------------------------------------------
     def bench_chart_part_two_series(self, timer):
         chart = self.rich[1]
-        part = CH['chart_part']
+        part = CH.chart_part
         with timer as test:
             while test.more:
                 for i in test.count:
@@ -514,7 +515,7 @@ class b_xlchart(bench):
 
     def bench_chart_part_plain(self, timer):
         chart = self.plain()[1]
-        part = CH['chart_part']
+        part = CH.chart_part
         with timer as test:
             while test.more:
                 for i in test.count:

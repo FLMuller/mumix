@@ -30,12 +30,12 @@ ROOT = findtools()
 from bench import bench
 
 SOURCES = ['rs3lex']          # (the .pyx)
-RS3 = os.path.join(ROOT, 'tools', 'primary', 'rs3')
+RS3 = os.path.join(ROOT, 'tools', 'rs_primary')
 REF = os.path.join(ROOT, 'tools', 'primary', 'rs3twolex', 'rs3')
 sys.path.insert(0, RS3)
 from use import load
 
-load('rs3lex', into={})                                  # rs3lex.pyx, built into rs3/pyxfiles when need be
+load('rs3lex')                                  # rs3lex.pyx, built into rs_primary/pyxfiles when need be
 rs3lex = sys.modules['rs3lex']                           # its own functions, which its __all__ (Source, css) does not export: this suite tests them
 
 CLAUDE = os.path.dirname(ROOT)
@@ -137,7 +137,7 @@ def compare(self, path, lines):
 
 class b_rs3lex(bench):
     BenchName = 'rs3lex'
-    BenchVersion = 'M1.1.6'        # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.1.9'        # runbench adds 1 to the last number on every run
     BenchHeader = 'the one lexer of rs3, against codelex and vclang'
     sources = SOURCES
 

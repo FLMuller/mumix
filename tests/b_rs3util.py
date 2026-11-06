@@ -24,7 +24,7 @@ ROOT = findtools()
 from bench import bench
 
 SOURCES = ['rs3util']
-sys.path.insert(0, os.path.join(ROOT, 'tools', 'primary', 'rs3'))
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'rs_primary'))
 import rs3util
 from rs3util import address, pathof
 
@@ -42,7 +42,7 @@ def put(path, text='x'):
 
 class b_rs3util(bench):
     BenchName = 'rs3util'
-    BenchVersion = 'M1.0.3'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.6'          # runbench adds 1 to the last number on every run
     BenchHeader = 'pathof (paths, patterns, ignore rules) and address (a page as an address)'
     sources = SOURCES
 
@@ -90,10 +90,10 @@ class b_rs3util(bench):
         self.assertTrue(os.path.isdir(os.path.join(rs3util.HOME, 'mumix', '.git')))
 
     def test_T2_a_short_path_is_made_long_and_a_long_one_short(self):
-        real = pathof('./mumix/tools/primary/rs3.py')
-        self.assertEqual(os.path.normcase(real), os.path.normcase(os.path.join(rs3util.HOME, 'mumix', 'tools', 'primary', 'rs3.py')))
-        self.assertEqual(pathof(real), './mumix/tools/primary/rs3.py')
-        self.assertEqual(pathof('mumix/tools/primary/rs3.py'), real)             # the ./ is not needed
+        real = pathof('./mumix/tools/reportserver.py')
+        self.assertEqual(os.path.normcase(real), os.path.normcase(os.path.join(rs3util.HOME, 'mumix', 'tools', 'reportserver.py')))
+        self.assertEqual(pathof(real), './mumix/tools/reportserver.py')
+        self.assertEqual(pathof('mumix/tools/reportserver.py'), real)             # the ./ is not needed
         self.assertEqual(os.path.normcase(pathof('./')), os.path.normcase(rs3util.HOME))
         self.assertEqual(pathof('.'), pathof('./'))
         self.assertEqual(pathof(rs3util.HOME), '.')
@@ -175,17 +175,17 @@ class b_rs3util(bench):
 
     # ---- address -------------------------------------------------------------------------------------------
     def test_T12_an_address_is_short_and_makes_the_page_again(self):
-        blocks = {'toptabs': ['toptabs', './mumix/tools/primary/rs3.py', './mumix/tools/primary/rs3/rs3util.py', './mumix/tests/b_rs3.py']}
+        blocks = {'toptabs': ['toptabs', './mumix/tools/reportserver.py', './mumix/tools/rs_primary/rs3util.py', './mumix/tests/b_reportserver.py']}
         url = address('[ftv wdxh, [toptabs ; [methods wdxh, [code ; editbox wxhd]]]]', blocks,
                       sizes={'ftv': (75, None), 'methods': (55, None), 'editbox': (None, 42)})
-        self.assertEqual(url, '/?layout=[ftv,[toptabs;[methods,[code;editbox]]]]&toptabs=mumix/{tools/primary/rs3.py,tools/primary/rs3/rs3util.py,tests/b_rs3.py}')
+        self.assertEqual(url, '/?layout=[ftv,[toptabs;[methods,[code;editbox]]]]&toptabs=mumix/{tools/reportserver.py,tools/rs_primary/rs3util.py,tests/b_reportserver.py}')
         layout, specs, title, selftest = address(url)
         self.assertEqual((layout, selftest), ('[ftv,[toptabs;[methods,[code;editbox]]]]', False))
-        self.assertEqual(specs['toptabs'], ['toptabs', './mumix/{tools/primary/rs3.py,tools/primary/rs3/rs3util.py,tests/b_rs3.py}'])
+        self.assertEqual(specs['toptabs'], ['toptabs', './mumix/{tools/reportserver.py,tools/rs_primary/rs3util.py,tests/b_reportserver.py}'])
         self.assertEqual(specs['ftv'], ['ftv'])
         self.assertEqual(pathof(specs['toptabs'][1], start=None).__class__.__name__, 'Paths')
-        self.assertEqual(list(pathof(specs['toptabs'][1])), ['./mumix/tools/primary/rs3.py', './mumix/tools/primary/rs3/rs3util.py',
-                                                              './mumix/tests/b_rs3.py'])
+        self.assertEqual(list(pathof(specs['toptabs'][1])), ['./mumix/tools/reportserver.py', './mumix/tools/rs_primary/rs3util.py',
+                                                              './mumix/tests/b_reportserver.py'])
 
     def test_T13_a_size_that_is_not_the_blocks_own_stays_and_a_space_is_an_underscore(self):
         url = address('[ftv 100dxh, [code ; editbox wx30d]]', {}, title='my page', sizes={'ftv': (75, None), 'editbox': (None, 42)})
@@ -218,7 +218,7 @@ class b_rs3util(bench):
             address('/?layout=%5Bdoc')
 
     def test_T16_patterns_travel_in_an_address_as_written_and_name_the_same_files_when_read(self):
-        patterns = ['./mumix/tools/primary/rs3/**/*.{py,md}', './mumix/*.md']
+        patterns = ['./mumix/tools/rs_primary/**/*.{py,md}', './mumix/*.md']
         url = address('[toptabs]', {'toptabs': ['toptabs'] + patterns})
         self.assertIn('toptabs=', url)
         read = address(url)[1]['toptabs'][1:]
@@ -229,9 +229,22 @@ class b_rs3util(bench):
         for pattern in read:
             got += [path for path in pathof(pattern) if path not in got]
         self.assertEqual(got, want)
-        self.assertIn('./mumix/tools/primary/rs3/rs3util.py', got)
+        self.assertIn('./mumix/tools/rs_primary/rs3util.py', got)
 
     # ---- speed ---------------------------------------------------------------------------------------------
+    def test_T40_a_folder_named_in_INCLUDE_is_entered_although_the_rules_hide_it(self):
+        folder = os.path.join(TMP, 'inc')
+        rules = 'results_x/' + chr(10) + 'hidden_x/' + chr(10)
+        for name, content in (('.gitignore', rules), ('keep.html', 'k'), ('results_x/r.html', 'r'),
+                              ('hidden_x/h.html', 'h')):
+            path = os.path.join(folder, *name.split('/'))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(content)
+        self.addCleanup(shutil.rmtree, folder, True)
+        got = pathof('./inc/**/*.html', start=TMP)
+        self.assertEqual(sorted(got), ['./inc/keep.html', './inc/results_x/r.html'])    # results_x matches result*; hidden_x does not
+
     def bench_pathof_the_whole_home_tree(self, timer):
         with timer as test:
             while test.more:
@@ -243,18 +256,18 @@ class b_rs3util(bench):
         with timer as test:
             while test.more:
                 for _ in test.count:
-                    pathof('./mumix/tools/primary/rs3/panes/pane_*.{py,js}')
+                    pathof('./mumix/tools/rs_primary/panes/pane_*.{py,js}')
         return 'pathof of pane_*.{py,js}', 'pathof'
 
     def bench_pathof_one_path_either_way(self, timer):
         with timer as test:
             while test.more:
                 for _ in test.count:
-                    pathof(pathof('./mumix/tools/primary/rs3.py'))
+                    pathof(pathof('./mumix/tools/reportserver.py'))
         return 'a short path to a long one and back', 'pathof'
 
     def bench_address_written_and_read(self, timer):
-        blocks = {'toptabs': ['toptabs'] + [f'./mumix/tools/primary/rs3/panes/pane_{n}.{e}' for n in ('code', 'ftv', 'log') for e in ('css', 'js', 'py')]}
+        blocks = {'toptabs': ['toptabs'] + [f'./mumix/tools/rs_primary/panes/pane_{n}.{e}' for n in ('code', 'ftv', 'log') for e in ('css', 'js', 'py')]}
         with timer as test:
             while test.more:
                 for _ in test.count:

@@ -51,7 +51,7 @@ from use import load
 from bench import bench
 
 SOURCES = ['xlw']
-globals().update(load('xlw', into={}))
+load('xlw')
 import xlw as xlwmodule
 import xlreader
 

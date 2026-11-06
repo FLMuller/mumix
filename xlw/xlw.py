@@ -314,7 +314,7 @@ def do_write(sheet, value, args, keywords):
     fun = xlsheet.FUN
     if fun is not None and delta is NO_STYLE:      # the Cython loop writes unstyled blocks
         block = [[value]] if rows is None else rows
-        fun['write_rows'](cells, tables, block, row0, col0, make, xlsheet.style_id)
+        fun.write_rows(cells, tables, block, row0, col0, make, xlsheet.style_id)
     elif rows is None:
         cells[row0, col0] = make(tables, value, delta)
     else:

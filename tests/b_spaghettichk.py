@@ -32,8 +32,7 @@ from bench import bench
 from use import load
 
 SOURCES = ['spaghettichk']
-load('spaghettichk')
-import spaghettichk as spag
+load(asmodule=['spaghettichk'])
 
 CLAUDE = os.path.dirname(ROOT)                    # the folder that holds .claude
 SAMPLE = os.path.join(ROOT, 'tests', 'z_sandbox', 'spagettitmp')
@@ -48,7 +47,7 @@ def run(*words):
     """The console text of main(words)."""
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
-        spag.main(list(words))
+        spaghettichk.main(list(words))
     return out.getvalue()
 
 
@@ -63,7 +62,7 @@ def same(path, other):
 
 class b_spaghettichk(bench):
     BenchName = 'spaghettichk'
-    BenchVersion = 'M1.0.2'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.4'          # runbench adds 1 to the last number on every run
     BenchHeader = 'the command line of spaghettichk and the limit on the area it looks at'
     sources = SOURCES
 
@@ -80,7 +79,7 @@ class b_spaghettichk(bench):
         got = keyed(run('scope', os.path.join(ROOT, 'odeproblem')))
         self.assertTrue(same(got['project'].split('   ')[0].strip(), ROOT), got['project'])
         self.assertTrue(same(got['scan'].split('   ')[0].strip(), ROOT), got['scan'])      # two up is the Claude folder
-        inside = keyed(run('scope', os.path.join(ROOT, 'tools', 'primary', 'rs3')))
+        inside = keyed(run('scope', os.path.join(ROOT, 'tools', 'rs_primary', 'panes')))
         self.assertTrue(same(inside['scan'].split('   ')[0].strip(), os.path.join(ROOT, 'tools')), inside['scan'])   # kept
 
     def test_T2_a_path_outside_a_project_is_refused_before_anything_is_read(self):

@@ -7,7 +7,7 @@ A doc is what a table, a chart or a whole report page is. The html may carry its
 out (rs3util.split_package), the inside of its <body> is the html, and
     the css     every rule is made a rule of the box: html, body and :root are the box, any other selector is below it, so
                 a report's `body{margin:20px}` and `td{...}` touch nothing outside it (@media is kept, @import is dropped)
-    the script  runs inside the box with `document` meaning aDOM, the box (rs3/panes/pane_doc.js): aDOM.currentdiv is the box
+    the script  runs inside the box with `document` meaning aDOM, the box (rs_primary/panes/pane_doc.js): aDOM.currentdiv is the box
                 element, getElementById and querySelector(All) look only inside it, createElement makes elements, and
                 addEventListener('DOMContentLoaded', f) runs f when the box is ready. window, location and localStorage are
                 the box's own (a storage of its own, a location that is the page's address), and the names the rest of the

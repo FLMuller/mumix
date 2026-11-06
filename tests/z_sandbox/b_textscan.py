@@ -50,7 +50,7 @@ from bench import bench
 import mumix                                      # puts tools, xlw on sys.path
 
 SOURCES = ['xlsheetfun']
-globals().update(load('xlw', into={}))
+load('xlw')
 from kv import kv
 import xlreader
 import xlsheet

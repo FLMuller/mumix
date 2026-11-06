@@ -47,13 +47,13 @@ from use import load
 
 from bench import bench
 SOURCES = ['kv']                      # the module this suite proves and times
-globals().update(load('kv', into={}))  # kv, kvr, kvw, KvError, KvSparseDimMismatch, KvReservedBracket
+load('kv')  # kv, kvr, kvw, KvError, KvSparseDimMismatch, KvReservedBracket
 
 
 class b_kv(bench):
     # -- identity and tuning ------------------------------------------------
     BenchName    = "kv"                   # runbench overwrites from the class name
-    BenchVersion = "M1.0.19"               # set ONCE; runbench auto-ticks the 3rd field
+    BenchVersion = "M1.0.20"               # set ONCE; runbench auto-ticks the 3rd field
     BenchHeader  = ""                     # runbench fills this from the CLI message
     sources      = SOURCES
     NKeys        = 100                    # leaf keys and sparse keys in each bench store

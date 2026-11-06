@@ -22,7 +22,7 @@ ROOT = findtools()
 from bench import bench
 
 SOURCES = ['rs3jsguard']
-sys.path.insert(0, os.path.join(ROOT, 'tools', 'primary', 'rs3'))
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'rs_primary'))
 from rs3jsguard import check, this_as
 
 CLAUDE = os.path.dirname(ROOT)
@@ -94,7 +94,7 @@ REFUSED_SCRIPTS = {                  # script: a word the message holds
 
 class b_rs3jsguard(bench):
     BenchName = 'rs3jsguard'
-    BenchVersion = 'M1.0.7'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.9'          # runbench adds 1 to the last number on every run
     BenchHeader = 'what a script of a doc block may say, and what is tried and refused'
     sources = SOURCES
 

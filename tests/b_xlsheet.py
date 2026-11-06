@@ -46,7 +46,7 @@ from bench import bench
 import mumix                                      # puts tools, xlw on sys.path
 
 SOURCES = ['xlsheet']
-globals().update(load('xlw', into={}))
+load('xlw')
 import xlw as xlwmodule
 import xlreader
 import xlsheet
@@ -210,7 +210,7 @@ EDGE_VALUES = [0, 1, -1, 0.1, 1e-9, 1e21, 12345678901234567890, float('nan'), fl
 
 class b_xlsheet(bench):
     BenchName = 'xlsheet'
-    BenchVersion = 'M1.0.9'
+    BenchVersion = 'M1.0.10'
     BenchHeader = ''
     sources = SOURCES
 
@@ -578,7 +578,7 @@ class b_xlsheet(bench):
     # ---- the Cython loops and the Python loops are the same ---------------------------------
     def test_T35_the_cython_loops_are_loaded(self):
         self.assertIsNotNone(xlsheet.FUN, 'xlsheetfun did not build: these tests run Python only')
-        self.assertEqual(sorted(xlsheet.FUN), ['emit_grid', 'scan_cells', 'write_rows'])
+        self.assertEqual(sorted(xlsheet.FUN.__all__), ['emit_grid', 'scan_cells', 'write_rows'])
 
     def test_T36_writing_a_block_gives_the_same_grid_in_both(self):
         import numpy as np
@@ -616,7 +616,7 @@ class b_xlsheet(bench):
         tables = xlsheet.tables_of(sheet)
         xlsheet.fill_tables(tables, ['a', 'b'], [{}, {'bold': True}])
         cells = sheet.kvr('cells')
-        scan = xlsheet.FUN['scan_cells']
+        scan = xlsheet.FUN.scan_cells
         plain = (b'<row r="1" spans="1:3"><c r="A1"><v>1.5</v></c><c r="B1" s="1" t="s"><v>1</v></c>'
                  b'<c r="C1" t="b"><v>true</v></c><c r="D1" s="1"/></row>')
         self.assertEqual(scan(plain, cells, tables.xfs, None), 4)
@@ -653,7 +653,7 @@ class b_xlsheet(bench):
         xl, sheet = self.sheet()
         tables = xlsheet.tables_of(sheet)
         xlsheet.fill_tables(tables, [], [{}, {'bold': True}])
-        count = xlsheet.FUN['scan_cells'](
+        count = xlsheet.FUN.scan_cells(
             sheetxml(self.TEXT_CELLS).split(b'<sheetData>')[1].split(b'</sheetData>')[0],
             sheet.kvr('cells'), tables.xfs, None, tables.texts,
             lambda raw: xlsheet.text_id(tables, xlsheet.text_value(raw)))
@@ -685,7 +685,7 @@ class b_xlsheet(bench):
             xl, sheet = self.sheet()
             tables = xlsheet.tables_of(sheet)
             xlsheet.fill_tables(tables, [], [{}])
-            found = xlsheet.FUN['scan_cells'](body.encode(), sheet.kvr('cells'), tables.xfs,
+            found = xlsheet.FUN.scan_cells(body.encode(), sheet.kvr('cells'), tables.xfs,
                                               None, tables.texts, lambda raw: 0)
             self.assertEqual(found, -1, body)
             self.assertEqual(ncells(sheet), 0, body)
@@ -698,7 +698,7 @@ class b_xlsheet(bench):
         tables = xlsheet.tables_of(sheet)
         xlsheet.fill_tables(tables, [], [{}])
         with self.assertRaises(ValueError):
-            xlsheet.FUN['scan_cells'](b'<c r="A1"><v>1.5x</v></c>', sheet.kvr('cells'),
+            xlsheet.FUN.scan_cells(b'<c r="A1"><v>1.5x</v></c>', sheet.kvr('cells'),
                                       tables.xfs, None)
 
     def test_T40_the_scan_reads_every_workbook_the_same_with_either_loop(self):

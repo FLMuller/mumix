@@ -83,9 +83,9 @@ for folder in ('tools', 'xlw', 'svgchart', 'htmlreport'):
     sys.path.insert(0, os.path.join(HERE, folder))
 from use import load
 
-odeproblem = load('odeproblem', into={})
-ODEproblem = odeproblem['ODEproblem']
-FIELDS = load('fields', into={})['Fields']
+load(asmodule=['odeproblem', 'fields'])
+ODEproblem = odeproblem.ODEproblem
+FIELDS = fields.Fields
 
 __all__ = ['PARAMETERS', 'parameters', 'initial', 'rates', 'thresholds', 'segment_mean',
            'run', 'write_xlsx', 'kolmogorov', 'result_table', 'build_workbook',

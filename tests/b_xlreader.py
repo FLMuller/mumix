@@ -37,9 +37,11 @@ from use import load
 from bench import bench
 
 SOURCES = ['xlreader', 'xlchart', 'xlw']
-globals().update(load('xlw', into={}))
-CH = load('xlchart', into={})
-RD = load('xlreader', into={})
+load('xlw')
+load(asmodule=['xlchart'])
+CH = xlchart
+load(asmodule=['xlreader'])
+RD = xlreader
 import xlreader                                  # for its helper functions (draw_color)
 from xlstore import KV, TKV                      # to tell a record from a node
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -105,7 +107,7 @@ def sha(path):
 
 class b_xlreader(bench):
     BenchName = 'xlreader'
-    BenchVersion = 'M1.0.12'
+    BenchVersion = 'M1.0.13'
     BenchHeader = ''
     sources = SOURCES
 
@@ -136,9 +138,9 @@ class b_xlreader(bench):
         chart.xaxis.min = 0
         chart.xaxis.max = 5
         chart.legend.pos = 'b'
-        first = CH['add_series'](chart, 'Data!$B$2:$B$3', 'Data!$B$2:$B$3', label='A',
+        first = CH.add_series(chart, 'Data!$B$2:$B$3', 'Data!$B$2:$B$3', label='A',
                                  marker=dict(symbol='diamond', size=7))
-        CH['add_series'](chart, 'Data!$B$2:$B$3', 'Data!$B$2:$B$3', labelref='Data!$A$1',
+        CH.add_series(chart, 'Data!$B$2:$B$3', 'Data!$B$2:$B$3', labelref='Data!$A$1',
                          axis=2, line=dict(color='C00000', dash='dash'), smooth=True)
         first.trend.fit = 'linear'
         first.trend.rsq = True
@@ -283,7 +285,7 @@ class b_xlreader(bench):
         chart = self.charts_of(self.book)[0]
         scratch = xlw()
         scratch.newbook(os.path.join(OUTDIR, 'scratch'), 'S')
-        again = RD['read_chart_xml'](CH['chart_part'](chart).encode('utf-8'),
+        again = RD.read_chart_xml(CH.chart_part(chart).encode('utf-8'),
                                      scratch.scratch.S, 'again')
         before = dump(chart)
         before.pop('anchor')              # the anchor belongs to the drawing, not the chart
@@ -412,9 +414,9 @@ class b_xlreader(bench):
         scratch.newbook(os.path.join(OUTDIR, 'fix'), 'S')
         sheet = scratch.fix.S
         for name, part, data in parts:
-            first = RD['read_chart_xml'](data, sheet, 'first')
-            xml = CH['chart_part'](first)
-            second = RD['read_chart_xml'](xml.encode('utf-8'), sheet, 'second')
+            first = RD.read_chart_xml(data, sheet, 'first')
+            xml = CH.chart_part(first)
+            second = RD.read_chart_xml(xml.encode('utf-8'), sheet, 'second')
             self.assertEqual(contains(dump(second), dump(first)), [], f'{name} {part}')
             self.assertEqual(order_errors(ET.fromstring(xml)), [], f'{name} {part}')
             sheet.kvr('priv').kvr('charts').remove('first')

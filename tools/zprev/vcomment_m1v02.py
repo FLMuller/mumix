@@ -48,7 +48,7 @@ import time
 # the support modules are in primary/ below this file: use finds them there
 from use import load, use
 
-use('primary', 'silent')
+use('primary')
 import codelex
 import reportserver as rsrv
 import vcserver

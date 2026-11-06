@@ -36,9 +36,11 @@ from bench import bench
 import mumix                                      # puts tools, xlw, svgchart on sys.path
 
 SOURCES = ['svgchart', 'xlchart']
-globals().update(load('xlw', into={}))
-CH = load('xlchart', into={})
-SC = load('svgchart', into={})
+load('xlw')
+load(asmodule=['xlchart'])
+CH = xlchart
+load(asmodule=['svgchart'])
+SC = svgchart
 from xlw import book_values
 
 OUTDIR = os.path.join(ROOT, 'results', 'b_svgchart')
@@ -49,7 +51,7 @@ YT = [0.2, 1.1, 1.9, 3.2, 3.9, 5.1]
 
 class b_svgchart(bench):
     BenchName = 'svgchart'
-    BenchVersion = 'M1.0.6'
+    BenchVersion = 'M1.0.8'
     BenchHeader = ''
     sources = SOURCES
 
@@ -75,13 +77,13 @@ class b_svgchart(bench):
         return chart, book_values(xl.unit), xl
 
     def series(self, chart, y='Data!$B$2:$B$7', **options):
-        return CH['add_series'](chart, 'Data!$A$2:$A$7', y, **options)
+        return CH.add_series(chart, 'Data!$A$2:$A$7', y, **options)
 
     def figure(self, chart, values):
-        return SC['chart_figure'](chart, values)
+        return SC.chart_figure(chart, values)
 
     def svg(self, chart, values, name=None, **kwargs):
-        text = SC['chart_svg'](chart, values, **kwargs)
+        text = SC.chart_svg(chart, values, **kwargs)
         if name:
             with open(os.path.join(OUTDIR, name + '.svg'), 'w', encoding='utf-8') as handle:
                 handle.write(text)
@@ -89,7 +91,7 @@ class b_svgchart(bench):
 
     # ---- excel_scale and nice_step ----------------------------------------------------------
     def test_T01_nice_step_is_1_2_5_times_a_power_of_ten(self):
-        nice = SC['nice_step']
+        nice = SC.nice_step
         self.assertEqual(nice(100), 10)
         self.assertEqual(nice(105), 20)
         self.assertEqual(nice(0.105), 0.02)
@@ -97,34 +99,34 @@ class b_svgchart(bench):
         self.assertEqual(nice(3), 0.5)                   # 6 intervals; 0.2 would give 15
 
     def test_T02_automatic_scale_of_data_from_zero(self):
-        scale = SC['excel_scale']
+        scale = SC.excel_scale
         self.assertEqual(scale(0, 100), (0, 120, 20))
         low, high, major = scale(0, 1)
         self.assertEqual((low, round(high, 9), round(major, 9)), (0, 1.2, 0.2))
 
     def test_T03_zero_is_forced_unless_the_data_are_far_from_it(self):
-        scale = SC['excel_scale']
+        scale = SC.excel_scale
         self.assertEqual(scale(10, 100)[0], 0)           # lower limit 5.5 < 5/6 of 105
         low, high, major = scale(95, 100)                # lower limit 94.75 > 5/6 of 100.25
         self.assertEqual((low, high, major), (94, 101, 1))
 
     def test_T04_negative_data(self):
-        self.assertEqual(SC['excel_scale'](-5, 5), (-6, 6, 2))
+        self.assertEqual(SC.excel_scale(-5, 5), (-6, 6, 2))
 
     def test_T05_log_scale_encloses_the_data_in_powers_of_the_base(self):
-        scale = SC['excel_scale']
+        scale = SC.excel_scale
         self.assertEqual(scale(3e-6, 1.3e-3, 10), (1e-6, 1e-2, 10.0))
         self.assertEqual(scale(0.0164, 0.0166, 10), (0.01, 0.1, 10.0))
         self.assertEqual(scale(1, 1000, 10), (1.0, 1000.0, 10.0))
 
     def test_T06_a_flat_series_still_gets_an_axis(self):
-        low, high, major = SC['excel_scale'](5, 5)
+        low, high, major = SC.excel_scale(5, 5)
         self.assertLess(low, 5)
         self.assertGreater(high, 5)
 
     # ---- numbers and colours ----------------------------------------------------------------
     def test_T07_number_formats(self):
-        fmt = SC['format_number']
+        fmt = SC.format_number
         self.assertEqual(fmt(0.5), '0.5')
         self.assertEqual(fmt(0), '0')
         self.assertEqual(fmt(1e-5), '1E-05')
@@ -138,7 +140,7 @@ class b_svgchart(bench):
         self.assertEqual(fmt(0.00012, '0.00E+00'), '1.20E-04')
 
     def test_T08_colours(self):
-        color = SC['resolve_color']
+        color = SC.resolve_color
         self.assertEqual(color('ff0000'), '#FF0000')
         self.assertEqual(color('theme:tx1'), '#000000')
         self.assertEqual(color('theme:accent1'), '#4472C4')
@@ -151,39 +153,39 @@ class b_svgchart(bench):
     def test_T09_the_spline_passes_through_the_points(self):
         x = np.array([0.0, 1.0, 2.5, 4.0, 5.0])
         y = np.array([1.0, 3.0, 2.0, 5.0, 4.0])
-        sx, sy = SC['catmull_rom'](x, y, per=10)
+        sx, sy = SC.catmull_rom(x, y, per=10)
         self.assertEqual(len(sx), 4 * 10 + 1)
         for i in range(len(x)):
             self.assertAlmostEqual(sx[i * 10], x[i], places=12)
             self.assertAlmostEqual(sy[i * 10], y[i], places=12)
 
     def test_T10_two_points_are_returned_as_they_are(self):
-        sx, sy = SC['catmull_rom']([0.0, 1.0], [2.0, 3.0])
+        sx, sy = SC.catmull_rom([0.0, 1.0], [2.0, 3.0])
         self.assertEqual(list(sx), [0.0, 1.0])
 
     def test_T11_linear_and_polynomial_fits(self):
         x = np.arange(6.0)
-        function, coefficients, r2, text = SC['trend_fit']('linear', x, 2 * x + 1)
+        function, coefficients, r2, text = SC.trend_fit('linear', x, 2 * x + 1)
         self.assertAlmostEqual(coefficients[0], 2.0, places=10)
         self.assertAlmostEqual(coefficients[1], 1.0, places=10)
         self.assertAlmostEqual(r2, 1.0, places=10)
         self.assertTrue(text.startswith('y = 2x'))
-        function, coefficients, r2, text = SC['trend_fit']('poly', x, x**2 - x, order=2)
+        function, coefficients, r2, text = SC.trend_fit('poly', x, x**2 - x, order=2)
         self.assertAlmostEqual(float(function(np.array([6.0]))[0]), 30.0, places=8)
 
     def test_T12_exponential_logarithmic_and_power_fits(self):
         x = np.arange(1.0, 7.0)
-        function, c, r2, text = SC['trend_fit']('exp', x, 3 * np.exp(0.5 * x))
+        function, c, r2, text = SC.trend_fit('exp', x, 3 * np.exp(0.5 * x))
         self.assertAlmostEqual(c[0], 3.0, places=8)
         self.assertAlmostEqual(c[1], 0.5, places=8)
-        function, c, r2, text = SC['trend_fit']('log', x, 2 * np.log(x) + 1)
+        function, c, r2, text = SC.trend_fit('log', x, 2 * np.log(x) + 1)
         self.assertAlmostEqual(c[0], 2.0, places=8)
-        function, c, r2, text = SC['trend_fit']('power', x, 4 * x**1.5)
+        function, c, r2, text = SC.trend_fit('power', x, 4 * x**1.5)
         self.assertAlmostEqual(c[0], 4.0, places=8)
         self.assertAlmostEqual(c[1], 1.5, places=8)
 
     def test_T13_moving_average(self):
-        function, average, r2, text = SC['trend_fit']('movingAvg', np.arange(5.0),
+        function, average, r2, text = SC.trend_fit('movingAvg', np.arange(5.0),
                                                       np.array([1.0, 3.0, 5.0, 7.0, 9.0]),
                                                       period=2)
         self.assertIsNone(function)
@@ -191,13 +193,13 @@ class b_svgchart(bench):
 
     def test_T14_an_unknown_fit_is_refused(self):
         with self.assertRaises(ValueError):
-            SC['trend_fit']('cubic-ish', np.arange(3.0), np.arange(3.0))
+            SC.trend_fit('cubic-ish', np.arange(3.0), np.arange(3.0))
 
     def test_T15_title_runs_become_sub_and_superscripts(self):
-        text = SC['mathtext']([('c', {}), ('A', {'baseline': -25}), ('2', {'baseline': 30})])
+        text = SC.mathtext([('c', {}), ('A', {'baseline': -25}), ('2', {'baseline': 30})])
         self.assertIn('_{', text)
         self.assertIn('^{', text)
-        self.assertEqual(SC['mathtext']('a $ b'), r'a \$ b')
+        self.assertEqual(SC.mathtext('a $ b'), r'a \$ b')
 
     # ---- the drawing ---------------------------------------------------------------------------------
     def test_T16_data_limits_follow_excels_rule_when_nothing_is_fixed(self):
@@ -206,7 +208,7 @@ class b_svgchart(bench):
         figure = self.figure(chart, values)
         ax = figure.axes[0]
         self.assertEqual(ax.get_xlim(), (0.0, 6.0))                # 0..5: major 1, max 5.25 -> 6
-        low, high, major = SC['excel_scale'](min(YT), max(YT))
+        low, high, major = SC.excel_scale(min(YT), max(YT))
         self.assertEqual(ax.get_ylim(), (low, high))
 
     def test_T17_fixed_limits_and_major_unit_win(self):
@@ -257,11 +259,11 @@ class b_svgchart(bench):
     def test_T22_autozero_on_a_log_axis_is_the_value_one_or_the_nearest_end(self):
         info = type('Info', (), {})()
         info.low, info.high, info.log = 1e-6, 1e-2, 10.0
-        self.assertEqual(SC['crossing_value'](info, None), 1e-2)       # 1 lies above the range
+        self.assertEqual(SC.crossing_value(info, None), 1e-2)       # 1 lies above the range
         info.low, info.high = 1e-3, 1e3
-        self.assertEqual(SC['crossing_value'](info, None), 1.0)        # 1 is inside
+        self.assertEqual(SC.crossing_value(info, None), 1.0)        # 1 is inside
         info.low, info.high = 10.0, 1e3
-        self.assertEqual(SC['crossing_value'](info, None), 10.0)       # 1 lies below the range
+        self.assertEqual(SC.crossing_value(info, None), 10.0)       # 1 lies below the range
 
     def test_T23_secondary_axis_is_a_second_matplotlib_axes_with_its_own_scale(self):
         chart, values, xl = self.chart(y2axis__log=10)
@@ -420,7 +422,7 @@ class b_svgchart(bench):
         first = self.svg(chart, values)
         self.assertEqual(first, self.svg(chart, values))           # no timestamp inside
         self.assertNotIn('matplotlib.org', first)
-        inline = SC['inline_svg'](first)
+        inline = SC.inline_svg(first)
         self.assertEqual(inline, self.svg(chart, values, inline=True))
 
     def test_T38_gridlines_default_major_off_when_none_minor_when_asked(self):
@@ -428,8 +430,8 @@ class b_svgchart(bench):
         self.series(chart, label='a')
         ax = self.figure(chart, values).axes[0]
         self.assertTrue(ax.xaxis.get_gridlines()[0].get_visible())
-        chart.xaxis.gridmajor = CH['rec'](none=True)
-        chart.yaxis.gridminor = CH['rec'](color='EEEEEE', width=0.5)
+        chart.xaxis.gridmajor = CH.rec(none=True)
+        chart.yaxis.gridminor = CH.rec(color='EEEEEE', width=0.5)
         chart.yaxis.minor = 0.25
         ax = self.figure(chart, values).axes[0]
         self.assertFalse(ax.xaxis.get_gridlines()[0].get_visible())
@@ -464,7 +466,7 @@ class b_svgchart(bench):
             position = ax.spines['bottom'].get_position()
             self.assertEqual(position[0], 'data')
             self.assertAlmostEqual(position[1], low, places=12)          # not floating mid-plot
-            ET.fromstring(SC['chart_svg'](chart, values))
+            ET.fromstring(SC.chart_svg(chart, values))
 
     # ---- the charts Excel saved -------------------------------------------------------------------
     def test_T42_charts_read_from_the_excel_workbooks_draw_and_keep_their_fixed_limits(self):
@@ -493,7 +495,7 @@ class b_svgchart(bench):
                             self.assertAlmostEqual(limits[0], low, msg=f'{name} {axis} min')
                         if high is not None and not (node.kvr('reverse')):
                             self.assertAlmostEqual(limits[1], high, msg=f'{name} {axis} max')
-                    text = SC['chart_svg'](chart, values)
+                    text = SC.chart_svg(chart, values)
                     ET.fromstring(text)
                     stem = os.path.splitext(name)[0].replace(' ', '_')
                     with open(os.path.join(OUTDIR, f'{stem}_{chart_name}.svg'), 'w',
@@ -505,7 +507,7 @@ class b_svgchart(bench):
 
     # ---- benchmarks -----------------------------------------------------------------------------------
     def bench_excel_scale(self, timer):
-        scale = SC['excel_scale']
+        scale = SC.excel_scale
         with timer as test:
             while test.more:
                 for i in test.count:
@@ -513,7 +515,7 @@ class b_svgchart(bench):
         return 'excel_scale(0.0013, 97.5)', 'scale'
 
     def bench_format_number(self, timer):
-        fmt = SC['format_number']
+        fmt = SC.format_number
         with timer as test:
             while test.more:
                 for i in test.count:
@@ -524,7 +526,7 @@ class b_svgchart(bench):
         chart, values, xl = self.chart()
         self.series(chart, label='a')
         chart.legend.pos = 'r'
-        draw = SC['chart_svg']
+        draw = SC.chart_svg
         with timer as test:
             while test.more:
                 for i in test.count:

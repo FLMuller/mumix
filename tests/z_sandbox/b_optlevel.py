@@ -30,7 +30,7 @@ from bench import bench
 from use import load
 
 SOURCES = ['use']
-use = SimpleNamespace(**load('use', into={}))
+load(asmodule=['use'])
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))

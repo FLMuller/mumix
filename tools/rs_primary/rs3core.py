@@ -1,4 +1,4 @@
-r"""rs3core.py -- the verbs about the server itself, run for rs3.py.
+r"""rs3core.py -- the verbs about the server itself, run for reportserver.py.
 
     ping      {do: 'ping'}                   -> {ok, pong: 1, boot, time}
     hello     {do: 'hello', hash | url}      -> {hash, path, id, boot, time}
@@ -28,7 +28,7 @@ r"""rs3core.py -- the verbs about the server itself, run for rs3.py.
               path's hash, and the answer {re: id, ...} is the reply. Only a program may give
               them. No such page is an answer at once.
 
-This module holds no state of its own: rs3.py hands each verb the server's state, S (S['conn']
+This module holds no state of its own: reportserver.py hands each verb the server's state, S (S['conn']
 is the connection the message came from, during the call), and the settings file is
 S['config_file'].
 
@@ -135,6 +135,17 @@ def status(msg, S):
     return {'status': state(S)}
 
 
+def monitor(msg, S):
+    """Show the server's own page unless one is open. The server manages that page: a program only asks for it.
+    {'opened': whether a new one was opened, 'url': the page}."""
+    import rs3pages
+    url = rs3pages.where(S, '/reportserver')
+    if state(S)['monitors']:
+        return {'opened': False, 'url': url}
+    rs3pages.show(S, url, True)
+    return {'opened': True, 'url': url}
+
+
 def pulse(msg, S):
     since = msg.get('since')
     since = since if isinstance(since, int) and not isinstance(since, bool) else 0
@@ -226,7 +237,7 @@ def tree(msg, S):
     return {'root': base, 'name': os.path.basename(root) or root, 'files': files, 'truncated': found.truncated}
 
 
-VERBS = {'ping': ping, 'hello': hello, 'config': config, 'status': status, 'pulse': pulse,
+VERBS = {'ping': ping, 'hello': hello, 'config': config, 'status': status, 'monitor': monitor, 'pulse': pulse,
          'stop': stop, 'restart': restart, 'snap': command('snap'),
          'trigger': command('trigger'), 'tree': tree}
 __all__ = ['VERBS']

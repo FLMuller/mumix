@@ -4,8 +4,8 @@ root = r'C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix'
 for p in ('tools', 'tools/primary', 'tools/primary/rs3'):
     sys.path.insert(0, os.path.join(root, p))
 from use import load
-Source = load('rs3lex', into={})['Source']
-isspaghetti = load('spaghettichk', into={})['isspaghetti']
+load('rs3lex')
+load('spaghettichk')
 rel = sys.argv[1].replace('\\', '/')
 real = os.path.join(root, rel)
 folder = os.path.dirname(rel)

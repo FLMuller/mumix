@@ -22,7 +22,8 @@ __all__ = ['KV', 'TKV']
 
 ###FLM why so complicated? just load 'kv','tkv' and creste the two stores?
 ###FLM or, as kv tkv are syblings, from kv import kv. simplify.
-kvnames = load('kv', into={})
-tkvnames = load('tkv', into={})
-KV = kvnames['kv']
-TKV = tkvnames['tkv']
+###cld Done: one load builds both when stale and binds a namespace for each, and KV and TKV are their classes.
+###cld A plain load('kv', 'tkv') would bind kvr and kvw from both, the second over the first.
+load(asmodule=['kv', 'tkv'])
+KV = kv.kv
+TKV = tkv.tkv

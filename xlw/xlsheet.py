@@ -79,7 +79,8 @@ from xlstore import KV
 from xlstyle import auto_numfmt, num_text, style_key, xml_escape
 
 try:
-    FUN = load('xlsheetfun', into={})         # the Cython loops; None runs the Python ones
+    load(asmodule=['xlsheetfun'])             # the Cython loops; None runs the Python ones
+    FUN = xlsheetfun
 except Exception:
     FUN = None
 
@@ -356,7 +357,7 @@ def sheet_to_xml(sheet, texts=None, formulas=None):
     if formulas is None:
         formulas = formula_list(tables_of(sheet))
     if FUN is not None:
-        xml, widest, ncols = FUN['emit_grid'](sheet.kvr('cells'), texts, col2letter, formulas,
+        xml, widest, ncols = FUN.emit_grid(sheet.kvr('cells'), texts, col2letter, formulas,
                                               cached_xml)
         return xml, columns_xml(widest, ncols), ncols
     found = cell_list(sheet)
@@ -583,7 +584,7 @@ def xml_to_sheet(data, sheet, report, remap=None):
     tables = tables_of(sheet)
     cells = sheet.kvr('cells')
     if b'<f' not in body:
-        if FUN is not None and FUN['scan_cells'](
+        if FUN is not None and FUN.scan_cells(
                 body, cells, tables.xfs, remap, tables.texts,
                 lambda raw: text_id(tables, text_value(raw))) >= 0:
             return head_and_tail(data[:start], tail, report)

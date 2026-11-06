@@ -119,11 +119,11 @@ import time
 import traceback
 import unittest
 
-# the support modules (codelex, codemark, htmlwriter, cumulette, reportserver) and the compiled
+# the support modules (codelex, codemark, htmlwriter, cumulette) and the compiled
 # ones (marked, mdwriter) are in primary/ below this file: use finds them there
 PRIMARY = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'primary')   # the page files
 from use import load, locate, use
-use('primary', 'silent')
+use('primary')
 from codemark import codemark
 from htmlwriter import htmappend, htmtemplate, htmwriteln
 load('marked', 'mdwriter')            # md2htm, mdwriteln: built by use into primary/pyxfiles

@@ -34,14 +34,14 @@ from use import load
 from bench import bench
 
 SOURCES = ['tkv']                       # the module this suite proves and times
-globals().update(load('tkv', into={}))  # tkv, kvr, kvw and the Tkv* error classes
+load('tkv')  # tkv, kvr, kvw and the Tkv* error classes
 
 from types import SimpleNamespace
 
 
 class b_tkv(bench):
     BenchName    = "tkv"
-    BenchVersion = "M1.0.14"
+    BenchVersion = "M1.0.15"
     BenchHeader  = ""
     sources      = SOURCES
 

@@ -23,7 +23,7 @@ findtools()
 from bench import bench
 from use import use
 
-use('primary', 'silent')
+use('primary')
 SOURCES = ['<unit>']             # the modules this suite tests: the report shows the code that ran
 from <unit> import <Unit>, <UnitError>
 

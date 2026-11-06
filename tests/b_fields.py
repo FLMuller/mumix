@@ -26,12 +26,12 @@ from use import load
 from bench import bench
 
 SOURCES = ['fields']
-globals().update(load('fields', into={}))          # Fields
+load('fields')          # Fields
 
 
 class b_fields(bench):
     BenchName = 'fields'
-    BenchVersion = 'M1.0.5'
+    BenchVersion = 'M1.0.6'
     BenchHeader = ''
     sources = SOURCES
 

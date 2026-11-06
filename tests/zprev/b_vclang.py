@@ -32,7 +32,7 @@ def roles(pieces, row):
 
 class b_vclang(bench):
     BenchName = 'vclang'
-    BenchVersion = 'M1.0.10'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.11'          # runbench adds 1 to the last number on every run
     BenchHeader = 'the languages of vcomment: triplets, lexer, function lists'
     sources = SOURCES
 

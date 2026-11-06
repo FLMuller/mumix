@@ -8,9 +8,9 @@ root = r'C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix'
 for p in ('tools', 'tools/primary', 'tools/primary/rs3'):
     sys.path.insert(0, os.path.join(root, p))
 from use import load
-Source = load('rs3lex', into={})['Source']
-isspaghetti = load('spaghettichk', into={})['isspaghetti']
-pathof = load('rs3util', into={})['pathof']
+load('rs3lex')
+load('spaghettichk')
+load('rs3util')
 
 
 def areas(real):

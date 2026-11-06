@@ -4,7 +4,7 @@ A page of rs3 is **blocks** (ftv, toptabs, methods, code, editbox, log, ...) pla
 The same string is the address of the page, so a page is a link you can paste:
 
 ```
-http://127.0.0.1:47653/?layout=[ftv,[toptabs;[methods,[code;editbox]]]]&toptabs=mumix/tools/primary/{rs3.py,rs3/**}
+http://127.0.0.1:47653/?layout=[ftv,[toptabs;[methods,[code;editbox]]]]&toptabs=mumix/tools/{reportserver.py,rs_primary/**}
 ```
 
 Code: `rs3layout.py` (the grammar, `parse`, `plain`, `render`), `rs3pages.py` (the address, `page_url`, `query_page`,
@@ -116,7 +116,7 @@ or `.claude` above it). The server's own folder is no root:
 
 | Written | Means |
 |---|---|
-| `mumix/tools/primary/rs3.py` | one file (the `./` of `./mumix/...` is optional, always understood) |
+| `mumix/tools/reportserver.py` | one file (the `./` of `./mumix/...` is optional, always understood) |
 | `a/{x,y}.py` | shell braces: `a/x.py` and `a/y.py`; they nest: `a/{x,b/{y,z}}.py` |
 | `a/*.py`, `a/pane_?.js` | `*` any characters, `?` one, in a file name or a folder name (`mumix/*/b_*.py`) |
 | `a/**/*.js` | `**` goes down through any number of folders |
@@ -148,9 +148,9 @@ All of a block's paths go in **one value**, so many files stay short: the common
 ## 7. From a program
 
 ```python
-import rs3
-rs3.contactRS('load', '[ftv,[toptabs;[methods,[code;editbox]]]]',
-              {'toptabs': ['toptabs', './mumix/tools/primary/rs3.py', './mumix/tools/primary/rs3/**']},
+import reportserver
+reportserver.contactRS('load', '[ftv,[toptabs;[methods,[code;editbox]]]]',
+              {'toptabs': ['toptabs', './mumix/tools/reportserver.py', './mumix/tools/rs_primary/**']},
               'my title')
 ```
 

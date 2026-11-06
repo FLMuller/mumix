@@ -35,9 +35,11 @@ from bench import bench
 import mumix                                      # puts tools, xlw, svgchart, htmlreport on sys.path
 
 SOURCES = ['report']
-globals().update(load('xlw', into={}))
-CH = load('xlchart', into={})
-RP = load('report', into={})
+load('xlw')
+load(asmodule=['xlchart'])
+CH = xlchart
+load(asmodule=['report'])
+RP = report
 
 OUTDIR = os.path.join(ROOT, 'results', 'b_report')
 
@@ -58,7 +60,7 @@ def header_of(table):
 
 class b_report(bench):
     BenchName = 'report'
-    BenchVersion = 'M1.0.5'
+    BenchVersion = 'M1.0.6'
     BenchHeader = ''
     sources = SOURCES
 
@@ -80,12 +82,12 @@ class b_report(bench):
             chart = xl.chart(f'c{number}')
             chart.title.text = [('Chart ', {}), ('A', {'baseline': -25})] if number == 0 \
                 else f'Second {number}'
-            CH['add_series'](chart, 'Data!$A$2:$A$6', 'Data!$B$2:$B$6', label='y')
+            CH.add_series(chart, 'Data!$A$2:$A$6', 'Data!$B$2:$B$6', label='y')
         return xl.charts
 
     # ---- small pieces -----------------------------------------------------------------------
     def test_T01_numbers_as_text(self):
-        sig = RP['sig']
+        sig = RP.sig
         self.assertEqual(sig(3.14159), '3.142')
         self.assertEqual(sig(3.14159, 2), '3.1')
         self.assertEqual(sig(5), '5')
@@ -99,7 +101,7 @@ class b_report(bench):
 
     def test_T02_sampling_keeps_the_ends_and_spreads_evenly(self):
         rows = list(range(241))
-        picked = RP['sample_rows'](rows, 15)
+        picked = RP.sample_rows(rows, 15)
         self.assertEqual(len(picked), 15)
         self.assertEqual((picked[0], picked[-1]), (0, 240))
         steps = np.diff(picked)
@@ -107,22 +109,22 @@ class b_report(bench):
 
     def test_T03_a_short_table_is_not_sampled(self):
         rows = list(range(10))
-        self.assertEqual(RP['sample_rows'](rows, 15), rows)
-        self.assertEqual(RP['sample_rows'](rows, 10), rows)
-        self.assertEqual(RP['sample_rows'](rows, 1), rows)       # a guard, not a sample
+        self.assertEqual(RP.sample_rows(rows, 15), rows)
+        self.assertEqual(RP.sample_rows(rows, 10), rows)
+        self.assertEqual(RP.sample_rows(rows, 1), rows)       # a guard, not a sample
 
     def test_T04_plain_title_joins_runs_and_handles_no_title(self):
         book = self.book_with_charts()
         charts = book.Data.kvr('priv').kvr('charts').nodes()
-        self.assertEqual(RP['plain_title'](charts[0]), 'Chart A')
-        self.assertEqual(RP['plain_title'](charts[1]), 'Second 1')
+        self.assertEqual(RP.plain_title(charts[0]), 'Chart A')
+        self.assertEqual(RP.plain_title(charts[1]), 'Second 1')
         xl = xlw()
         xl.newbook(os.path.join(OUTDIR, 'untitled'), 'Data')
-        self.assertEqual(RP['plain_title'](xl.chart('c')), '')
+        self.assertEqual(RP.plain_title(xl.chart('c')), '')
 
     # ---- tables --------------------------------------------------------------------------------
     def test_T05_table_structure(self):
-        root = parse(RP['table_html'](self.headers, self.units, self.rows[:3], caption='cap'))
+        root = parse(RP.table_html(self.headers, self.units, self.rows[:3], caption='cap'))
         table = root.find('table')
         self.assertEqual(table.find('caption').text, 'cap')
         head = table.find('thead').find('tr')
@@ -132,39 +134,39 @@ class b_report(bench):
         self.assertEqual(texts(body[1]), ['1', '0.1235', 'row 1'])
 
     def test_T06_text_columns_left_numbers_right(self):
-        root = parse(RP['table_html'](self.headers, self.units, self.rows[:2]))
+        root = parse(RP.table_html(self.headers, self.units, self.rows[:2]))
         cells = root.find('table').find('tbody').find('tr').findall('td')
         self.assertEqual([cell.get('class') for cell in cells], ['num', 'num', 'txt'])
 
     def test_T07_cell_text_is_escaped(self):
-        root = parse(RP['table_html'](['a<b'], None, [['<script>x</script> & "q"']]))
+        root = parse(RP.table_html(['a<b'], None, [['<script>x</script> & "q"']]))
         cell = root.find('table').find('tbody').find('tr').find('td')
         self.assertEqual(cell.text, '<script>x</script> & "q"')
         self.assertEqual(root.find('table').find('thead').find('tr').find('th').text, 'a<b')
         self.assertIsNone(root.find('.//script'))
 
     def test_T08_row_classes(self):
-        root = parse(RP['table_html'](['a'], None, [[1], [2], [3]],
+        root = parse(RP.table_html(['a'], None, [[1], [2], [3]],
                                       row_classes=[None, 'flag', None]))
         rows = root.find('table').find('tbody').findall('tr')
         self.assertEqual([row.get('class') for row in rows], [None, 'flag', None])
 
     def test_T09_an_empty_table_and_missing_units(self):
-        root = parse(RP['table_html'](['a', 'b'], None, []))
+        root = parse(RP.table_html(['a', 'b'], None, []))
         self.assertEqual(len(root.find('table').find('tbody').findall('tr')), 0)
         self.assertEqual(texts(root.find('table').find('thead').find('tr')), ['a', 'b'])
 
     def test_T10_facts_and_list(self):
-        facts = parse(RP['facts_html']([('feed time', 3600.0, 's'), ('ratio', 0.25, '')]))
+        facts = parse(RP.facts_html([('feed time', 3600.0, 's'), ('ratio', 0.25, '')]))
         rows = facts.find('table').find('tbody').findall('tr')
         self.assertEqual(texts(rows[0]), ['feed time', '3600 s'])
         self.assertEqual(texts(rows[1]), ['ratio', '0.25'])
-        items = parse('<r>' + RP['list_html'](['a & b', '<c>']) + '</r>').find('ul')
+        items = parse('<r>' + RP.list_html(['a & b', '<c>']) + '</r>').find('ul')
         self.assertEqual([li.text for li in items], ['a & b', '<c>'])
 
     # ---- charts --------------------------------------------------------------------------------
     def test_T11_charts_of_a_book_in_sheet_order_with_titles(self):
-        charts = RP['book_charts'](self.book_with_charts(3))
+        charts = RP.book_charts(self.book_with_charts(3))
         self.assertEqual([item[1] for item in charts], ['c0', 'c1', 'c2'])
         self.assertEqual([item[0] for item in charts], ['Data'] * 3)
         self.assertEqual([item[2] for item in charts], ['Chart A', 'Second 1', 'Second 2'])
@@ -176,11 +178,11 @@ class b_report(bench):
         xl = xlw()
         xl.newbook(os.path.join(OUTDIR, 'nocharts'), 'Data')
         xl.write([1, 2, 3])
-        self.assertEqual(RP['book_charts'](xl.nocharts), [])
+        self.assertEqual(RP.book_charts(xl.nocharts), [])
 
     def test_T13_charts_section_embeds_inline_svg_and_links_the_files(self):
-        charts = RP['book_charts'](self.book_with_charts(2))
-        root = parse(RP['charts_section'](charts, 'my run'))
+        charts = RP.book_charts(self.book_with_charts(2))
+        root = parse(RP.charts_section(charts, 'my run'))
         figures = root.findall('figure')
         self.assertEqual(len(figures), 2)
         link = figures[0].find('figcaption').find('a')
@@ -190,8 +192,8 @@ class b_report(bench):
         self.assertIsNone(svg.get('width'))
 
     def test_T14_charts_are_written_as_standalone_files(self):
-        charts = RP['book_charts'](self.book_with_charts(2))
-        paths = RP['write_charts'](OUTDIR, 'unit', charts)
+        charts = RP.book_charts(self.book_with_charts(2))
+        paths = RP.write_charts(OUTDIR, 'unit', charts)
         self.assertEqual([os.path.basename(path) for path in paths],
                          ['unit_c0.svg', 'unit_c1.svg'])
         for path, item in zip(paths, charts):
@@ -200,7 +202,7 @@ class b_report(bench):
 
     # ---- the page --------------------------------------------------------------------------------
     def test_T15_page_is_well_formed_with_title_sections_and_workbook_link(self):
-        text = RP['page']('Run <1> & 2', [('First', '<p>one</p>'), ('Second', '<p>two</p>')],
+        text = RP.page('Run <1> & 2', [('First', '<p>one</p>'), ('Second', '<p>two</p>')],
                           subtitle='sub', workbook='my book.xlsx', generated='2026-10-31')
         self.assertTrue(text.startswith('<!DOCTYPE html>'))
         root = parse(text)
@@ -214,14 +216,14 @@ class b_report(bench):
         self.assertIn('generated 2026-10-31', text)
 
     def test_T16_page_without_optional_parts(self):
-        root = parse(RP['page']('T', [('H', '<p>x</p>')]))
+        root = parse(RP.page('T', [('H', '<p>x</p>')]))
         main = root.find('body').find('main')
         self.assertEqual(len(list(main.iter('a'))), 0)
         self.assertEqual(len(list(main.iter('footer'))), 0)
 
     def test_T17_page_has_no_scripts_and_no_external_files(self):
-        charts = RP['book_charts'](self.book_with_charts(1))
-        text = RP['page']('T', [('Charts', RP['charts_section'](charts, 'u'))])
+        charts = RP.book_charts(self.book_with_charts(1))
+        text = RP.page('T', [('Charts', RP.charts_section(charts, 'u'))])
         self.assertNotIn('<script', text)
         self.assertNotIn('src=', text)
         outside = [url for url in re.findall(r'https?://[^"\s<]+', text)
@@ -230,7 +232,7 @@ class b_report(bench):
         self.assertEqual(outside, [])
 
     def test_T18_write_page_is_utf8(self):
-        path = RP['write_page'](OUTDIR, 'unit.html', RP['page']('µ-mixing', []))
+        path = RP.write_page(OUTDIR, 'unit.html', RP.page('µ-mixing', []))
         with open(path, encoding='utf-8') as handle:
             self.assertIn('µ-mixing', handle.read())
 
@@ -296,7 +298,7 @@ class b_report(bench):
 
     # ---- benchmarks -----------------------------------------------------------------------------------
     def bench_sig(self, timer):
-        sig = RP['sig']
+        sig = RP.sig
         with timer as test:
             while test.more:
                 for i in test.count:
@@ -304,7 +306,7 @@ class b_report(bench):
         return 'sig(0.000123456)', 'text'
 
     def bench_table_html_15x11(self, timer):
-        build = RP['table_html']
+        build = RP.table_html
         headers = [f'h{j}' for j in range(11)]
         rows = self.wide
         with timer as test:
@@ -314,7 +316,7 @@ class b_report(bench):
         return 'table_html, 15 rows x 11 columns', 'table'
 
     def bench_page_four_sections(self, timer):
-        page = RP['page']
+        page = RP.page
         sections = [(f'S{i}', '<p>text</p>') for i in range(4)]
         with timer as test:
             while test.more:

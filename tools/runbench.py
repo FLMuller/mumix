@@ -21,8 +21,8 @@ Python:  runbench(targets=(), name='', nohub=False, test_time=1.0, timeout=10.0,
                    worker_pause=None, orphan=5.0, tick=True, collect=None, server=True,
                    results=None, tests=True, benches=True) -> the number of suites that failed
   collect  a list that gets the suites' dicts (the tests, the bench, the page).
-  server   True: register the results folder with the report server and start it (one only);
-           False: not; a tuple (port, roots file, log file, pid file): a server of your own.
+  server   True: start the report server after the run, through reportserver.bat (hidden, as a program does);
+           False: not.
   results  the folder for the reports, instead of the one beside this folder.
   tests, benches  False leaves that part out: -test is benches=False, -bench is tests=False.
 
@@ -58,13 +58,12 @@ import subprocess
 import sys
 import time
 
-# the support modules (codelex, codemark, htmlwriter, cumulette, reportserver) and the compiled
+# the support modules (codelex, codemark, htmlwriter, cumulette) and the compiled
 # ones (marked, mdwriter) are in primary/ below this file: use finds them there
 PRIMARY = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'primary')   # the page files
 from use import load, use
-use('primary', 'silent')
+use('primary')
 import codelex
-import reportserver as rsrv
 from htmlwriter import htmappend, htmsave, htmtemplate, htmwriteln
 load('marked', 'mdwriter')            # md2htm, mdwriteln: built by use into primary/pyxfiles
 from cumulette import Channel, ChannelError, Torn
@@ -861,6 +860,30 @@ def summary_md(rows, stamp, wall, machine, broken):
     return md
 
 
+def bat_path():
+    """The bat a person meets the report server through: .claude/vscripts/reportserver.bat in the first folder up from
+    here that has it; '' when there is none."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    while True:
+        path = os.path.join(here, '.claude', 'vscripts', 'reportserver.bat')
+        if os.path.isfile(path):
+            return path
+        if os.path.dirname(here) == here:
+            return ''
+        here = os.path.dirname(here)
+
+
+def open_server(by):
+    """Start the report server through its bat, with no window, as a program does (reportserver.bat --by NAME --start
+    --hidden: start if it is not running, print the lines, the last is the status). One line saying what happened."""
+    bat = bat_path()
+    if not bat:
+        return 'report server: reportserver.bat not found'
+    done = subprocess.run([bat, '--by', by, '--start', '--hidden'], capture_output=True, text=True,
+                          creationflags=0x08000000, timeout=60)
+    return (done.stdout.strip().splitlines() or ['report server: no answer'])[-1]
+
+
 def write_report(rows, results, stem, stamp, wall, machine, server):
     """The page of the run, written to a new file in results. Returns its path."""
     suites = [s for s, total, notes in rows]
@@ -878,12 +901,7 @@ def write_report(rows, results, stem, stamp, wall, machine, server):
                         f'data-name="{name}">')
         htmappend(htm, page)
         htmwriteln(htm, '</div>')
-    bat, port = '', 0
-    if server:
-        try:
-            bat, port = rsrv.prepare(results, server[1]), server[0]
-        except OSError as error:
-            print(f'report server: could not prepare {results} ({error})')
+    bat, port = (bat_path() if server else ''), 0       # the page names the bat; it is given no port to talk to
     now = time.time()
     local = time.localtime(now)
     base = f'{stem}_{time.strftime("%Y.%m.%d_%H;%M", local)}'
@@ -954,7 +972,7 @@ def finish_run(suites, results, stem, budget, wall, server):
     path = write_report(rows, results, stem, stamp, wall, machine, server)
     if server:
         try:
-            rsrv.ensure('runbench', *server)
+            print(open_server('runbench'))
         except Exception as error:                  # the server is a convenience: never fail
             print(f'report server: could not start ({error!r})')
     with open(os.path.join(results, 'last_run.json'), 'w', encoding='utf-8') as f:
@@ -1027,7 +1045,7 @@ def runbench(targets=(), name='', nohub=False, test_time=1.0, timeout=10.0, budg
         hub.close()
     if collect is not None:
         collect.extend(suites)
-    srv = (rsrv.PORT,) + rsrv.files() if server is True else (tuple(server) if server else None)
+    srv = bool(server)
     return finish_run(suites, folder, stem, budget, time.time() - began, srv)
 
 

@@ -1,11 +1,11 @@
 r"""rs3pages.py -- pages made of blocks: the layout, the collation, the page, and the routes.
 
 A page is a layout string (rs3layout.py) and, for each locator in it, a block with its data. A
-block is rs3/panes/pane_NAME.py with write(*data, S=, page=, loc=) -> done(label, css, js, html, ...) (rs3util); the
+block is rs_primary/panes/pane_NAME.py with write(*data, S=, page=, loc=) -> done(label, css, js, html, ...) (rs3util); the
 locator `cd.2` is the block `code` (the part before the . is its kind, a short name or a block's name: rs3layout), unless the layout
 defines it, `{cd3=code}`. The server runs each block's write, takes the html of each into its place in the
 layout, collates the css and the js into ONE <style> and ONE <script> (a label seen before is
-not written again; so are two identical texts), and fills rs3/html/page.html with them and with the
+not written again; so are two identical texts), and fills rs_primary/html/page.html with them and with the
 manager (html/manager.js), which routes the signals between the blocks. The result is a complete
 html page. The data of a block that are ./ paths with a pattern in them (./mumix/**/*.py, ./a/{x,y}.py) are opened
 here, to the files they name (rs3util.pathof); the block gets the files.
@@ -71,7 +71,7 @@ TOKEN = re.compile(r'@@(\w+)@@')
 
 
 def module_of(block):
-    """The module of a block: rs3/panes/pane_NAME.py, by name only (no path can be given)."""
+    """The module of a block: rs_primary/panes/pane_NAME.py, by name only (no path can be given)."""
     if not BLOCK.match(block) or not os.path.isfile(os.path.join(PANES, f'pane_{block}.py')):
         raise ValueError(f'no block called {block!r}')
     return importlib.import_module(f'pane_{block}')
