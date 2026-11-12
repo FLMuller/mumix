@@ -19,16 +19,18 @@ makes the pane that goes behind announce showcode off and the one now in front s
 
 Signals
     receives  onShowfile {path, show}     switch to the tab of that file, or make one; show false: remove the tab
-              onSelectfunk, onSaved, onSearchtext, onSearchnext,
+              onSelectfunk, onSaved, onNotesaved, onSearchtext, onSearchnext,
               onSearchprev, onShowmethods: handed on to the code pane of the tab that is shown
     emits     mngshowfile {path, show, to}   for the files the page was made with; and what the code panes inside emit
-              (showcode, linenoClicked, commentline, commentselect, searchcount): they speak as this block
+              (showcode, linenoClicked, commentline, commentselect, searchcount): they speak as this block; and what the
+              doc sections emit (noteline, noteselect: the notes of an html section, rs3microDB), also as this block
 IN and OUT below are these names.
 
 The css and js of the code block ride along (the `also` of the dict write returns), so a
 page with tabs and no code block of its own still works.
 
-VERSION  M1 m02.v01 (2026-11-06): a section is a doc of its own (pane_doc), given as html or as the ./ path of a file; search goes on to the doc in front.
+VERSION  M1 m02.v02 (2026-11-12): onNotesaved handed on to the section in front (its doc reads its notes again); noteline and noteselect of the sections are among its OUT.
+         M1 m02.v01 (2026-11-06): a section is a doc of its own (pane_doc), given as html or as the ./ path of a file; search goes on to the doc in front.
          M1 m01.v05 (2026-11-04): hands showmethods on to the code pane of the tab shown.
          M1 m01.v04 (2026-11-04): showfile in, showcode out (no more openfile/closefile, no where); takes and holds are declared.
          M1 m01.v03 (2026-11-04): what it can find is returned by write().
@@ -44,9 +46,9 @@ from rs3util import asset, done
 
 __all__ = ['write']
 
-IN = ['showfile', 'selectfunk', 'showmethods', 'saved', 'searchtext',
+IN = ['showfile', 'selectfunk', 'showmethods', 'saved', 'notesaved', 'searchtext',
       'searchnext', 'searchprev', 'searchhome']
-OUT = ['mngshowfile', 'showcode', 'linenoClicked', 'commentline', 'commentselect', 'searchcount']
+OUT = ['mngshowfile', 'showcode', 'linenoClicked', 'commentline', 'commentselect', 'searchcount', 'noteline', 'noteselect']
 
 
 def write(*items, S=None, page=None, loc=None):

@@ -108,7 +108,7 @@ RS.pane('toptabs', function(ctx){
       if (tab) { if (active !== tab) show(tab); } else add(d.path);
     }
   };
-  ['onSelectfunk', 'onShowmethods', 'onSaved', 'onSearchtext', 'onSearchnext', 'onSearchprev', 'onSearchhome']
+  ['onSelectfunk', 'onShowmethods', 'onSaved', 'onNotesaved', 'onSearchtext', 'onSearchnext', 'onSearchprev', 'onSearchhome']
     .forEach(function(n){ h[n] = active_(n); });
   // the sections the page was made with, in their order: the first that is not put away shows
   var away = hiddenSet();
