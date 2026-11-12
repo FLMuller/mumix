@@ -74,4 +74,4 @@ Open, for the user to decide:
 2. Which statistic of the radius pdf the closure should use: the peak (5 eta, used) or the mean (7-8 eta).
 3. Kida's core boundary (pressure inflection, 0.66 r_max for a Burgers vortex) is used as r_max for the radius and as 0.6 r_max for the swirl: inconsistent, kept.
 4. The lag constant C_c of section 13 is not calibrated.
-5. The new references of the paper (Pearson, Yoffe, Goto, Vassilicos, Hanjalic, Schiestel, Lumley, Fox, Baldyga 1989, Burnham) were not checked against copies; Lumley (1992) is listed but not cited in the text.
+5. The new references of the paper (Pearson, Yoffe, Goto, Vassilicos, Hanjalic, Schiestel, Fox, Baldyga 1989, Burnham) were not checked against copies.

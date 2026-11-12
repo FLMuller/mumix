@@ -46,7 +46,6 @@ NEW_REFS = [
     ("Fox", r"Fox, R. O. (1995). The spectral relaxation model of the scalar dissipation rate in homogeneous turbulence. <em>Phys. Fluids</em> 7, 1082&ndash;1094. (Not checked against a copy.)"),
     ("Goto", r"Goto, S. and Vassilicos, J. C. (2016). Unsteady turbulence cascades. <em>Phys. Rev. E</em> 94, 053108. (Not checked against a copy.)"),
     ("Hanjalic", r"Hanjali&#263;, K., Launder, B. E. and Schiestel, R. (1980). Multiple-time-scale concepts in turbulent transport modelling. In <em>Turbulent Shear Flows 2</em>, 36&ndash;49. Springer. (Not checked against a copy.)"),
-    ("Lumley", r"Lumley, J. L. (1992). Some comments on turbulence. <em>Phys. Fluids A</em> 4, 203&ndash;211. (Not checked against a copy.)"),
     ("Pearson", r"Pearson, B. R., Yousef, T. A., Haugen, N. E. L., Brandenburg, A. and Krogstad, P.-&Aring;. (2004). Delayed correlation between turbulent energy injection and dissipation. <em>Phys. Rev. E</em> 70, 056301. (Read as the preprint, arXiv physics/0404114.)"),
     ("Schiestel", r"Schiestel, R. (1987). Multiple-time-scale modeling of turbulent flows in one-point closures. <em>Phys. Fluids</em> 30, 722&ndash;731. (Not checked against a copy.)"),
     ("Vassilicos", r"Vassilicos, J. C. (2015). Dissipation in turbulent flows. <em>Annu. Rev. Fluid Mech.</em> 47, 95&ndash;114. (Not checked against a copy.)"),
