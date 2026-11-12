@@ -35,6 +35,18 @@ RS.pane('doc', function(ctx){
        .catch(function(e){ fn([], e.message); });
   };
   aDOM.onnotesaved = function(fn){ saved.push(fn); };
+  // maths: a page that writes formulas as \( ... \) (inline) or $$ ... $$ (display) asks for them to be set: aDOM.typeset() loads MathJax (the one script, from cdnjs, the main
+  // page's own) the first time, and sets the formulas of this box. A page that never calls it loads nothing.
+  var MATHJAX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js';
+  function typeset(){
+    if (window.MathJax && window.MathJax.typesetPromise){ window.MathJax.typesetPromise([box]).catch(function(e){ console.error('rs3 doc: mathjax:', e); }); return; }
+    if (!window.MathJax) window.MathJax = {tex: {inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']]}, svg: {fontCache: 'global'}, startup: {typeset: false}};
+    if (document.getElementById('rs3mathjax')) { window.setTimeout(typeset, 300); return; }         // loading: try again
+    var s = document.createElement('script');
+    s.id = 'rs3mathjax'; s.src = MATHJAX_URL; s.async = true; s.onload = function(){ window.setTimeout(typeset, 50); };
+    document.head.appendChild(s);
+  }
+  aDOM.typeset = typeset;
   aDOM.on = function(types, list){       // the inline handlers: one listener of the box for each kind, finding the element
     types.forEach(function(type){
       var attr = 'data-aon-' + type;
