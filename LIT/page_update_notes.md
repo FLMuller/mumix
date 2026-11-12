@@ -71,7 +71,7 @@ Applied (unlike the list above, these ARE in the data, the book and the paper):
 
 Open, for the user to decide:
 1. Model I (the corrections x 3 and x 0.6, one law) against model II (two populations, one chord factor). The paper keeps I as the reference and recommends II for a micromixing closure.
-2. Which statistic of the radius pdf the closure should use: the peak (5 eta, used) or the mean (7-8 eta).
+2. The radius pdfs are two lognormal functions: the first (53-71 % of the tubes, mean 4.6-5.5 eta) is the r_max/eta of the model, 5; the second (median 8.5-16.8 eta) raises the whole-pdf mean to 7-8 eta and is not in the model. Open: what the second family is, and whether a closure needs a term for it.
 3. Kida's core boundary (pressure inflection, 0.66 r_max for a Burgers vortex) is used as r_max for the radius and as 0.6 r_max for the swirl: inconsistent, kept.
 4. The lag constant C_c of section 13 is not calibrated.
 5. The new references of the paper (Pearson, Yoffe, Goto, Vassilicos, Hanjalic, Schiestel, Fox, Baldyga 1989, Burnham) were not checked against copies.

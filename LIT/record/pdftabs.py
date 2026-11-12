@@ -116,9 +116,15 @@ def tanahashi2001(book, f):
     s = f[("t01", "swirl")]
     fit_block(tab, s, r"swirl v/u_rms", "u_rms", "(the swirl needs no width constraint).")
     tab.h("11. What the page uses, and what it could use")
-    tab.table(["statistic of the radius pdf", "r_max/η"], [["peak (mode) of the digitised curve", "%.2f" % r["mode"]], ["median", "%.2f" % r["median"]], ["mean", "%.2f" % r["mean"]],
-              ["10 % and 90 %", "%.2f and %.2f" % (r["q10"], r["q90"])], ["the page's row (the peak of the pdf quoted in the text, D ≈ 9 η, halved)", "4.5"]], "The page took the peak: a tube radius that the text quotes.")
-    tab.p(tab.guess("the table row uses the peak of the pdf (4.5)", "the paper's text quotes the peak of the diameter pdf; the whole-tube mean radius is %.1f, the median %.1f, and the pdf has a heavy tail, so the choice of the peak, not the mean, is ours" % (r["mean"], r["median"])))
+    tab.table(["statistic of the radius pdf", "r_max/η"],
+              [["<b>first lognormal function</b> (%.0f %% of the tubes, width %.2f): median" % (100 * r["a1"], r["s1"]), "<b>%.2f</b>" % r["m1"]],
+               ["first lognormal function: mean", "<b>%.2f</b>" % (r["m1"] * math.exp(r["s1"] ** 2 / 2))],
+               ["second lognormal function (%.0f %% of the tubes, width %.2f): median" % (100 * (1 - r["a1"]), r["s2"]), "%.2f" % r["m2"]],
+               ["whole pdf: peak (mode) of the digitised curve", "%.2f" % r["mode"]], ["whole pdf: median", "%.2f" % r["median"]], ["whole pdf: mean (raised by the second function)", "%.2f" % r["mean"]],
+               ["whole pdf: 10 % and 90 %", "%.2f and %.2f" % (r["q10"], r["q90"])], ["the page's row (the peak of the pdf quoted in the text, D ≈ 9 η, halved)", "4.5"]],
+              "The first lognormal function is the tube of the model: its mean and median are the r_max/η to compare with the model's 5. The page's row took the peak quoted in the text.")
+    tab.p(tab.guess("the table row uses the peak of the pdf quoted in the text (4.5), where the first lognormal function has a median of %.1f and a mean of %.1f" % (r["m1"], r["m1"] * math.exp(r["s1"] ** 2 / 2)),
+                    "the paper's text quotes only the peak of the diameter pdf; the first function comes from our fit of the digitised curve. The whole-pdf mean, %.1f, includes the broad second function and is not the radius of the model's tube" % r["mean"]))
 
 
 def tanahashi2004(book, f, after):
