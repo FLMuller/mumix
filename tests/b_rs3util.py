@@ -42,7 +42,7 @@ def put(path, text='x'):
 
 class b_rs3util(bench):
     BenchName = 'rs3util'
-    BenchVersion = 'M1.0.8'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.9'          # runbench adds 1 to the last number on every run
     BenchHeader = 'pathof (paths, patterns, ignore rules) and address (a page as an address)'
     sources = SOURCES
 

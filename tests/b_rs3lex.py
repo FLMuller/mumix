@@ -137,7 +137,7 @@ def compare(self, path, lines):
 
 class b_rs3lex(bench):
     BenchName = 'rs3lex'
-    BenchVersion = 'M1.1.11'        # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.1.12'        # runbench adds 1 to the last number on every run
     BenchHeader = 'the one lexer of rs3, against codelex and vclang'
     sources = SOURCES
 

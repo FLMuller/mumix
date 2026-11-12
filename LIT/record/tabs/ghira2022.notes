@@ -19,3 +19,12 @@
 {"code": "20261112T024724.540901-1de4cb", "file": "ghira2022", "line": 2, "text": "", "who": "flm", "ts": "2026-11-12T02:49:44"}
 {"code": "20261112T024727.616399-de1ed7", "file": "ghira2022", "line": 5, "text": "", "who": "flm", "ts": "2026-11-12T02:49:47"}
 {"code": "20261112T024920.620847-47ddfb", "file": "ghira2022", "line": 7, "text": "", "who": "flm", "ts": "2026-11-12T02:49:50"}
+{"code": "20261112T120906.111642-f766bd", "file": "ghira2022", "line": 19, "text": "value used column to", "who": "flm", "ts": "2026-11-12T12:09:06"}
+{"code": "20261112T120906.111642-f766bd", "file": "ghira2022", "line": 19, "text": "value used column too many digits", "who": "flm", "ts": "2026-11-12T12:09:09"}
+{"code": "20261112T121343.942023-cbad39", "file": "ghira2022", "line": 8, "text": "this rationale is weak. ", "who": "flm", "ts": "2026-11-12T12:13:43"}
+{"code": "20261112T121343.942023-cbad39", "file": "ghira2022", "line": 8, "text": "this rationale is weak. I though our ", "who": "flm", "ts": "2026-11-12T12:13:48"}
+{"code": "20261112T121343.942023-cbad39", "file": "ghira2022", "line": 8, "text": "this rationale is weak. I though our 0.6", "who": "flm", "ts": "2026-11-12T12:13:51"}
+{"code": "20261112T121343.942023-cbad39", "file": "ghira2022", "line": 8, "text": "this rationale is weak. I though our 0.6 came from the U", "who": "flm", "ts": "2026-11-12T12:13:54"}
+{"code": "20261112T121343.942023-cbad39", "file": "ghira2022", "line": 8, "text": "this rationale is weak. I though our 0.6 came from using the U", "who": "flm", "ts": "2026-11-12T12:14:25"}
+{"code": "20261112T121343.942023-cbad39", "file": "ghira2022", "line": 8, "text": "this rationale is weak. I though our 0.6 came from using the U reportedU", "who": "flm", "ts": "2026-11-12T12:14:28"}
+{"code": "20261112T121343.942023-cbad39", "file": "ghira2022", "line": 8, "text": "this rationale is weak. I though our 0.6 came from using the U reported", "who": "flm", "ts": "2026-11-12T12:14:30"}
