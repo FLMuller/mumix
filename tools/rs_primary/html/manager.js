@@ -230,14 +230,20 @@ var RS = (function(){
       var el = m.sel ? document.querySelector(m.sel) : null;
       if (el){ el.click(); reply = {re: m.id, ok: true}; } else reply.error = 'no element ' + m.sel;
     } else if (m.do === 'snap'){          // the geometry of what matches sel (the page when none): where things are, and how much each holds, and its background
-      var found = Array.prototype.slice.call(document.querySelectorAll(m.sel || 'body'), 0, 300).map(function(el){
+      var all = document.querySelectorAll(m.sel || 'body'), found = [], size = 0, LIMIT = 60000;      // as many as one message holds (the server takes 64 KB): the reply says how many matched
+      function one(el){
         var r = el.getBoundingClientRect();
         return {tag: el.tagName.toLowerCase(), id: el.id || '', cls: String(el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className || ''),
                 x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height),
                 client: [el.clientWidth, el.clientHeight], scroll: [el.scrollWidth, el.scrollHeight], top: Math.round(el.scrollTop),
                 shown: !!el.offsetParent || el === document.body, bg: window.getComputedStyle(el).backgroundColor};
-      });
-      reply = {re: m.id, ok: true, window: [window.innerWidth, window.innerHeight], found: found};
+      }
+      for (var i = 0; i < all.length; i++){
+        var item = one(all[i]), n = JSON.stringify(item).length + 1;
+        if (size + n > LIMIT) break;
+        found.push(item); size += n;
+      }
+      reply = {re: m.id, ok: true, window: [window.innerWidth, window.innerHeight], found: found, matched: all.length, truncated: found.length < all.length};
     } else reply.error = m.do + ' is not built into rs3 pages yet';
     send(reply);
   }

@@ -21,6 +21,7 @@ r"""rs3core.py -- the verbs about the server itself, run for reportserver.py.
               after the reply; every page is told {bye: 'stop'|'restart'} first. Only a program
               or the monitor page (/reportserver) may ask.
     snap      {do: 'snap', to, sel?}         -> what the page answers
+              snap answers {found: [one element each], matched, truncated}: as many elements as one message holds (about 60 KB of the 64 KB limit; it was 300 elements), `matched` is how many the selector found.
     trigger   {do: 'trigger', to, sel}       -> what the page answers
               `to` is a page's path; snap asks that page to post an SVG of itself and answer
               with its path; trigger asks it to press the button `sel`. The server only carries
