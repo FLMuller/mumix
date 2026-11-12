@@ -18,7 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ANALYSIS = os.path.join(os.path.dirname(HERE), "analysis")
 sys.path.insert(0, ANALYSIS)
 
-from recordbook import pdfcrop        # noqa: E402
+from recordbook import paper_line, pdfcrop        # noqa: E402
 
 __all__ = ["fill"]
 
@@ -126,6 +126,7 @@ def tanahashi2004(book, f, after):
     book.tabs.remove(tab)
     book.tabs.insert(book.tabs.index(after) + 1, tab)
     tab.h("1. The paper")
+    paper_line(tab, ["Tanahashi (2004).pdf"], ["Tanahashi, Kang, Miyamoto, Shiokawa and Miyauchi (2004)"])
     tab.p("<b>Tanahashi, Kang, Miyamoto, Shiokawa and Miyauchi (2004)</b>, Int. J. Heat and Fluid Flow 25, 331&ndash;340, doi 10.1016/j.ijheatfluidflow.2004.02.016. Whole tubes (all coherent fine-scale eddies, no threshold) in channel flow at "
           r"\(Re_\tau=180\), 400 and 800. This paper is <i>not</i> a row of the summary table (it has no \(Re_\lambda\)); we digitised its Fig. 5 as a second whole-tube size and swirl pdf.")
     tab.h("2. The simulation: Table 1 of the paper")

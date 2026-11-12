@@ -47,7 +47,7 @@ import time
 from rs3table import Pages
 from rs3util import pathof
 
-SHOWN = ('code', 'md', 'text', 'html')           # the kinds the tree shows
+SHOWN = ('code', 'md', 'text', 'html', 'pdf')     # the kinds the tree shows (a pdf is opened by the system's program: rs3microDB openfile)
 MAX_BYTES = 4 * 1024 * 1024                  # a source file longer than this is shown 'big' and not opened
 DEFAULTS = {'font': 'Consolas', 'size': 12, 'initials': 'user', 'linenos': True,
             'tabwidth': 4, 'wrap': False, 'color': '#e8650f'}

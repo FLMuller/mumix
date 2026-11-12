@@ -31,11 +31,14 @@ RS.pane('doc', function(ctx){
   var source = box.getAttribute('data-source') || '';                  // the ./ path of the html file this box shows (a file page), else ''
   aDOM.noteline = function(file, line){ ctx.emit('noteline', {file: String(file), line: +line, source: source}); };
   aDOM.noteselect = function(note){ ctx.emit('noteselect', {file: String(note.file), line: +note.line, code: String(note.code), text: String(note.text), who: String(note.who || ''), source: source}); };
-  aDOM.notes = function(file, fn){
-    ctx.verb('note_list', file === undefined ? {source: source} : {file: String(file), source: source}).then(function(r){ fn(r.ok ? r.notes : [], r.ok ? '' : (r.error || 'refused')); })
-       .catch(function(e){ fn([], e.message); });
+  aDOM.notes = function(file, fn){                                     // asked at page load: waits for the link to the server (ctx.whenLinked), as the blocks do
+    ctx.whenLinked(function(){
+      ctx.verb('note_list', file === undefined ? {source: source} : {file: String(file), source: source}).then(function(r){ fn(r.ok ? r.notes : [], r.ok ? '' : (r.error || 'refused')); })
+         .catch(function(e){ fn([], e.message); });
+    });
   };
   aDOM.onnotesaved = function(fn){ saved.push(fn); };
+  aDOM.openfile = function(path, doi){ return ctx.verb('openfile', doi ? {path: String(path), doi: String(doi)} : {path: String(path)}).then(function(r){ return r.ok ? '' : (r.error || 'refused'); }); };      // a pdf of the repository, by its ./ path, in the program of this machine
   // maths: a page that writes formulas as \( ... \) (inline) or $$ ... $$ (display) asks for them to be set: aDOM.typeset() loads MathJax (the one script, from cdnjs, the main
   // page's own) the first time, and sets the formulas of this box. A page that never calls it loads nothing.
   var MATHJAX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js';

@@ -61,6 +61,11 @@ RS.pane('ftv', function(ctx){
     if (!a) return;
     e.preventDefault();
     var path = a.dataset.p, want = a.dataset.k === 'html' ? 'tab' : sendto, at = marks[path];
+    if (a.dataset.k === 'pdf'){                                      // a pdf is not shown in a pane: the server opens it in the system's program for pdfs
+      ctx.verb('openfile', {path: path}).then(function(r){ if (!r.ok) ctx.emit('notice', {text: r.error || 'the pdf was not opened', bad: true}); })
+        .catch(function(err){ ctx.emit('notice', {text: err.message, bad: true}); });
+      return;
+    }
     var shown = !!(at && at.size && (!want || at.has(want)));       // a click on a file that is shown closes it
     ctx.emit('mngshowfile', {path: path, show: !shown, to: want === 'tab' ? 'tab' : want ? [want] : undefined});
   });

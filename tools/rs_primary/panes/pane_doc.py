@@ -33,9 +33,11 @@ Notes of a page that is an html file (rs3microDB, the .notes file beside it) are
 Maths: document.typeset() (aDOM.typeset) sets the formulas of the box, written \( ... \) or $$ ... $$, with MathJax (the main page's own script from cdnjs, loaded the first time).
 A page that does not call it loads nothing.
 Pictures: document.opentab(src) opens a data: image (base64) at full size in a browser tab of its own.
+Files: document.openfile('./path/x.pdf', doi?) asks the server (rs3microDB, openfile) to open that pdf of the repository in this machine's program for pdfs, or the doi in the browser when the file is not there; it returns a promise of '' or the reason.
 IN and OUT below are these names.
 
-VERSION  M2 m02.v08 (2026-11-12): the box of a doc that is a file carries data-source (the ./ path): the notes of a page with several files (toptabs sections) go to the file's own .notes.
+VERSION  M2 m02.v09 (2026-11-12): aDOM.openfile(path): a pdf of the repository by its ./ path.
+         M2 m02.v08 (2026-11-12): the box of a doc that is a file carries data-source (the ./ path): the notes of a page with several files (toptabs sections) go to the file's own .notes.
          M2 m02.v07 (2026-11-12): aDOM.opentab(src): a data: picture in a tab of its own.
          M2 m02.v06 (2026-11-12): aDOM.typeset: MathJax on request.
          M2 m02.v05 (2026-11-12): aDOM.notes, aDOM.noteline, aDOM.noteselect, aDOM.onnotesaved: a page's script talks to the page's editbox and to its .notes file (rs3microDB). Nothing else changed.

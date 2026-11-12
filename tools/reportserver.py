@@ -102,7 +102,7 @@ ORIGINS = (None, f'http://{HOST}:{PORT}', f'http://localhost:{PORT}')   # None: 
 SHAPES = {'ping': (), 'config': ('change',), 'tree': ('hash',), 'list': ('hash',),
           'open': ('hash', 'path', 'label'), 'check': ('hash', 'filename'),
           'methods': ('hash', 'path'), 'update': ('**',), 'insert': ('**',),   # ('**',): a dict
-          'note_add': ('**',), 'note_list': ('**',),
+          'note_add': ('**',), 'note_list': ('**',), 'openfile': ('**',),
           'load': ('layout', 'blocks', 'title', 'show', 'selftest'), 'view': ('path', 'show'),
           'hello': ('hash', 'path', 'url'), 'pulse': ('since',), 'status': (),
           'stop': (), 'restart': (), 'monitor': (),

@@ -122,7 +122,7 @@ class FakePage:
 
 class b_rs3(bench):
     BenchName = 'reportserver'
-    BenchVersion = 'M1.0.24'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.27'          # runbench adds 1 to the last number on every run
     BenchHeader = 'the third report server: pages of blocks, through contactRS, HTTP and a page'
     sources = SOURCES
 
@@ -770,7 +770,7 @@ class b_rs3(bench):
             got = page.ask({'do': 'tree', 'hash': page.hash})
             self.assertTrue(got['ok'], got)
             kinds = {f['k'] for f in got['files']}
-            self.assertLessEqual(kinds, {'code', 'md', 'text', 'html'})
+            self.assertLessEqual(kinds, {'code', 'md', 'text', 'html', 'pdf'})      # a pdf is listed since 2026-11-12 (a click opens it through rs3microDB openfile)
             self.assertTrue(all(f['p'].startswith('./') for f in got['files']))
             self.assertIn('./mumix/tools/reportserver.py', [f['p'] for f in got['files']])
         finally:

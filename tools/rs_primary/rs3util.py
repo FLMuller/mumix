@@ -85,7 +85,7 @@ SHOWN_DOT = {'.claude'}
 INCLUDE = ['result*']                       # folder names that the ignore rules (.gitignore, .ignore) never hide: reports are written there
 JUNK = ('.pyc', '.pyo', '.tmp')
 JUNK_NAMES = ('thumbs.db', 'desktop.ini', '.ds_store')
-KINDS = {'.html': 'html', '.htm': 'html', '.result': 'html', '.md': 'md', '.mu': 'md', '.txt': 'text'}
+KINDS = {'.html': 'html', '.htm': 'html', '.result': 'html', '.md': 'md', '.mu': 'md', '.txt': 'text', '.pdf': 'pdf'}
 KINDS.update({ext: 'code' for ext in ('.py .pyx .pxd .pxi .js .mjs .css .m .vba .vb .bas .cls .frm').split()})
 FLAGS = re.I if os.name == 'nt' else 0
 ROOTS = {}                                  # folder -> its root, found by walking up once

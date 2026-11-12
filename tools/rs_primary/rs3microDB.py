@@ -7,6 +7,7 @@ Verbs (websocket; each takes the page's hash, as every verb of rs3)
                earlier comment this one replaces it (the file is appended to, never rewritten: the last record of a code
                is the comment). An empty text removes the comment.
     note_list  {do: 'note_list', hash, file?}  -> {ok, notes: [{code, file, line, text, who, ts}]}
+    openfile   {do: 'openfile', hash, path, doi?}  -> {ok, via}   open a ./ path that ends in .pdf in the system's program for pdfs; if that file is not there, open the doi (https://doi.org/DOI) in the browser
                the comments now standing, oldest first; only those of `file` when it is given.
 
 Where it is written. A comment goes to ONE file: an html file the page was made from (its doc, or a section of its toptabs; the message names it as `source`, and the server
@@ -22,7 +23,8 @@ A record of a code with an empty text is a removal.
 Limits: a text of at most 30000 characters, a file name of at most 200, a line number of at most 10 million, a notes
 file of at most 8 MB (writing refuses after that).
 
-VERSION  M1 m01.v02 (2026-11-12): `source`: a page of several html files (toptabs sections) has a notes file for each, checked against the page's specification.
+VERSION  M1 m01.v03 (2026-11-12): openfile: a page opens a pdf of the repository in the system's pdf program.
+         M1 m01.v02 (2026-11-12): `source`: a page of several html files (toptabs sections) has a notes file for each, checked against the page's specification.
          M1 m01.v01 (2026-11-12): first version.
 """
 import hashlib
@@ -30,6 +32,7 @@ import json
 import os
 import re
 import time
+import webbrowser
 
 import rs3pages
 from rs3util import address, pathof
@@ -165,4 +168,28 @@ def note_list(msg, S):
     return {'ok': True, 'notes': notes}
 
 
-VERBS = {'note_add': note_add, 'note_list': note_list}
+DOI = re.compile(r'10\.\d{4,9}/[^\s<>"]{1,200}')
+
+
+def openfile(msg, S):
+    """From a page: open a pdf of the repository in the default program of this machine, or, when the pdf is not there, the paper's doi in the browser. {do: 'openfile', hash, path, doi?}:
+    path is a ./ path from the root (rs3util.pathof) that ends in .pdf and is a file inside the root of the page; nothing else is opened. The pdf opens with the program the system gives
+    .pdf (os.startfile): the report server runs on this machine. Without the file, and with a doi (10.xxxx/yyyy, nothing else), https://doi.org/DOI opens in the browser (webbrowser).
+    The answer is {ok, via: 'pdf' | 'doi'}."""
+    page, why = S['pages'].known(msg.get('hash'))
+    if page is None:
+        return refuse(why)
+    path, doi = msg.get('path'), msg.get('doi')
+    if not isinstance(path, str) or not path.startswith('./') or not path.lower().endswith('.pdf'):
+        return refuse('openfile opens a ./ path that ends in .pdf')
+    real = pathof(path)
+    if real is not None and os.path.isfile(real) and hasattr(os, 'startfile'):
+        os.startfile(real)
+        return {'ok': True, 'via': 'pdf'}
+    if isinstance(doi, str) and DOI.fullmatch(doi):
+        webbrowser.open('https://doi.org/' + doi)
+        return {'ok': True, 'via': 'doi'}
+    return refuse('no such pdf in the root of the server, and no doi to open instead')
+
+
+VERBS = {'note_add': note_add, 'note_list': note_list, 'openfile': openfile}

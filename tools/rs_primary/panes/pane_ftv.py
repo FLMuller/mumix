@@ -4,7 +4,7 @@ r"""pane_ftv.py -- the file tree: the text files of the page's root, as folders 
 
 The page is built with the list of files in it (the tree verb of rs3core): the tree "has been initialised by
 the server" and only responds to changes after that. A refresh button asks the server again.
-Only text kinds are listed: code, md, text, and html. A click on a bare file name announces
+Only these kinds are listed: code, md, text, html and pdf. A click on a pdf asks the server to open it in the system's program for pdfs (the verb openfile of rs3microDB). A click on a bare file name announces
 mngshowfile (show true); a click on a file that is shown announces it with show false. An html file is a
 page, so it goes to a new browser tab; other files go where the manager says (a container, else a code pane, else a
 tab) or to the block the `send to` toggle names (it shows when the page has more than one block that takes files; its

@@ -42,12 +42,36 @@ ANALYSIS = os.path.join(LIT, "analysis")
 PAGE = os.path.join(HERE, "comments.html")      # (the book is now one file for each tab, in tabs/)
 MAX_PAGE_BYTES = 7_500_000                      # the doc block takes at most 8 MB
 
-__all__ = ["Book", "pdfcrop", "plain", "build", "main"]
+__all__ = ["Book", "pdfcrop", "plain", "paper_line", "doi_of", "build", "main"]
 
 
 def plain(text):
     """The text of the page's tables and notes unchanged: its formulas (between backslash-paren pairs) are set by MathJax, as in the main page."""
     return text
+
+
+def doi_of(pdf):
+    """The first doi found on page 1 (else page 2) of LIT/<pdf>, or None."""
+    import pypdfium2
+    doc = pypdfium2.PdfDocument(os.path.join(LIT, pdf))
+    for number in range(min(2, len(doc))):
+        found = re.search(r"10\.\d{4,9}/[^\s,;\"<>)\]\u27e9]+", doc[number].get_textpage().get_text_range())
+        if found:
+            return found.group(0).rstrip(".")
+    return None
+
+
+def paper_line(tab, pdfs, labels=None):
+    """A line of the tab that leads to the papers: for each pdf of LIT/ the reference as a link that asks the server to open the pdf (and, if the file is not there, the doi), and the doi
+    as a link of its own. labels: the reference text of each pdf (default: the file name without .pdf)."""
+    parts = []
+    for number, pdf in enumerate(pdfs):
+        label = (labels[number] if labels and number < len(labels) else None) or pdf[:-4]
+        doi = doi_of(pdf)
+        parts.append("<a class=\"plink\" onclick=\"openpaper('%s', '%s')\" title=\"opens the pdf (./mumix/LIT/%s) through the server; the doi if the pdf is not found\">%s</a>%s" % (
+            "./mumix/LIT/" + pdf, doi or "", html.escape(pdf, quote=True), label,
+            " (<a href=\"https://doi.org/%s\" target=\"_blank\">doi:%s</a>)" % (doi, doi) if doi else " (no doi found on the first pages of the pdf)"))
+    return tab.p("The paper: " + "<br>".join(parts))
 
 
 def pdfcrop(pdf, page, box=(0, 0, 1, 1), scale=3.0):
@@ -112,7 +136,7 @@ class Tab:
         return "<span class=\"guess\" id=\"%s\">[GUESS: %s &mdash; because %s]</span>" % (gid, what, why)
 
     def html(me, with_summary=False, all_tabs=None):
-        out = ["<div class=\"rpanel\" id=\"p-%s\">" % me.id]
+        out = ["<div class=\"rpanel\" id=\"p-%s\"><div id=\"nterr\" class=\"nterr\"></div>" % me.id]
         if me.guesses:
             out.append("<div class=\"gindex\"><b>Guesses in this tab (%d)</b>: %s</div>" % (len(me.guesses), " ".join(
                 "<a class=\"glink\" onclick=\"jump('%s')\">%d</a>" % (gid, k) for k, (gid, what, why) in enumerate(me.guesses, 1))))
@@ -161,6 +185,9 @@ table.dt{border-collapse:collapse;font-size:11px}
 table.dt th,table.dt td{border:1px solid #ccc;padding:2px 5px;text-align:left;vertical-align:top}
 table.dt th{background:#eee}
 .nt{margin-left:48px}
+.nterr{color:#c00;font-size:12px}
+.path{font-family:Consolas,monospace;font-size:11px;color:#555}
+.plink{color:#06c;cursor:pointer;text-decoration:underline}
 .note{border-left:3px solid #06c;margin:2px 0 4px 0;padding:2px 8px;font-size:12px;color:#134;cursor:pointer;white-space:pre-wrap;background:#eef5ff}
 .note .who{color:#06c;font-weight:bold;margin-right:6px}
 """
@@ -172,6 +199,10 @@ function pick(el, e){
   for (i = 0; i < old.length; i++) old[i].classList.remove('sel');
   el.classList.add('sel');
   document.noteline(el.getAttribute('data-file'), el.getAttribute('data-line'));
+}
+function openpaper(path, doi){
+  if (!document.openfile){ return; }
+  document.openfile(path, doi).then(function(why){ var box = document.getElementById('nterr'); if (box) box.textContent = why ? 'the pdf was not opened: ' + why : ''; });
 }
 function jump(id){
   var el = document.getElementById(id);
@@ -194,7 +225,14 @@ function showNotes(list){
     if (box) addNote(box, list[k]);
   }
 }
-function reload(){ document.notes(TAB, function(list, err){ if (!err) showNotes(list); }); }
+function reload(){
+  document.notes(TAB, function(list, err){
+    var box = document.getElementById('nterr');
+    if (err){ if (box){ box.textContent = 'the notes of this tab could not be read: ' + err; } return; }
+    if (box) box.textContent = '';
+    showNotes(list);
+  });
+}
 document.addEventListener('DOMContentLoaded', function(){
   reload();
   if (document.typeset) document.typeset();         // the formulas (the report server loads MathJax for the box)

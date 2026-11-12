@@ -94,7 +94,7 @@ REFUSED_SCRIPTS = {                  # script: a word the message holds
 
 class b_rs3jsguard(bench):
     BenchName = 'rs3jsguard'
-    BenchVersion = 'M1.0.9'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.12'          # runbench adds 1 to the last number on every run
     BenchHeader = 'what a script of a doc block may say, and what is tried and refused'
     sources = SOURCES
 
