@@ -58,3 +58,20 @@ These change numbers or statements of the page. They are NOT applied to the page
 7. Sources whose page cut-outs the program could not find (caption not in the text layer): Jimenez et al. (1993) Table 3, Da Silva et al. (2011) Table 1, Kida et al. (2002) Tables 1 and 2, Sassa and Makita (2005) Table 1. Their tabs say so in red.
 
 The report server was changed in mumix/tools for the book (rs3microDB, edit box type note, doc block typeset/opentab/notes) and snap now answers by bytes (60 KB of 64 KB) instead of 300 elements; see LIT/record/README.md.
+
+## Review and rebuild of 2026-11-12 (Fable): what changed
+
+Applied (unlike the list above, these ARE in the data, the book and the paper):
+- Every source re-read from rendered page images (LIT/record/review_notes.md). The numbers typed earlier match the pages; the changes are in interpretation.
+- Data (analysis/sourcedata.py, fittingtool/data/tubes.csv, corrections.json): Tanahashi 2001 at Re_lambda 80 (was 200); Ghira 2025 swirl of the two Re 54 runs and nu, eps of the second; Jimenez 1993 circulation (Table 3); Sassa 2005 swirl read from Fig. 8(b) (shown, not fitted); Da Silva 2011 swirl shown, not fitted (its Table 1 prints 9.0 and 7.15 u_eta, its u0/u' gives 3.6 and 4.2); Ghira 2025 given the same swirl factor 0.6 as Ghira 2022. Snapshots of the previous state: zprev/*_v47.*.
+- Model selection (fittingtool/modelselect.py): leave-one-source-out error, AICc, BIC, in place of 'within 25 % of the best'. With the corrections as decided: L1 (r = 5, U = a + b ln Re) 9.0 %, D6 (r = 5, U = c Re^(1/3), c = 0.769) 10.4 %, no evidence between them (dAICc 0.7); D6 kept (one parameter). Nothing with 3-4 parameters predicts better.
+- Two-population reading (no swirl correction): intense tubes U = 1.29 Re^0.32 (Ghira + Mouri 2007 at 0.1 %, rms 12 %); all tubes U = 2.00 Re^0.13 with a fitted chord factor 1.84 for Mouri and Hori (Kida + Mouri-Hori, rms 1.3 %). Reproduces Kida's volume fraction (0.35, 0.29 against 0.35, 0.31 measured).
+- Recording book (LIT/record): tabs Corrections and Data to model; every paper tab: 1 the paper, 2 Data consolidation (value in the paper -> correction -> value used -> fitted / shown / not used, with the reason), 3 the evidence (page cut-outs and what was read), 4 numbers, 5 conversions, 6 row of the table.
+- Paper: analysis/build_paper.py writes vortex-energy-balance.html in journal form (abstract, introduction, theory sections 2-8 unchanged from v47, 9 data and corrections with their review, 10 model selection, 11 model I, 12 model II, 13 CFD closure and the delay of the cascade, 14 limits, 15 conclusions). The scripts build_intro_sections.py, build_data_sections.main and build_fit_sections.py are no longer the build of the page.
+
+Open, for the user to decide:
+1. Model I (the corrections x 3 and x 0.6, one law) against model II (two populations, one chord factor). The paper keeps I as the reference and recommends II for a micromixing closure.
+2. Which statistic of the radius pdf the closure should use: the peak (5 eta, used) or the mean (7-8 eta).
+3. Kida's core boundary (pressure inflection, 0.66 r_max for a Burgers vortex) is used as r_max for the radius and as 0.6 r_max for the swirl: inconsistent, kept.
+4. The lag constant C_c of section 13 is not calibrated.
+5. The new references of the paper (Pearson, Yoffe, Goto, Vassilicos, Hanjalic, Schiestel, Lumley, Fox, Baldyga 1989, Burnham) were not checked against copies; Lumley (1992) is listed but not cited in the text.
