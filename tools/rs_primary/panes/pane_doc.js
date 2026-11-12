@@ -25,6 +25,16 @@ RS.pane('doc', function(ctx){
     else box.addEventListener(type, fn);
   };
   aDOM.removeEventListener = function(type, fn){ box.removeEventListener(type, fn); };
+  // the notes of a page that is an html file (rs3microDB): a page asks for its notes, says which line or note the user clicked (the editbox of the page
+  // takes it), and hears when a note was written
+  var saved = [];
+  aDOM.noteline = function(file, line){ ctx.emit('noteline', {file: String(file), line: +line}); };
+  aDOM.noteselect = function(note){ ctx.emit('noteselect', {file: String(note.file), line: +note.line, code: String(note.code), text: String(note.text), who: String(note.who || '')}); };
+  aDOM.notes = function(file, fn){
+    ctx.verb('note_list', file === undefined ? {} : {file: String(file)}).then(function(r){ fn(r.ok ? r.notes : [], r.ok ? '' : (r.error || 'refused')); })
+       .catch(function(e){ fn([], e.message); });
+  };
+  aDOM.onnotesaved = function(fn){ saved.push(fn); };
   aDOM.on = function(types, list){       // the inline handlers: one listener of the box for each kind, finding the element
     types.forEach(function(type){
       var attr = 'data-aon-' + type;
@@ -155,6 +165,7 @@ RS.pane('doc', function(ctx){
       mark(d.text);
       show(0);
     },
+    onNotesaved: function(d){ saved.forEach(function(fn){ try { fn(d); } catch (e) { console.error('rs3 doc:', e); } }); },
     onSearchnext: function(d){ if (d.mode === 'text') show(at + 1); },
     onSearchprev: function(d){ if (d.mode === 'text') show(at - 1); },
     onSearchhome: function(d){ if (d.mode === 'text' && home !== null) cell.scrollTop = home; }

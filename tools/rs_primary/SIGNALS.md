@@ -32,13 +32,13 @@ the editbox forgets a comment. methods follows the last `showcode` on and goes b
 | code | `showcode {path, loc, on}`, `linenoClicked {lineno}`, `commentline {path, base, line}`, `commentselect {path, base, first, last, tag, text}`, `searchcount {index, total}` | `onShowfile {path, show}`, `onSelectfunk {lineno}`, `onShowmethods {path, ranges, focus}` (fold the file to those lines, or grey the rest), `onSaved`, `onSearchtext`/`onSearchnext`/`onSearchprev` (mode text) |
 | toptabs | `mngshowfile` (the files its page was made with), and its code panes' (`showcode`, `linenoClicked`, `commentline`, `commentselect`, `searchcount`) as this block | `onShowfile`, and the code ones (`selectfunk`, `showmethods`, `saved`, search), handed to the tab shown |
 | methods | `selectfunk {lineno, to}`, `showmethods {path, ranges, focus, to}` (the lines of the methods it shows or has picked, only while a filter is on or two rows are picked; `focus`: a double click), `showpane {block, on}` | `onShowcode`, `onLinenoClicked`, `onSaved`, `onSearchtext` (mode names) |
-| editbox | `saved {path}`, `notice {text, bad}` | `onCommentline`, `onCommentselect`, `onShowcode` (off: forget the comment of that file), `onWithconfig` |
+| editbox | `saved {path}`, `notesaved {file, line, code}`, `notice {text, bad}` | `onCommentline`, `onCommentselect`, `onNoteline {file, line}`, `onNoteselect {file, line, code, text, who}` (type note: the notes of an html page, rs3microDB), `onShowcode` (off: forget the comment of that file), `onWithconfig` |
 | options | `withlineno {on}`, `withwrap {on}`, `showpane {block, on}` | none |
 | statusbar | `searchtext {text, mode}`, `searchnext {mode}`, `searchprev {mode}`, `searchhome {mode}` (the star: back to where the view was before the search), `withlineno {on}`, `withwrap {on}`, `withconfig` | `onSearchcount`, `onStatus`, `onBusy {on}`, `onNotice {text, bad}` |
 | search | `searchtext {text, mode}`, `searchnext {mode}`, `searchprev {mode}` | `onSearchcount` |
 | serverstatus | none | `onStatus` |
 | log | none | `onLog {rows\|reset}`, `onSearchtext` (mode log) |
-| doc | `searchcount {index, total}` | `onSearchtext`/`onSearchnext`/`onSearchprev`/`onSearchhome` (mode text) |
+| doc | `searchcount {index, total}`, `noteline {file, line}`, `noteselect {file, line, code, text, who}` (a page's script: `document.noteline`, `document.noteselect`) | `onSearchtext`/`onSearchnext`/`onSearchprev`/`onSearchhome` (mode text), `onNotesaved {file, line, code}` |
 
 ## Signals added while building (not in the design talk)
 `commentline`, `commentselect` (code to editbox: which lines the user clicked), `saved` (editbox to

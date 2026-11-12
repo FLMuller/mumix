@@ -82,7 +82,7 @@ LOGS = os.path.join(FOLDER, 'logs')
 LOG_FILE = os.path.join(LOGS, 'rs3.log')
 PID_FILE = os.path.join(FOLDER, 'rs3.pid')
 CONFIG_FILE = os.path.join(FOLDER, 'rs3.config')
-HANDLERS = ('rs3core', 'rs3pages', 'rs3comment')   # hard-wired: no list on disk
+HANDLERS = ('rs3core', 'rs3pages', 'rs3comment', 'rs3microDB')   # hard-wired: no list on disk
 GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 MAX_MSG = 65536                     # bytes of one message to the server (a question is short)
 MAX_HEAD = 8192                     # bytes of the handshake
@@ -102,6 +102,7 @@ ORIGINS = (None, f'http://{HOST}:{PORT}', f'http://localhost:{PORT}')   # None: 
 SHAPES = {'ping': (), 'config': ('change',), 'tree': ('hash',), 'list': ('hash',),
           'open': ('hash', 'path', 'label'), 'check': ('hash', 'filename'),
           'methods': ('hash', 'path'), 'update': ('**',), 'insert': ('**',),   # ('**',): a dict
+          'note_add': ('**',), 'note_list': ('**',),
           'load': ('layout', 'blocks', 'title', 'show', 'selftest'), 'view': ('path', 'show'),
           'hello': ('hash', 'path', 'url'), 'pulse': ('since',), 'status': (),
           'stop': (), 'restart': (), 'monitor': (),

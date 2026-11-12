@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>test book</title>
+<style>.ln{padding:2px 6px;cursor:pointer}.ln:hover{background:#fde}.nt{margin-left:30px;color:#06c;font-size:12px}</style></head>
+<body><button id="reload" onclick="reload()">reload</button><div id="lines">
+<div class="ln" data-file="t1" data-line="1" onclick="pick(this)">line one</div><div class="nt" id="n-t1-1"></div>
+<div class="ln" data-file="t1" data-line="2" onclick="pick(this)">line two</div><div class="nt" id="n-t1-2"></div>
+</div>
+<script>
+function pick(el){ document.noteline(el.getAttribute('data-file'), el.getAttribute('data-line')); }
+function show(list){
+  var spans = document.querySelectorAll('.nt'), i, k;
+  for (i = 0; i < spans.length; i++) spans[i].textContent = '';
+  for (k = 0; k < list.length; k++){
+    var t = document.getElementById('n-' + list[k].file + '-' + list[k].line);
+    if (t) t.textContent = t.textContent + '[' + list[k].code + '] ' + list[k].text + '  ';
+  }
+}
+function reload(){ document.notes(undefined, function(list, err){ if (err) document.getElementById('lines').setAttribute('title', err); show(list); }); }
+document.addEventListener('DOMContentLoaded', reload);
+document.onnotesaved(reload);
+</script></body></html>

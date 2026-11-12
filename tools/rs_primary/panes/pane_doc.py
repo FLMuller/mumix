@@ -23,10 +23,17 @@ Signals
     receives  onSearchtext {text, mode}  mode 'text': every place the text occurs in the box is marked, and the first is shown
               onSearchnext {mode}, onSearchprev {mode}   step through the marks (the status bar's down and up)
               onSearchhome {mode}        back to where the box was scrolled before the search (the status bar's star)
+              onNotesaved {file, line, code}   a note of the page was written (by the editbox): aDOM.onnotesaved listeners run
     emits     searchcount {index, total}   the count of the marks, for the status bar
+              noteline {file, line}, noteselect {file, line, code, text, who}   a page's script says which line or note was clicked
+                                           (aDOM.noteline, aDOM.noteselect); the editbox of the page takes it (type note)
+Notes of a page that is an html file (rs3microDB, the .notes file beside it) are the script's through aDOM:
+    aDOM.notes(file, fn)    fn(notes, error): the notes standing of `file` (all when file is undefined), notes [{code, file, line, text, who, ts}]
+    aDOM.noteline(file, line), aDOM.noteselect(note), aDOM.onnotesaved(fn)
 IN and OUT below are these names.
 
-VERSION  M2 m02.v04 (2026-11-06): the large surfaces of a page have the tools' background: a background on anything but a mark (a small tag (not a table cell), a mark class or data-mark, a b-ROLE row, a state or stripe, a pseudo-element) is taken out of the css and the inline styles at load, and the box takes none (so v03's background is no more). A layout is measured by pane_doc.js (fit), not marked.
+VERSION  M2 m02.v05 (2026-11-12): aDOM.notes, aDOM.noteline, aDOM.noteselect, aDOM.onnotesaved: a page's script talks to the page's editbox and to its .notes file (rs3microDB). Nothing else changed.
+         M2 m02.v04 (2026-11-06): the large surfaces of a page have the tools' background: a background on anything but a mark (a small tag (not a table cell), a mark class or data-mark, a b-ROLE row, a state or stripe, a pseudo-element) is taken out of the css and the inline styles at load, and the box takes none (so v03's background is no more). A layout is measured by pane_doc.js (fit), not marked.
          M2 m02.v03 (2026-11-06): the box's size and place are the layout's: a page's rule on html, body or :root keeps only type, colour, background and padding (a margin becomes padding); bare outer <div>s are unwrapped.
          M2 m02.v02 (2026-11-06): a layout of blocks that a page's html holds (<div class="rslayout">, made by rs3pages.unfold) is not the doc's own: its text is not searched, its tables get no star, aDOM does not look into it.
          M2 m02.v01 (2026-11-04): every table of the box that has a header row and no sort of its own gets the star and the hamburger (RS.table).
@@ -46,8 +53,8 @@ from rs3util import asset, done, pathof, split_package
 
 __all__ = ['write']
 
-IN = ['searchtext', 'searchnext', 'searchprev', 'searchhome']
-OUT = ['searchcount']
+IN = ['searchtext', 'searchnext', 'searchprev', 'searchhome', 'notesaved']
+OUT = ['searchcount', 'noteline', 'noteselect']
 
 MAX_PAGE = 8 * 1024 * 1024
 BODY = re.compile(r'<body[^>]*>(.*)</body\s*>', re.S | re.I)
