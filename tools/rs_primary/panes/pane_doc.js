@@ -41,15 +41,27 @@ RS.pane('doc', function(ctx){
   aDOM.openfile = function(path, doi){ return ctx.verb('openfile', doi ? {path: String(path), doi: String(doi)} : {path: String(path)}).then(function(r){ return r.ok ? '' : (r.error || 'refused'); }); };      // a pdf of the repository, by its ./ path, in the program of this machine
   // maths: a page that writes formulas as \( ... \) (inline) or $$ ... $$ (display) asks for them to be set: aDOM.typeset() loads MathJax (the one script, from cdnjs, the main
   // page's own) the first time, and sets the formulas of this box. A page that never calls it loads nothing.
-  var MATHJAX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js';
+  var MATHJAX_ROOT = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5', MATHJAX_URL = MATHJAX_ROOT + '/tex-svg.js';
   function typeset(){
     if (!box.offsetParent){ window.setTimeout(typeset, 400); return; }        // a box that is not shown (a tab behind) is set when it is: MathJax measures the text it sets in
-    if (window.MathJax && window.MathJax.typesetPromise){ window.MathJax.typesetPromise([box]).catch(function(e){ console.error('rs3 doc: mathjax:', e); }); return; }
-    if (!window.MathJax) window.MathJax = {tex: {inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']]}, svg: {fontCache: 'global'}, startup: {typeset: false}};
-    if (document.getElementById('rs3mathjax')) { window.setTimeout(typeset, 300); return; }         // loading: try again
-    var s = document.createElement('script');
-    s.id = 'rs3mathjax'; s.src = MATHJAX_URL; s.async = true; s.onload = function(){ window.setTimeout(typeset, 50); };
-    document.head.appendChild(s);
+    var MJ = window.MathJax;
+    if (MJ && MJ.typesetPromise && MJ.startup && MJ.startup.promise){
+      // one typeset at a time, for every box of the page: two that run together lose formulas (MathJax writes a document back to front)
+      window.rs3mathChain = (window.rs3mathChain || MJ.startup.promise).then(function(){ return window.MathJax.typesetPromise([box]); })
+                                                                        .catch(function(e){ console.error('rs3 doc: mathjax:', e); });
+      return;
+    }
+    // the first call loads MathJax. Its own folder is named (a script added by a script cannot find it), so the extensions it loads on demand are found, and
+    // boldsymbol, which the pages use, is loaded at the start
+    if (!MJ) window.MathJax = {loader: {paths: {mathjax: MATHJAX_ROOT}, load: ['[tex]/boldsymbol']},
+                               tex: {inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']], packages: {'[+]': ['boldsymbol']}},
+                               svg: {fontCache: 'global'}, startup: {typeset: false}};
+    if (!document.getElementById('rs3mathjax')){
+      var s = document.createElement('script');
+      s.id = 'rs3mathjax'; s.src = MATHJAX_URL; s.async = true;
+      document.head.appendChild(s);
+    }
+    window.setTimeout(typeset, 250);                                          // again when it has loaded
   }
   aDOM.typeset = typeset;
   // a picture of the page (a data: image) in a browser tab of its own at full size: a data: address cannot be opened as a page, so it is made a blob first

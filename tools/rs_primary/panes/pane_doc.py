@@ -36,7 +36,8 @@ Pictures: document.opentab(src) opens a data: image (base64) at full size in a b
 Files: document.openfile('./path/x.pdf', doi?) asks the server (rs3microDB, openfile) to open that pdf of the repository in this machine's program for pdfs, or the doi in the browser when the file is not there; it returns a promise of '' or the reason.
 IN and OUT below are these names.
 
-VERSION  M2 m02.v09 (2026-11-12): aDOM.openfile(path): a pdf of the repository by its ./ path.
+VERSION  M2 m02.v10 (2026-11-12): typeset: one at a time for the whole page, MathJax's folder named and boldsymbol loaded at the start (formulas were lost and \boldsymbol was left undefined).
+         M2 m02.v09 (2026-11-12): aDOM.openfile(path): a pdf of the repository by its ./ path.
          M2 m02.v08 (2026-11-12): the box of a doc that is a file carries data-source (the ./ path): the notes of a page with several files (toptabs sections) go to the file's own .notes.
          M2 m02.v07 (2026-11-12): aDOM.opentab(src): a data: picture in a tab of its own.
          M2 m02.v06 (2026-11-12): aDOM.typeset: MathJax on request.

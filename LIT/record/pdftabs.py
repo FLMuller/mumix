@@ -63,6 +63,7 @@ def fit_block(tab, fit, what, unit, tiny=""):
 
 def digitised_table(tab, csv, cols, every=12, caption=""):
     d = np.genfromtxt(os.path.join(ANALYSIS, csv), delimiter=",", names=True)
+    d = d[np.isfinite(d[cols[0]]) & np.isfinite(d[cols[3]])]              # the two curves of a file differ in length: the shorter is padded with nan
     idx = list(range(0, len(d), every))
     rows = [["%.3g" % d[cols[0]][i], "%.3g" % d[cols[1]][i], "%.3g" % d[cols[2]][i], "%.3g" % d[cols[3]][i]] for i in idx]
     tab.table([cols[0], cols[1], cols[2], cols[3] + " = (top+bottom)/2"], rows, "%s (every %dth of %d points; the whole file is %s)" % (caption, every, len(d), csv))
