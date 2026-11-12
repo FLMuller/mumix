@@ -1,0 +1,39 @@
+/* page.css  the style of a fitting report: one self-contained document, a tab bar and a panel for each tab.
+   The class names (btab, bpanel, on, bad, data-go) are those of the runbench reports, so that the report server treats a fitting report
+   like a bench report; nothing here needs the server. */
+:root{color-scheme:light dark;--ink:#1d2733;--muted:#5b6770;--rule:#d5dbe0;--page:#fff;--band:#f3f5f7;--accent:#c25400;--tab:#fdebd0;--tabon:#e67e22;--flag:#fff4d6}
+@media (prefers-color-scheme:dark){:root{--ink:#e6e9ec;--muted:#9aa5ae;--rule:#3a444d;--page:#14181c;--band:#1c2228;--accent:#f0a060;--tab:#3a2a18;--tabon:#c25400;--flag:#3b3317}}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.5 "Segoe UI",Calibri,Arial,sans-serif}
+main{max-width:1240px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:1.45rem;margin:0 0 4px}h2{font-size:1.1rem;margin:22px 0 6px;border-bottom:1px solid var(--rule);padding-bottom:3px}h3{font-size:1rem;margin:16px 0 4px}
+p.sub{color:var(--muted);margin:0 0 8px}
+.bbar{display:flex;flex-wrap:wrap;gap:4px;border-bottom:2px solid var(--tabon);margin:10px 0}
+.btab{font:inherit;font-size:12px;font-weight:bold;padding:4px 12px;border:1px solid #e0a878;border-radius:8px 8px 0 0;background:var(--tab);color:var(--accent);cursor:pointer}
+.btab.on{background:var(--tabon);border-color:#b34700;color:#fff}
+.btab.bad{background:#f4c7c0;border-color:#c0392b;color:#8e2a20}
+.bpanel[hidden]{display:none}
+table.grid{border-collapse:collapse;margin:6px 0 12px;font-size:12.5px}
+table.grid th,table.grid td{border:1px solid var(--rule);padding:3px 8px;text-align:right;white-space:nowrap}
+table.grid th{background:var(--band);cursor:pointer;position:sticky;top:0}
+table.grid td.l,table.grid th.l{text-align:left}
+table.grid tr.sel td{background:var(--flag);font-weight:bold}
+table.grid tr.info td{color:var(--muted)}
+.tablebox{overflow-x:auto;max-width:100%}
+code,pre{font:12.5px Consolas,monospace;background:var(--band);padding:1px 4px;border-radius:3px}
+pre{padding:8px 10px;overflow-x:auto}
+.eq{font:13px Consolas,monospace;padding:6px 10px;background:var(--band);border-left:3px solid var(--tabon);margin:6px 0}
+.note{color:var(--muted);font-size:12.5px}
+.cards{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+.card{border:1px solid var(--rule);border-radius:6px;padding:6px 12px;background:var(--band)}
+.card b{display:block;font-size:1.15rem}
+figure{margin:8px 0;border:1px solid var(--rule);border-radius:6px;padding:6px;background:#fff;color:#1d2733;overflow-x:auto}
+figure svg{max-width:100%;height:auto}
+figure.zoomable{overflow-x:auto}
+figure.zoomable svg{max-width:none}
+.zoombar{display:flex;align-items:center;gap:.6em;font-size:.85em;margin:.2em 0}
+.zoombar input{width:16em}
+figcaption{font-size:12px;color:#444;padding:2px 4px}
+.ftv ul{list-style:none;padding-left:18px;margin:2px 0}
+.ftv summary{cursor:pointer;font-weight:bold}
+.ftv li{margin:1px 0}
+.ftv .meta{color:var(--muted);font-size:12px}

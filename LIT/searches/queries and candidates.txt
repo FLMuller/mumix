@@ -1,0 +1,121 @@
+Scopus searches for the vortex-tube model (LIT/vortex-energy-balance.html)
+=========================================================================
+
+Files in this folder are the unmodified Scopus exports; the original files are still in Downloads.
+Which export belongs to which query is inferred from the time of export, the record count and the content
+(marked "inferred"). Only the 2026-11-09 2326 file records its own query.
+
+1. 2026-11-09 2326  refine values
+   Query: TITLE-ABS-KEY ( DNS Vortex dissipation rate )          (about 110 hits; facets only, no records)
+
+2. 2026-11-09 2330  first export, 23 records (1992-2025)
+   Query not recorded (earlier session). Contains Jimenez et al. 1993, Jimenez and Wray 1998, Tanahashi 2001,
+   Farge 2003, Ghira 2022 and 2025.
+
+3. 2026-11-10 0223  12 records (2023-2025)  - inferred: query 2 below
+   REF(Ghira 2022) AND REF(Jimenez 1993) AND ( REF(Tanahashi) OR REF(Kida Goto "low-pressure vortex")
+   OR REF(Moisy Jimenez 2004) OR REF(Mouri Hori "vortex tubes") )
+
+4. 2026-11-10 0224  4 records (1990-2017)  - inferred: the micromixing query
+   REF(Baldyga Bourne 1984 micromixing) AND ( REF(Jimenez 1993) OR REF(Moffatt Kida Ohkitani 1994)
+   OR REF(Ghira 2022) OR REF(Burgers 1948) )
+
+5. 2026-11-10 0953  topic query, 51 records (1994-2026)  - inferred
+   TITLE-ABS-KEY ( ( "vortex tube*" OR "vortex filament*" OR worm OR worms OR "intense vorticity structure*"
+                     OR "coherent fine scale eddies" OR "tubular vortices" OR "vortex core*" )
+     AND ( radius OR diameter OR circulation OR "azimuthal velocity" OR "tangential velocity" OR "induced velocity" )
+     AND ( Kolmogorov OR "Taylor microscale" OR "Reynolds number" )
+     AND ( "direct numerical simulation" OR DNS ) )
+   AND DOCTYPE ( ar ) AND SUBJAREA ( PHYS OR ENGI )
+
+6. 2026-11-10 0954  authors plus topic, 374 records (1999-2026)  - inferred (the author list matched the most)
+   ( AUTH(Pirozzoli) OR AUTH(Mouri) OR AUTH(Ishihara) OR AUTH(Goto) OR AUTH(Vincent) OR AUTH(Meneguzzi)
+     OR AUTH("da Silva") OR AUTH(Horiuti) OR AUTH(Kang) OR AUTH(Miyauchi) )
+   AND TITLE-ABS-KEY ( vortex OR vorticity ) AND TITLE-ABS-KEY ( turbulence ) AND PUBYEAR > 1998
+   Note: AUTH(Ishihara) also returns wind-engineering and vibration papers; filter by title.
+
+7. 2026-11-10 0955  cited-by, 49 records (2005-2026)  - inferred
+   REF ( Jimenez AND Wray AND 1998 AND "vortex filaments" ) AND REF ( Jimenez AND 1993 AND "intense vorticity" )
+   AND TITLE-ABS-KEY ( radius OR circulation OR diameter OR "Reynolds number" ) AND PUBYEAR > 2004
+
+The exports hold abstracts but no reference lists, so "cites which of our references" cannot be checked from them.
+
+
+Candidate papers found in files 5-7 (read from the abstracts only; DOIs as exported by Scopus)
+------------------------------------------------------------------------------------------
+Quantitative tube data by Re_lambda or flow (to read in full):
+
+Mouri, Hori and Kawashima (2003) Phys. Rev. E 67, 016305. Grid turbulence, Re_lambda about 110-330.
+Mouri, Hori and Kawashima (2004) Phys. Rev. E 70, 066305. DOI 10.1103/PhysRevE.70.066305. Boundary layers, Re_lambda 300-1300.
+Mouri, Hori and Kawashima (2007) Phys. Fluids 19, 055101. DOI 10.1063/1.2720827. Intense tubes and sheets, Re_lambda 332-1934
+   (Table 2 of this paper holds the intense-tube R0, V0, Re0 that Mouri and Hori 2009 refer to).
+Mouri and Hori (2009) Fluid Dyn. Res. 41, 021402. DOI 10.1088/0169-5983/41/2/021402. This is the published version of
+   the preprint saved as "Mouri (2009).pdf" (arXiv 0801.2276); the page's reference still shows it as a preprint.
+Da Silva, Dos Reis and Pereira (2011) J. Fluid Mech. 685, 165. DOI 10.1017/jfm.2011.296. Plane jet DNS: mean radius
+   R/eta about 4.6, u_theta/u' about 0.8 and Re_Gamma/Re_lambda^(1/2) about 28 deep inside the jet; Burgers vortex described well.
+Das, Tanahashi, Shoji and Miyauchi (2006) Theor. Comput. Fluid Dyn. 20, 55. DOI 10.1007/s00162-006-0008-z. Channel DNS:
+   diameter about 10-12 eta, maximum azimuthal velocity 0.5-0.6 u'_rms, profile follows Burgers vortex, circulation power law.
+Miyauchi, Kang and Tanahashi (2006) Fluid Mech. Appl. 79, 71. DOI 10.1007/1-4020-4181-0_7. Channel DNS up to Re_tau 1270:
+   diameter about 10 eta (near wall) and 8.5 eta (log region), maximum azimuthal velocity 2.0 and 1.7 u_K, independent of Re_tau.
+Wang, Tanahashi and Miyauchi (2007) Int. J. Heat Fluid Flow 28, 1280. DOI 10.1016/j.ijheatfluidflow.2007.06.009. Mixing layer
+   DNS (Re_omega0 = 700): diameter about 8 eta, maximum azimuthal velocity 2.0 u_K falling to 1.2 u_K.
+Tanahashi, Das, Shoji and Miyauchi (1999) Trans. JSME B 65, 3244. DOI 10.1299/kikaib.65.3244. Channel: diameter about 10 eta.
+Ishihara, Hunt and Kaneda (2011) J. Phys. Conf. Ser. 318, 042004. DOI 10.1088/1742-6596/318/4/042004. DNS at Re_lambda = 1131:
+   strong vortex tubes of diameter about 10 eta in thin shear layers.
+Ishihara, Kaneda and Hunt (2013) Flow Turb. Combust. 91, 895. DOI 10.1007/s10494-013-9499-z. Re_lambda up to 1131: vortical
+   eddies of thickness about 10 eta with peak vorticity up to 35 omega_rms and velocity jumps up to 3.4 u_0.
+Pirozzoli (2009) Theor. Comput. Fluid Dyn. 23, 55. DOI 10.1007/s00162-009-0092-y, and Pirozzoli (2012) Physica D 241, 202.
+   DOI 10.1016/j.physd.2011.03.005. DNS at various Re_lambda: induced velocity, dissipation signature of tubes.
+Leung, Swaminathan and Davidson (2012) J. Fluid Mech. 710, 453. DOI 10.1017/jfm.2012.373. DNS at Re_lambda = 141: geometry of
+   educed structures.
+Goto and Motoori (2024) Rev. Mod. Plasma Phys. 8, 23. DOI 10.1007/s41614-024-00161-8. Review: hierarchy of tubular vortices.
+
+Background (no radius, swirl or circulation by Re_lambda in the abstract): Ishihara et al. 2007 J. Fluid Mech. 592, 335
+(velocity gradients to Re_lambda 1130); Polanco et al. 2021 Nat. Commun. 12, 7090 (circulation intermittency).
+
+
+8. 2026-11-10 1002  user query, 2024 records, WITH reference lists (2005-2027)
+   ( REF ( "vortex" ) OR REF ( " vorticity" ) OR REF ( "burgers" ) )
+   AND TITLE-ABS-KEY ( DNS AND ( circulation OR diameter OR "Reynolds number" OR "burgers" ) ) AND PUBYEAR > 2004
+   The export has a References column (median 97 per record), so co-citation can be counted. Of the 2024 records,
+   26 cite three or more of our core papers. Citations of our core papers within the set: Jimenez 1993 58,
+   Vincent and Meneguzzi 33, Jimenez and Wray 1998 26, Tanahashi 2004 16, Da Silva 2011 13, Tanahashi 2001 12,
+   Burgers 1948 11, Moisy and Jimenez 9, Ishihara 9, Moffatt 1994 7, Mouri 7, Ghira 2022 4.
+
+Further candidates from file 8 (abstracts only; DOIs as exported):
+
+Sassa and Makita (2005) in Engineering Turbulence Modelling and Experiments 6, pp. 431-440. DOI 10.1016/B978-008044544-1/50041-8.
+   "Reynolds Number Dependence of Elementary Vortices in Turbulence": Burgers-like vortices detected by conditional sampling
+   in stably stratified grid turbulence, homogeneous shear turbulence and a nocturnal surface layer, Re_lambda 19-2391.
+   Diameter about 10 eta regardless of Re_lambda; maximum azimuthal velocity / u_K grows as Re_lambda^0.28 (except in shear
+   flow), in line with the DNS scaling law. HIGHEST PRIORITY: it covers Re_lambda from 19 to 2391 in one study.
+Tanahashi, Hirayama, Shimura, Ueda and Miyauchi (2009) Proc. ICHMT Turbulence, Heat and Mass Transfer. DOI 10.1615/ICHMT.2009.TurbulHeatMassTransf.2440.
+   Dual-plane stereo PIV of a jet: pdfs of eddy diameter and maximum azimuthal velocity peak at D/eta about 8 and
+   u_theta,max/u_K about 1 (experiment, resolution 2.8 eta).
+Tanahashi, Hirayama, Taka and Miyauchi (2008) Int. J. Heat Fluid Flow 29, 792. DOI 10.1016/j.ijheatfluidflow.2008.02.009.
+Okamoto, Yoshimatsu, Schneider, Farge and Kaneda (2007) Phys. Fluids 19, 115109. DOI 10.1063/1.2771661. Coherent vortices by
+   wavelet extraction in DNS at Re_lambda 167-732; intermittency, not a tube radius.
+Branco, Alves, Ghira and da Silva (2026) J. Phys. Conf. Ser. 3230, 012027. DOI 10.1088/1742-6596/3230/1/012027. Newest work of the
+   Ghira group: IVS in isotropic turbulence and near interfaces; enstrophy budget agrees with the Burgers solution.
+Dos Reis, Da Silva and Pereira (2011) 7th Int. Symp. Turbulence and Shear Flow Phenomena (TSFP7), no DOI. Planar jet: radius,
+   vorticity, tangential velocity and circulation of the structures against distance from the interface.
+Naka, Itoh, Minamoto, Shimura and Tanahashi (2017) TSFP10. DNS of a mixing layer at Re_lambda about 250: coherent fine-scale
+   structures consistent with the lower Re data.
+Horiuti and Fujisawa (2008) J. Fluid Mech. 595, 341. DOI 10.1017/S0022112007009251. Stretched spiral vortex in DNS.
+Kaneda and Ishihara (2006) J. Turbulence 7, 1. DOI 10.1080/14685240500256099. DNS to 4096^3, Re_lambda about 1200 (spectra, no tubes).
+
+2026-11-10 13:29 one more search (74 records, with references; file "2026-11-10 1329 one more search, mostly Burgers equation and LES").
+Most hits are Burgers-equation or LES papers (matched on "Burgers"); not relevant. Of interest:
+Kang, Tanahashi and Miyauchi (2006) J. Mech. Sci. Technol. 20, 1190. DOI 10.1007/BF02915828. Channel DNS to Re_tau 1270: coherent fine scale
+   eddies, phase-averaged azimuthal velocity on the cross section scaled by eta and u_K (maximum swirl and strain at the centre); a
+   whole-tube source like Das et al. (2006) and Tanahashi et al. Candidate for new rows.
+Nomura and Post (1998) J. Fluid Mech. 377, 65. DOI 10.1017/S0022112098003024, and Nomura, Post and Diamessis (1997) AIAA 28th Fluid Dyn. Conf.:
+   isotropic DNS; properties of the Burgers vortex compared with those found in the turbulence; dynamics of vorticity and strain. Possible
+   source of strain and alignment values, probably no tube radius.
+Gotoh, Fukayama and Nakano (2002) Phys. Fluids 14, 1065. DOI 10.1063/1.1448296. Forced DNS to 1024^3, Re_lambda 38-460: velocity statistics,
+   no tubes; useful for eta, Re_lambda and L of a forced DNS (conversions).
+Horiuti and Fujisawa (2008) J. Fluid Mech. 595, 341 (already listed above): stretched spiral vortex.
+Elperin et al. (2017) Phys. Rev. E 96, 053111: turbulent diffusion of reacting flows, DNS; micromixing, for later.
+
+2026-11-10 13:32 ( REF ( "burgers" ) ) AND TITLE-ABS-KEY ( DNS AND ( vortex OR vorticity OR filaments circulation OR diameter OR "Reynolds number" OR "burgers" ) )
+   21 records (file "2026-11-10 1332 REF burgers and DNS vortex or vorticity or circulation"); every one is also in the 13:29 export, so nothing new.

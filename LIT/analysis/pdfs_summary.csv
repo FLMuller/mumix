@@ -1,0 +1,9 @@
+source,quantity,mode,median,mean,q10,q90,fit_weight1,fit_median1,fit_s1,fit_median2,fit_s2,rms_of_peak,area_digitised
+Tanahashi 2001, mixing layer,radius,4.822,5.861,8.032,3.783,14.91,0.708,5.231,0.288,11.27,0.605,0.019,1.021
+Tanahashi 2004, channel Re_tau 800,radius,4.311,5.855,8.154,3.539,17.31,0.644,4.946,0.350,16.76,0.700,0.045,1.166
+Das 2006, channel Re_tau 180, open symbols,radius,6.119,8.447,10.23,4.179,20,0.076,6.173,0.230,8.739,0.686,0.012,1.021
+Pirozzoli 2012, DNS,radius,4.228,5.285,7.211,2.96,14.38,0.528,4.297,0.341,8.542,0.692,0.026,1.026
+Tanahashi 2004, channel Re_tau 800,swirl v_theta,max / u_K,1.232,2.335,2.623,0.9007,4.798,0.692,1.933,0.734,2.954,0.395,0.045,1.016
+Pirozzoli 2012, DNS,swirl v_theta,max / u_K,1.398,2.097,2.47,0.8263,4.767,0.644,1.543,0.660,3.204,0.475,0.030,1.023
+Tanahashi 2001, mixing layer,swirl v_theta,max / u_rms,0.4763,0.7522,0.8171,0.3338,1.402,0.415,0.5002,0.619,0.9006,0.407,0.038,1.000
+Das 2006, channel Re_tau 180, open symbols,swirl v_theta,max / u_rms,0.3748,0.6095,0.6913,0.2281,1.313,0.208,0.2928,0.856,0.6592,0.601,0.026,0.959

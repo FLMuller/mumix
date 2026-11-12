@@ -1,0 +1,1074 @@
+<title>Burgers Vortex Energy Balance</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<script>
+window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: single reading column, numbered derivation steps, wide tables scroll inside their own box. */
+:root {
+  --bg: #f6f8f9;
+  --fg: #18242b;
+  --muted: #586973;
+  --rule: #d3dde2;
+  --accent: #0b6e8a;
+  --warn: #9a4a00;
+  --panel: #e9f0f3;
+  --warn-panel: #f8ecdd;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101a1f; --fg: #dbe6eb; --muted: #93a5af; --rule: #2a3a42;
+    --accent: #5ec0dc; --warn: #f0a864; --panel: #17262d; --warn-panel: #2b2217;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101a1f; --fg: #dbe6eb; --muted: #93a5af; --rule: #2a3a42;
+  --accent: #5ec0dc; --warn: #f0a864; --panel: #17262d; --warn-panel: #2b2217;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  font: 16px/1.6 var(--font-body);
+  padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 46rem; margin: 0 auto; }
+h1 { font: 600 2rem/1.15 var(--font-display); text-wrap: balance; margin: 0 0 8px; }
+h2 { font: 600 1.35rem/1.25 var(--font-display); text-wrap: balance; margin: 44px 0 8px; padding-top: 20px; border-top: 1px solid var(--rule); }
+h3 { font: 600 0.8rem/1.3 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 26px 0 4px; }
+p { margin: 10px 0; }
+.lede { color: var(--muted); margin-bottom: 4px; }
+mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; margin: 14px 0 !important; padding: 2px 0; }
+mjx-container { color: var(--fg); }
+.result { background: var(--panel); border-left: 3px solid var(--accent); padding: 4px 16px; margin: 16px 0; }
+.caution { background: var(--warn-panel); border-left: 3px solid var(--warn); padding: 8px 16px; margin: 16px 0; }
+.caution strong { color: var(--warn); }
+.tablebox { overflow-x: auto; margin: 14px 0; }
+.note { font-size: 0.9em; }
+.dt th, .dt td { text-align: center; vertical-align: middle; }
+.dt th { text-transform: none; }
+.dt .msep { border-left: 2px solid var(--muted); padding-left: 20px; }
+.dt th:has(+ .msep), .dt td:has(+ .msep) { padding-right: 20px; }
+.dt tr.nu td { background: rgba(214, 69, 65, 0.25); }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 14px 7px 0; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+code { font: 0.9em var(--font-mono); }
+ul { padding-left: 1.2em; margin: 8px 0; }
+li { margin: 4px 0; }
+.src { font: 0.8rem var(--font-mono); color: var(--muted); }
+.ev td { white-space: normal; vertical-align: top; }
+.ev td.c { min-width: 26rem; }
+.ev td.lab { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; padding-right: 10px; }
+.ev tr.m td { border-bottom: 1px dashed var(--rule); }
+.ev tr.m td[rowspan] { border-bottom: 1px solid var(--rule); }
+</style>
+
+<main>
+<h1>Burgers Vortex Energy Balance</h1>
+<p class="lede">Distilled from the Gemini session on Burgers (1948) and Moffatt, Kida and Ohkitani (1994). Symbols: \(\gamma\) axial stretching rate, \(\Gamma\) circulation, \(\nu\) kinematic viscosity, \(\varepsilon\) imposed dissipation per unit mass. Burgers' strain constant is \(A=\gamma/2\) and his circulation is \(C=\Gamma\).</p>
+<p class="src">Checked: the algebra and numbers below were recomputed. Not checked: Gemini's page and equation citations in the two PDFs.</p>
+
+<h2>1. One stretched vortex</h2>
+<h3>Velocity profile and core size</h3>
+<p>With viscous core length \(\delta=\sqrt{\nu/\gamma}\), the azimuthal velocity is</p>
+$$U_\theta(R)=\frac{\Gamma}{2\pi R}\left(1-e^{-\gamma R^2/4\nu}\right).$$
+<p>Put \(x=\gamma R^2/4\nu\). The velocity peaks where</p>
+$$e^{x}-2x-1=0\;\Rightarrow\;x=1.2564,\qquad r_{\max}=\sqrt{4x}\,\sqrt{\frac{\nu}{\gamma}}=2.242\sqrt{\frac{\nu}{\gamma}}.$$
+$$U_{\max}=\frac{1-e^{-x}}{2\pi}\,\frac{\Gamma}{r_{\max}}=0.1138\,\frac{\Gamma}{r_{\max}}=0.0508\,\Gamma\sqrt{\frac{\gamma}{\nu}},\qquad \Gamma=8.78\,U_{\max}\,r_{\max}.$$
+<h3>Dissipation of the whole structure</h3>
+<p>The background strain is irrotational, so integrating the enstrophy isolates the excess caused by the vortex (Burgers eq. 60, Moffatt eq. 3.36):</p>
+$$P_{\text{ex}}=\rho\nu\int_0^\infty \omega^2\,2\pi r\,dr=\frac{\rho A C^2}{4\pi}=\frac{\rho\,\gamma\,\Gamma^2}{8\pi}\quad\text{per unit length.}$$
+<p>It does not depend on \(\nu\). Moffatt's addition is that non-axisymmetric strain leaves this total unchanged while 98.7% of it falls outside \(r=\sqrt2\,\delta\), where only 37% of the enstrophy sits.</p>
+
+<h2>2. Dissipation as flow times pressure drop</h2>
+<p>The radial inflow through the cylinder \(r=r_{\max}\), per unit length, uses \(\alpha+\beta=-\gamma\):</p>
+$$Q=\pi r_{\max}^2\,\gamma .$$
+<p>Dividing the dissipation by \(Q\) cancels \(\gamma\):</p>
+$$\frac{P_{\text{ex}}}{Q}=\frac{\rho\,\Gamma^2}{8\pi^2 r_{\max}^2}=\frac{\rho\,U_{\max}^2}{2\,(1-e^{-x})^2}=0.977\,\rho\,U_{\max}^2=1.954\cdot\tfrac12\rho U_{\max}^2 .$$
+<div class="result"><p>\(P_{\text{ex}}=Q\,\Delta P\) with \(\Delta P\approx\rho U_{\max}^2\), matching the core pressure drop Burgers quotes. The same constant holds for Moffatt's non-axisymmetric strain.</p></div>
+<p>There is no excess axial velocity: the vortex induces only cross-flow motion and \(U_z=\gamma z\) is the background. The "axial energy flux" branch in the session (constants 3.73, 0.244, 0.593, 0.379) was withdrawn by Gemini and should be dropped.</p>
+
+<h2>3. Background strain dissipation</h2>
+<p>For \(U=(\alpha x,\beta y,\gamma z)\) with \(\alpha=-\tfrac12(1+\lambda)\gamma\), \(\beta=-\tfrac12(1-\lambda)\gamma\):</p>
+$$\varepsilon_{\text{strain}}=2\nu\left(\alpha^2+\beta^2+\gamma^2\right)=\nu\gamma^2\left(\lambda^2+3\right)\;\xrightarrow{\;\lambda=0\;}\;3\nu\gamma^2 .$$
+
+<h2>4. Global budget</h2>
+<p>\(Q\) is per metre of vortex (m²/s) and \(L_e\) is the vortex length per unit volume (m/m³), so \(L_eQ\) is the volume drawn into the cores per second per unit volume, in 1/s. The budget fixes it:</p>
+$$\varepsilon-3\nu\gamma^2=0.977\,(L_eQ)\,U_{\max}^2\quad\Rightarrow\quad L_eQ=\frac{\varepsilon-3\nu\gamma^2}{0.977\,U_{\max}^2}.$$
+<p>The core volume fraction is then an output, not an input. Derivation: each metre of tube occupies the cross-section \(\pi r_{\max}^2\) (m³ per m of tube), and there are \(L_e\) metres of tube per m³ of fluid, so the fraction of volume inside the cores is</p>
+$$V_f=L_e\,\pi r_{\max}^2 .$$
+<p>The inflow per metre of tube is \(Q=\pi\gamma r_{\max}^2\) (section 2), so \(\pi r_{\max}^2=Q/\gamma\) and</p>
+$$V_f=\frac{L_eQ}{\gamma}\quad\Longleftrightarrow\quad L_eQ=V_f\,\gamma .$$
+<p>Meaning: the cores hold a fraction \(V_f\) of the volume, and the strain field refills that volume at the rate \(\gamma\), so the volume drawn in per second per unit volume is \(V_f\gamma\). Because \(V_f\) is a fraction of the cylinder's own cross-section, it is a cross-section of the core, not of the whole dissipative eddy. The dissipation spreads over a larger radius than \(r_{\max}\) (98.7% of it lies outside \(r=\sqrt2\,\delta\)); that is a limit of this \(Q\,\Delta P\) bookkeeping.</p>
+
+<div class="caution"><strong>Correction to the session.</strong> Gemini assumed \(V_f=1\%\) as an input and reduced \(L_eQ\) to \(0.0503\,\nu\). That value has units m²/s, because it cancelled \(\pi r_{\max}^2\) against a \(Q\) already evaluated as \(5.03\,\nu\) (which also dropped a factor \(\pi\)). It then discarded the mismatched term as "negligible". The 22.8% eddy share it reported came from that slip. With the units kept, \(L_eQ=V_f\gamma\) and everything is consistent.</div>
+
+<h2>5. Closing with Kolmogorov scales</h2>
+$$\eta=\left(\frac{\nu^3}{\varepsilon}\right)^{1/4},\quad U_\eta=(\nu\varepsilon)^{1/4},\quad \gamma_\eta=\sqrt{\frac{\varepsilon}{\nu}},\quad U_\eta\,\eta=\nu .$$
+<p>Assumption: the tube's peak-swirl radius and peak velocity scale with the Kolmogorov scales through one dial \(\beta\),</p>
+$$r_{\max}=\beta\,\eta,\qquad U_{\max}=\beta\,U_\eta .$$
+<p>Fixing the two separately would overdetermine the problem, which caused the repeated loops in the session. Here \(\beta\) is just \(r_{\max}/\eta\), the tube radius in Kolmogorov lengths (the core diameter is \(2\beta\eta\)).</p>
+
+<h3>Step 1: what \(x\) is and where it comes from</h3>
+<p>\(x\) is the dimensionless radius squared of the Burgers vortex,</p>
+$$x(R)=\frac{\gamma R^2}{4\nu}=\left(\frac{R}{2\delta}\right)^2,\qquad \delta=\sqrt{\nu/\gamma}.$$
+<p>Substituting \(R^2=4\nu x/\gamma\) into \(U_\theta=\frac{\Gamma}{2\pi R}\left(1-e^{-x}\right)\) gives the velocity as a function of \(x\) alone:</p>
+$$U_\theta=\frac{\Gamma}{4\pi}\sqrt{\frac{\gamma}{\nu}}\;\frac{1-e^{-x}}{\sqrt{x}} .$$
+<p>The peak is where \(\mathrm d/\mathrm dx\left[(1-e^{-x})\,x^{-1/2}\right]=0\):</p>
+$$e^{-x}x^{-1/2}-\tfrac12(1-e^{-x})x^{-3/2}=0\;\Rightarrow\;2x\,e^{-x}=1-e^{-x}\;\Rightarrow\;e^{x}-2x-1=0 .$$
+<p>This has the single positive root (found by Newton iteration)
+$$\boxed{\,x=1.25643\,},\qquad e^{x}=3.51286=2x+1,\qquad 1-e^{-x}=0.71533 .$$
+So \(x\) is a pure number fixed by the shape of the profile. It converts between the peak radius and the viscous scale:</p>
+$$r_{\max}^2=\frac{4x\,\nu}{\gamma}\quad\Longleftrightarrow\quad\gamma=\frac{4x\,\nu}{r_{\max}^2}.$$
+
+<h3>Step 2: strain rate from \(r_{\max}=\beta\eta\)</h3>
+<p>The Kolmogorov scales satisfy \(\eta^2=\nu/\gamma_\eta\) with \(\gamma_\eta=\sqrt{\varepsilon/\nu}\). Then \(r_{\max}^2=\beta^2\nu/\gamma_\eta\), and</p>
+$$\gamma=\frac{4x\,\nu}{\beta^2\nu/\gamma_\eta}=\frac{4x}{\beta^2}\,\gamma_\eta .$$
+
+<h3>Step 3: circulation from \(U_{\max}=\beta U_\eta\)</h3>
+<p>The peak velocity in terms of \(\Gamma\) and \(r_{\max}\) is \(U_{\max}=\frac{(1-e^{-x})\,\Gamma}{2\pi r_{\max}}\). Solving for \(\Gamma\) and inserting both conditions together with \(U_\eta\eta=\nu\):</p>
+$$\Gamma=\frac{2\pi\,r_{\max}U_{\max}}{1-e^{-x}}=\frac{2\pi\,(\beta\eta)(\beta U_\eta)}{1-e^{-x}}=\frac{2\pi}{1-e^{-x}}\,\beta^2\,\nu=8.78\,\beta^2\,\nu .$$
+
+<h3>Step 4: the Reynolds numbers</h3>
+<p>Three Reynolds numbers appear. Each is a velocity times a length over \(\nu\).</p>
+<div class="tablebox"><table>
+<thead><tr><th>Name</th><th>Definition</th><th>Value with \(r_{\max}=\beta\eta,\ U_{\max}=\beta U_\eta\)</th></tr></thead>
+<tbody>
+<tr><td>Circulation Re, \(R_\Gamma\)</td><td>\(\Gamma/\nu\)</td><td>\(8.78\,\beta^2\)</td></tr>
+<tr><td>Core Re, \(Re_c\)</td><td>\(U_{\max}r_{\max}/\nu\)</td><td>\(\beta^2\)</td></tr>
+<tr><td>Strain Re, \(Re_\gamma\)</td><td>\(\gamma r_{\max}^2/\nu\)</td><td>\(4x=5.03\)</td></tr>
+</tbody></table></div>
+<p>\(R_\Gamma\) is the inverse of Moffatt's small parameter, \(\epsilon=\nu/\Gamma=1/R_\Gamma\), so the asymptotic theory needs \(R_\Gamma\gg1\). The core Reynolds number follows from the \(U_{\max}\) relation above:</p>
+$$Re_c=\frac{U_{\max}r_{\max}}{\nu}=\frac{\beta U_\eta\cdot\beta\eta}{\nu}=\beta^2,\qquad R_\Gamma=\frac{2\pi}{1-e^{-x}}\,Re_c=8.78\,Re_c=8.78\,\beta^2 .$$
+<p>The strain Reynolds number is just Step 1 rearranged, so it is the same for every Burgers vortex: \(Re_\gamma=\gamma r_{\max}^2/\nu=4x\). For comparison, a structure at exactly the Kolmogorov scale has Reynolds number \(U_\eta\eta/\nu=1\), which \(Re_c=\beta^2\) reaches at \(\beta=1\).</p>
+<p>Summary:</p>
+$$\gamma=\frac{4x\,\nu}{r_{\max}^2}=\frac{4x}{\beta^2}\,\gamma_\eta,\qquad \Gamma=\frac{2\pi\,r_{\max}U_{\max}}{1-e^{-x}}=8.78\,\beta^2\,\nu,\qquad R_\Gamma=\frac{\Gamma}{\nu}=8.78\,\beta^2 .$$
+
+<h3>Step 5: strain share of the budget</h3>
+<p>Start from the background dissipation of section 3, \(\varepsilon_{\text{strain}}=3\nu\gamma^2\), and substitute \(\gamma\) from Step 2:</p>
+$$\varepsilon_{\text{strain}}=3\nu\left(\frac{4x}{\beta^2}\gamma_\eta\right)^2=\frac{48\,x^2}{\beta^4}\;\nu\gamma_\eta^2 .$$
+<p>Now \(\nu\gamma_\eta^2=\nu\cdot\varepsilon/\nu=\varepsilon\), so</p>
+$$\frac{\varepsilon_{\text{strain}}}{\varepsilon}=\frac{48\,x^2}{\beta^4}=\frac{75.8}{\beta^4}\qquad(48x^2=75.77).$$
+
+<h3>Step 6: vortex share of the budget</h3>
+<p>Start from the vortex term of the section 4 budget, \(\varepsilon_{\text{vortex}}=0.977\,(L_eQ)\,U_{\max}^2\), where \(0.977=1/\left(2(1-e^{-x})^2\right)\) comes from section 2. Substitute in turn \(L_eQ=V_f\gamma\) (section 4), then \(\gamma=\frac{4x}{\beta^2}\gamma_\eta\) (Step 2) and \(U_{\max}^2=\beta^2U_\eta^2\):</p>
+$$\varepsilon_{\text{vortex}}=0.977\,V_f\,\gamma\,U_{\max}^2=0.977\,V_f\,\frac{4x}{\beta^2}\gamma_\eta\;\beta^2U_\eta^2=0.977\cdot4x\;V_f\;\gamma_\eta U_\eta^2 .$$
+<p>The factors \(\beta^2\) cancel, which is what the choice \(U_{\max}=\beta U_\eta\) buys. Next \(\gamma_\eta U_\eta^2=\sqrt{\varepsilon/\nu}\,\sqrt{\nu\varepsilon}=\varepsilon\), so</p>
+$$\frac{\varepsilon_{\text{vortex}}}{\varepsilon}=0.977\cdot4x\;V_f=4.91\,V_f .$$
+
+<h3>Step 7: closing the budget and the volume fraction</h3>
+<p>The imposed dissipation is split between the background strain and the vortices, \(\varepsilon=\varepsilon_{\text{strain}}+\varepsilon_{\text{vortex}}\). Dividing by \(\varepsilon\) and inserting Steps 5 and 6:</p>
+$$1=\frac{75.8}{\beta^4}+4.91\,V_f .$$
+<p>Solving for the volume fraction gives \(V_f\) as a function of the one dial \(\beta\):</p>
+$$\boxed{\;V_f=\frac{1-75.8/\beta^{4}}{4.91},\qquad r_{\max}=\beta\eta\;}\qquad\Longleftrightarrow\qquad \beta=\left(\frac{75.8}{1-4.91\,V_f}\right)^{1/4}.$$
+<p>\(V_f\) must be positive, which needs \(\beta>75.8^{1/4}=2.95\), and cannot exceed \(1/4.91=20\%\) (the vortices would then carry all of \(\varepsilon\)).</p>
+
+<p>Two more quantities complete the table. The inflow per metre of tube is the same for every \(\beta\):</p>
+$$Q=\pi\gamma r_{\max}^2=\pi\cdot4x\,\nu=15.8\,\nu ,$$
+<p>since \(\gamma r_{\max}^2=4x\nu\) (Step 1). The strain rate (small \(\gamma\)) and circulation (big \(\Gamma\)) follow from the summary of Step 4. Dimensional columns use the example \(\varepsilon=0.1\) W/kg and \(\nu=10^{-6}\) m²/s, for which \(\eta=56\ \mu\)m, \(U_\eta=17.8\) mm/s and \(\gamma_\eta=316\) s⁻¹.</p>
+<div class="tablebox"><table>
+<thead><tr><th>\(V_f\)</th><th>\(\beta=r_{\max}/\eta\)</th><th>\(r_{\max}\)</th><th>\(\gamma/\gamma_\eta\)</th><th>\(\gamma\)</th><th>\(\Gamma/\nu=R_\Gamma\)</th><th>\(\Gamma\)</th><th>\(Q/\nu\)</th><th>\(Q\)</th><th>\(\epsilon=1/R_\Gamma\)</th><th>strain share</th><th>vortex share</th></tr></thead>
+<tbody>
+<tr><td>1%</td><td>2.99</td><td>168 µm</td><td>0.563</td><td>178 s⁻¹</td><td>78</td><td>78 mm²/s</td><td>15.8</td><td>15.8 mm²/s</td><td>0.013</td><td>95.1%</td><td>4.9%</td></tr>
+<tr><td>2%</td><td>3.03</td><td>170 µm</td><td>0.548</td><td>173 s⁻¹</td><td>81</td><td>81 mm²/s</td><td>15.8</td><td>15.8 mm²/s</td><td>0.012</td><td>90.2%</td><td>9.8%</td></tr>
+<tr><td>5%</td><td>3.17</td><td>178 µm</td><td>0.501</td><td>159 s⁻¹</td><td>88</td><td>88 mm²/s</td><td>15.8</td><td>15.8 mm²/s</td><td>0.011</td><td>75.4%</td><td>24.6%</td></tr>
+<tr><td>10%</td><td>3.49</td><td>196 µm</td><td>0.412</td><td>130 s⁻¹</td><td>107</td><td>107 mm²/s</td><td>15.8</td><td>15.8 mm²/s</td><td>0.009</td><td>50.9%</td><td>49.1%</td></tr>
+</tbody></table></div>
+<h3>Vortex length and spacing</h3>
+<p>The tube length per unit volume follows from \(L_e=V_f\gamma/Q\). At 1%: \(L_e=0.01\cdot178/1.58\times10^{-5}=1.1\times10^{5}\) m/m³, about 110 m of vortex per litre.</p>
+<p>\(L_e\) has units m/m³ = 1/m², so each tube has on average \(1/L_e\) m² of cross-section to itself. For tubes roughly parallel and evenly spread, the mean spacing between axes is</p>
+$$d=\sqrt{\frac{V}{L}}=\frac{1}{\sqrt{L_e}}\quad(L=L_eV\text{ metres of tube in a volume }V),$$
+<p>and with \(L_e=V_f/(\pi r_{\max}^2)\) from section 4:</p>
+$$d=r_{\max}\sqrt{\frac{\pi}{V_f}}=\beta\,\eta\sqrt{\frac{\pi}{V_f}} .$$
+<p>So \(d/\eta\) depends on \(\beta\) and \(V_f\) only, not on \(\varepsilon\) or \(\nu\). For random orientation the spacing is of the same order; the exact factor depends on the orientation distribution.</p>
+<div class="tablebox"><table>
+<thead><tr><th>\(V_f\)</th><th>\(L_e\)</th><th>\(d/r_{\max}\)</th><th>\(d/\eta\)</th><th>\(d\)</th></tr></thead>
+<tbody>
+<tr><td>1%</td><td>1.1×10⁵ m/m³</td><td>17.7</td><td>53</td><td>3.0 mm</td></tr>
+<tr><td>2%</td><td>2.2×10⁵ m/m³</td><td>12.5</td><td>38</td><td>2.1 mm</td></tr>
+<tr><td>5%</td><td>5.0×10⁵ m/m³</td><td>7.9</td><td>25</td><td>1.4 mm</td></tr>
+<tr><td>10%</td><td>8.2×10⁵ m/m³</td><td>5.6</td><td>20</td><td>1.1 mm</td></tr>
+</tbody></table></div>
+<p>Same example as above (\(\varepsilon=0.1\) W/kg, \(\nu=10^{-6}\) m²/s, \(\eta=56\ \mu\)m). The tubes are thin and well separated: even at 10% volume fraction the axes are about 20 Kolmogorov lengths apart, so a drop larger than about \(d\) intersects several tubes.</p>
+
+<div class="result"><p>The strain term alone reaches 100% of \(\varepsilon\) at \(\beta=75.8^{1/4}=2.95\), so the tube radius is at least about \(3\eta\) and \(R_\Gamma\) is at least about 76. Any larger \(\beta\) hands the remainder to the vortex, and the volume fraction cannot exceed \(1/4.91=20\%\). A 20–25% vortex share needs \(V_f\approx5\%\), while the 1% quoted for worms gives about 5%.</p></div>
+
+<h2>6. A second closure: circulation set by the tube spacing</h2>
+<p>The budget leaves \(\beta\) free. A second relation comes from taking the circulation as the velocity difference across the mean spacing \(d\) (section 5) times that spacing, with the inertial-range velocity \(U(d)=(\varepsilon d)^{1/3}\):</p>
+$$\Gamma=c\,U(d)\,d=c\,\varepsilon^{1/3}d^{4/3}\;\Rightarrow\;\frac{\Gamma}{\nu}=c\left(\frac{d}{\eta}\right)^{4/3},$$
+<p>using \(\varepsilon^{1/3}\eta^{4/3}=\nu\). Insert \(\Gamma/\nu=8.78\,\beta^2\) (Step 4) and \(d/\eta=\beta\sqrt{\pi/V_f}\) (spacing section):</p>
+$$8.78\,\beta^2=c\,\beta^{4/3}\left(\frac{\pi}{V_f}\right)^{2/3}\;\Rightarrow\;\beta=\left(\frac{c}{8.78}\right)^{3/2}\frac{\pi}{V_f}.$$
+<p>Together with the budget \(1=75.8/\beta^4+4.91\,V_f\) this has one root \(V_f\) for each \(c\).</p>
+<h3>Letting \(c\) depend on \(\varepsilon\)</h3>
+<p>\(c\) is dimensionless, so it can depend on \(\varepsilon\) only through a Reynolds number; at fixed large scale \(L\) and \(\nu\) that number is \(\propto\varepsilon^{1/3}\). Try</p>
+$$c=c_0\left(\frac{\varepsilon}{\varepsilon_0}\right)^{1/3},\qquad c_0=0.71\text{ at }\varepsilon_0=0.1\ \text{W/kg}.$$
+<p>The reference \(c_0=0.71\) is an assumed value, not fitted to data; it gives a vortex share of about 12% at 0.1 W/kg, in the range Moffatt quotes. Results for \(\nu=10^{-6}\) m²/s:</p>
+<div class="tablebox"><table>
+<thead><tr><th>\(\varepsilon\) (W/kg)</th><th>\(c\)</th><th>\(V_f\)</th><th>\(r_{\max}/\eta\)</th><th>\(r_{\max}\)</th><th>\(R_\Gamma\)</th><th>\(d\)</th><th>\(d/\eta\)</th><th>\(\gamma\)</th><th>vortex share</th></tr></thead>
+<tbody>
+<tr><td>0.01</td><td>0.33</td><td>0.77%</td><td>2.98</td><td>298 µm</td><td>78</td><td>6.0 mm</td><td>60</td><td>57 s⁻¹</td><td>4%</td></tr>
+<tr><td>0.03</td><td>0.48</td><td>1.3%</td><td>3.00</td><td>228 µm</td><td>79</td><td>3.5 mm</td><td>46</td><td>97 s⁻¹</td><td>6%</td></tr>
+<tr><td>0.1</td><td>0.71</td><td>2.4%</td><td>3.04</td><td>171 µm</td><td>81</td><td>2.0 mm</td><td>35</td><td>172 s⁻¹</td><td>12%</td></tr>
+<tr><td>0.3</td><td>1.02</td><td>4.0%</td><td>3.12</td><td>133 µm</td><td>85</td><td>1.2 mm</td><td>28</td><td>283 s⁻¹</td><td>20%</td></tr>
+<tr><td>1</td><td>1.53</td><td>7.0%</td><td>3.28</td><td>104 µm</td><td>94</td><td>0.70 mm</td><td>22</td><td>468 s⁻¹</td><td>34%</td></tr>
+</tbody></table></div>
+<div class="result"><p>With \(c\propto\varepsilon^{1/3}\), \(V_f\) rises roughly as \(\varepsilon^{0.48}\) and the vortex share of the dissipation rises from about 4% to 34% over two decades of \(\varepsilon\). The tube radius stays near \(3\eta\) and \(R_\Gamma\) near 80–95, because the strain term pins \(\beta\) just above 2.95. Larger \(c_0\) pushes the share toward 100% and \(\beta\) away from 3 (for \(c_0=3\), 74% at 0.1 W/kg), so \(c_0\approx0.7\) is near the upper end that keeps the strain term dominant. The size of the \(\varepsilon\)-dependence is set entirely by the assumed exponent \(1/3\) and by \(c_0\). The inertial-range velocity is also questionable at \(d\approx20\)–\(47\eta\), inside the dissipation range of about \(60\eta\).</p></div>
+
+<h2>7. The data: whole tubes and intense tubes</h2>
+<p>The literature values of tube radius, swirl and circulation do not describe one population. Papers select tubes in different ways, and the selection changes the swirl and the circulation strongly and the radius only a little. Two sets are therefore distinguished, and every value in the appendix is assigned to one of them.</p>
+<h3>What is meant by the two sets</h3>
+<ul>
+<li><strong>Intense tubes</strong> are the strongest structures only. They are the 1% of the volume with the highest vorticity (the intense vorticity structures or worms of Jim&eacute;nez et al., Ghira et al., Da Silva et al.; 1.4% in Aligolzadeh et al.), so in the simulations and the 3D measurement they occupy a volume fraction \(V_i\approx0.01\). In the hot-wire records (Mouri et al. 2003, 2004, 2007) the cut is on the signal: the highest 0.1% or 1% of the absolute velocity increments, a share of the samples along the record and not of the volume. The volume that these tubes occupy is not given, so \(V_i\approx0.01\) applies to the DNS-defined tubes only.</li>
+<li><strong>Whole tubes</strong> are tube-like vortices selected with a low threshold or none: the low-pressure cores of Kida et al. (31&ndash;35% of the volume), the vortices fitted by Mouri and Hori (2009), the coherent fine-scale eddies of Tanahashi et al., the cores of Pirozzoli and the elementary vortices of Sassa and Makita. They occupy a volume fraction \(V_w\approx0.2\)&ndash;0.35, the order of the \(V_f\) of the budget in sections 4 and 5.</li>
+</ul>
+<p>The intense tubes are the tail of the distribution of tube strengths and the whole set contains them. The two sets overlap in radius and differ in swirl. The ranges of the values used (rows with an \(Re_\lambda\); the number of values in brackets) are:</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Measurement</th><th>Intense tubes: range (number)</th><th>Whole tubes: range (number)</th></tr></thead>
+<tbody>
+<tr><td>\(r_{\max}/\eta\)</td><td>4.31&ndash;7.38 (44)</td><td>4.50&ndash;5.42 (16)</td></tr>
+<tr><td>\(\Gamma/\nu\)</td><td>161&ndash;246 (7)</td><td>110&ndash;123 (2)</td></tr>
+<tr><td>\(U_{\max}/U_\eta\)</td><td>3.67&ndash;14.00 (37)</td><td>3.64&ndash;9.54 (13)</td></tr>
+<tr><td>\(Re_c\)</td><td>32.0&ndash;86.8 (28)</td><td>35.6&ndash;49.4 (11)</td></tr>
+<tr><td>\(d/\eta\)</td><td>&mdash;</td><td>15.6&ndash;17.2 (2)</td></tr>
+</tbody></table></div>
+<p>The radii overlap: 4.3&ndash;7.4 \(\eta\) for intense tubes and 4.5&ndash;5.4 \(\eta\) for whole tubes, except the \(8\)&ndash;\(9\,\eta\) of Mouri and Hori (2009), fits that the authors say are biased high (the same experiments give 5.2&ndash;7.4 \(\eta\) for intense tubes). The swirl and the tube Reynolds number differ by a factor 2&ndash;3: intense tubes have \(U_{\max}\approx4\)&ndash;14 \(U_\eta\) and \(Re_c\approx32\)&ndash;87, whole tubes \(U_{\max}\approx2.4\)&ndash;3.9 \(U_\eta\) and \(Re_c\approx20\)&ndash;28.</p>
+<h3>How the two sets scale</h3>
+<p>For intense tubes the swirl follows the r.m.s. velocity: \(V_0/\langle v^2\rangle^{1/2}\approx0.5\)&ndash;0.8 (Mouri et al.), \(u_0/u'\approx0.7\)&ndash;0.8 (Da Silva et al.) and \(U_{ivs}/u'\approx1.0\)&ndash;1.25 (Ghira et al.), so, with \(u'/U_\eta=(Re_\lambda/\sqrt{15})^{1/2}\) and a nearly constant radius \(\beta_i\approx5\),</p>
+$$U_i=\kappa\,u'=\kappa\left(\frac{Re_\lambda}{\sqrt{15}}\right)^{1/2}U_\eta,\qquad Re_{c,i}=\beta_iU_i/U_\eta\propto Re_\lambda^{1/2},\qquad \frac{\Gamma_i}{\nu}=8.78\,Re_{c,i}.$$
+<p>This agrees with the measured \(Re_0\propto Re_\lambda^{1/2}\) of Mouri et al. For whole tubes the swirl is a few Kolmogorov velocities and grows slowly (\(Re_0\propto Re_\lambda^{0.18}\) of Mouri and Hori, \(\Gamma/\nu\propto Re_\lambda^{0.16}\) of Kida et al., \(W_{\max}/u_K\propto Re_\lambda^{0.28}\) of Sassa and Makita):</p>
+$$U_w=c\,\beta_w^{\,q}\,Re_\lambda^{\,s}\,U_\eta,\qquad Re_{c,w}=\beta_wU_w/U_\eta,\qquad \frac{\Gamma_w}{\nu}=8.78\,Re_{c,w},$$
+<p>which is the closure of section 9 (with \(c=1\)). The ratio of the two swirls, \(U_i/U_w\propto Re_\lambda^{1/2-s}\), is about 2 at \(Re_\lambda=300\) and about 2.5 at 2000: the intense tubes become relatively stronger as \(Re_\lambda\) rises.</p>
+<h3>How this enters the model</h3>
+<p>The dissipation budget of sections 4 and 5 describes the whole set: the volume \(V_f\) it closes is the volume of the tubes that carry the vortex dissipation, and the swirl in it must be that of the whole set,</p>
+$$\frac{\varepsilon_{\text{vortex}}}{\varepsilon}=4.91\,V_w\,\frac{(U_w/U_\eta)^2}{\beta_w^{2}}\;\Rightarrow\;V_w=\frac{\left(1-75.8/\beta_w^{4}\right)\beta_w^{2}}{4.91\,(U_w/U_\eta)^{2}}.$$
+<p>The intense tubes are a small subset, with a volume \(V_i\approx0.01\) and a share of the dissipation</p>
+$$\frac{\varepsilon_i}{\varepsilon}=4.91\,V_i\,\frac{(U_i/U_\eta)^2}{\beta_i^{2}}.$$
+<p>With \(V_i=0.01\), \(\beta_i=5\) and \(U_i/U_\eta=9\) (\(Re_\lambda\approx300\)) this is \(\varepsilon_i/\varepsilon\approx0.16\), close to the 15% of the enstrophy that Jim&eacute;nez et al. find in their intense 1%. So the two sets are consistent with each other in the budget, but they must not be fitted by the same swirl law.</p>
+<p>The fits of section 9 mix the two sets: the radii come from intense tubes (Ghira, Jim&eacute;nez, Aligolzadeh) and one whole-tube radius (Tanahashi), the circulation from intense tubes (Ghira), and the tube Reynolds number from whole tubes (Mouri and Hori 2009). One swirl law then has to serve both, which shows up as the factor 1.5&ndash;2.5 between the swirl listed by Ghira et al. and the model swirl, as the 2&ndash;3 times too low \(Re_c\) against the intense tubes of Mouri et al., and as the degenerate exponents \(q\) and \(s\). The next step is to fit the two sets separately: the intense set with \(\beta_i\) and \(\kappa\) (or a free exponent), the whole set with the closure of section 9, and to use the whole set in the budget.</p>
+<h3>The data</h3>
+<p>The table has one row per source, run and \(Re_\lambda\), sorted by \(Re_\lambda\) and then by source, and gives the tube as the model sees it: the Kolmogorov length \(\eta\) and velocity \(u_\eta\), the radius \(r_{\max}\) and swirl \(U_{\max}\) in SI units and in Kolmogorov units, the tube Reynolds number, the strain \(\gamma\), the circulation \(\Gamma\), the spacing \(d/\eta\) and the tube set (intense or whole, section 7). A dash means that the source does not give the quantity and the Burgers relations cannot supply it. The measured quantities are those of the appendix (A0 and the source sections); the others are completed with the Burgers relations: \(Re_c=r_{\max}U_{\max}/\nu=(r_{\max}/\eta)(U_{\max}/U_\eta)\) when the source gives both, otherwise the Re_c of the source; \(\Gamma/\nu=8.78\,Re_c\) unless the source lists \(\Gamma\); and \(\gamma=4x\gamma_\eta/(r_{\max}/\eta)^2\) from the radius, with \(\gamma_\eta=(\varepsilon/\nu)^{1/2}\).</p>
+<p class="note">The SI columns use water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg (\(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s, \(\gamma_\eta=316\) s\(^{-1}\)), except where marked. The DNS results in Kolmogorov units hold for any \(\varepsilon\); the reference only fixes the physical size (appendix A0b).</p>
+<div class="note">
+<div><sup>a</sup> Mouri et al.: experiments in air; the measured \(\nu\) and \(\varepsilon\) of each run are used (appendix A7&ndash;A10).</div>
+<div><sup>b</sup> Aligolzadeh et al.: water in a large 2 m tank driven by two counter-rotating impellers of 1.6 m diameter at low speed (\(Re_I=\Omega R_I^2/\nu=23\,000\), so \(\Omega\approx0.04\) rad/s). Only \(\eta=0.926\) mm is given, so \(\varepsilon=\nu^3/\eta^4=1.4\times10^{-6}\) W/kg follows for water, with \(\nu=10^{-6}\) m\(^2\)/s assumed, not stated by the authors. The low \(\varepsilon\) and the large \(\eta\) and \(r_{\max}\) are those of this slow, large facility; the values in Kolmogorov units are unaffected.</div>
+<div><sup>c</sup> Ghira et al.: \(Re_c\) is the product of the converted radius and swirl, and \(\Gamma/\nu=8.78\,Re_c\) is the total Burgers circulation from them, as for every other row. The circulation they list (Eq. 9, \(\Gamma_{ivs}=2\pi\langle U_{ivs}\rangle R_{ivs}\)) is the circulation inside \(R_{ivs}\), about 60% of the total (\(R_{ivs}/R_B\approx0.97\)); divided by 0.60 it is 0.83&ndash;0.84 of \(8.78\,Re_c\) at every \(Re_\lambda\) (appendix A1), and it is not used.</div>
+<div><sup>d</sup> How the data were augmented: a source that gives no single \(Re_\lambda\) (none, or a range) gives the tube only in Kolmogorov units. The SI columns of these rows are the reference values (water, 0.1 W/kg) applied to those dimensionless numbers, so they show the size at the reference condition and are not measurements. The strain \(\gamma\), \(Re_c\) and \(\Gamma\) of every row are likewise computed from the Burgers relations where the source does not give them.</div>
+<div><sup>e</sup> Mouri and Hori (2009): the radii \(R_0/\eta\) of 8.3&ndash;9.2 are biased high by the authors' own account (their fits of the whole vortex; the same experiments give 5.2&ndash;7.4 for the intense tubes of Mouri et al. 2007). They are kept in the table and not fitted; only \(Re_c\) is fitted. They are candidates for a later outlier label.</div>
+<div>Corrections: where a value carries "= calculated &times; factor", the calculated value of the paper has been multiplied by the factor (appendix A0c gives the reason for each): Mouri and Hori (2009) radius &times; 1/1.7 and swirl &times; 3 (the average over all tubes read by a hot wire has too large a radius and too small a swirl), and the swirl of Ghira et al. (2022) &times; 0.6 (it lies above the swirl of the other sources and above the swirl implied by their own axis vorticity). \(Re_c\), \(\Gamma\) and \(\gamma\) are computed from the corrected radius and swirl. All other values are as calculated from the papers.</div>
+<div>Included: empty = every value of the row enters the fits of sections 8 and 9; <em>no</em> = none does; <em>no: &hellip;</em> = the listed values do not, the others do. Rows not included are shown for comparison.</div>
+</div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>No.</th><th>Ref.</th><th>\(Re_\lambda\)</th><th>\(\eta\) (&micro;m)</th><th>\(u_\eta\) (mm/s)</th><th>\(r_{\max}\) (&micro;m)</th><th>\(U_{\max}\) (mm/s)</th><th>\(Re_c\)</th><th>\(r_{\max}/\eta\)</th><th>\(U_{\max}/U_\eta\)</th><th>\(\gamma\) (s\(^{-1}\))</th><th>\(\Gamma\) (m\(^2\)/s)</th><th>\(d/\eta\)</th><th>Tube set</th><th>Method</th><th>Included</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Jim&eacute;nez et al. (1993)</td><td>35.8</td><td>56.2</td><td>17.8</td><td>266</td><td>&mdash;</td><td>&mdash;</td><td>4.73</td><td>&mdash;</td><td>71.1</td><td>&mdash;</td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td></td></tr>
+<tr><td>2</td><td>Ghira et al. (2025)</td><td>54</td><td>56.2</td><td>17.8</td><td>279</td><td>&mdash;</td><td>&mdash;</td><td>4.95</td><td>&mdash;</td><td>64.8</td><td>&mdash;</td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td></td></tr>
+<tr><td>3</td><td>Ghira et al. (2025)</td><td>54</td><td>56.2</td><td>17.8</td><td>275</td><td>&mdash;</td><td>&mdash;</td><td>4.88</td><td>&mdash;</td><td>66.6</td><td>&mdash;</td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td></td></tr>
+<tr><td>4</td><td>Jim&eacute;nez et al. (1993)</td><td>62.8</td><td>56.2</td><td>17.8</td><td>262</td><td>&mdash;</td><td>&mdash;</td><td>4.66</td><td>&mdash;</td><td>73.2</td><td>&mdash;</td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td></td></tr>
+<tr><td>5</td><td>Kida et al. (2002)</td><td>83</td><td>56.2</td><td>17.8</td><td>292</td><td>64.8</td><td>18.9</td><td>5.20</td><td>3.64</td><td>58.8</td><td>1.1&times;10<sup>-4</sup></td><td>15.6</td><td>whole</td><td>DNS, forced isotropic</td><td>no</td></tr>
+<tr><td>6</td><td>Ghira et al. (2022)<sup>c</sup></td><td>90</td><td>56.2</td><td>17.8</td><td>281</td><td>65.2</td><td>18.3</td><td>4.99</td><td>3.67<br><small>= 6.12 &times; 0.6</small></td><td>63.7</td><td>1.61&times;10<sup>-4</sup></td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td>no: &Gamma;, U<sub>max</sub></td></tr>
+<tr><td>7</td><td>Jim&eacute;nez et al. (1993)</td><td>94.5</td><td>56.2</td><td>17.8</td><td>262</td><td>&mdash;</td><td>&mdash;</td><td>4.66</td><td>&mdash;</td><td>73.2</td><td>&mdash;</td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td></td></tr>
+<tr><td>8</td><td>Da Silva et al. (2011)</td><td>111</td><td>56.2</td><td>17.8</td><td>293</td><td>65.5</td><td>19.2</td><td>5.20</td><td>3.68</td><td>58.7</td><td>1.68&times;10<sup>-4</sup></td><td>&mdash;</td><td>intense</td><td>DNS, isotropic and plane jet</td><td>no</td></tr>
+<tr><td>9</td><td>Da Silva et al. (2011)</td><td>120</td><td>56.2</td><td>17.8</td><td>299</td><td>76.4</td><td>22.8</td><td>5.31</td><td>4.29</td><td>56.3</td><td>2&times;10<sup>-4</sup></td><td>&mdash;</td><td>intense</td><td>DNS, isotropic and plane jet</td><td>no</td></tr>
+<tr><td>10</td><td>Ghira et al. (2022)<sup>c</sup></td><td>148</td><td>56.2</td><td>17.8</td><td>272</td><td>76.9</td><td>20.9</td><td>4.83</td><td>4.32<br><small>= 7.20 &times; 0.6</small></td><td>68</td><td>1.84&times;10<sup>-4</sup></td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td>no: &Gamma;, U<sub>max</sub></td></tr>
+<tr><td>11</td><td>Jim&eacute;nez et al. (1993)</td><td>168.1</td><td>56.2</td><td>17.8</td><td>242</td><td>&mdash;</td><td>&mdash;</td><td>4.31</td><td>&mdash;</td><td>85.5</td><td>&mdash;</td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td></td></tr>
+<tr><td>12</td><td>Kida et al. (2002)</td><td>170</td><td>56.2</td><td>17.8</td><td>304</td><td>69</td><td>20.9</td><td>5.40</td><td>3.88</td><td>54.5</td><td>1.23&times;10<sup>-4</sup></td><td>17.2</td><td>whole</td><td>DNS, forced isotropic</td><td>no</td></tr>
+<tr><td>13</td><td>Aligolzadeh et al. (2023)<sup>b</sup></td><td>179</td><td>926</td><td>1.08</td><td>5570</td><td>&mdash;</td><td>&mdash;</td><td>6.01</td><td>&mdash;</td><td>0.162</td><td>&mdash;</td><td>&mdash;</td><td>intense</td><td>3D scanning PIV, water tank</td><td></td></tr>
+<tr><td>14</td><td>Ghira et al. (2022)<sup>c</sup></td><td>191</td><td>56.2</td><td>17.8</td><td>266</td><td>84.8</td><td>22.6</td><td>4.73</td><td>4.77<br><small>= 7.95 &times; 0.6</small></td><td>70.9</td><td>1.98&times;10<sup>-4</sup></td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td>no: &Gamma;, U<sub>max</sub></td></tr>
+<tr><td>15</td><td>Tanahashi et al. (2001)</td><td>200</td><td>56.2</td><td>17.8</td><td>253</td><td>&mdash;</td><td>&mdash;</td><td>4.50</td><td>&mdash;</td><td>78.5</td><td>&mdash;</td><td>&mdash;</td><td>whole</td><td>DNS, mixing layer</td><td></td></tr>
+<tr><td>16</td><td>Ghira et al. (2022)<sup>c</sup></td><td>242</td><td>56.2</td><td>17.8</td><td>261</td><td>89.8</td><td>23.4</td><td>4.64</td><td>5.05<br><small>= 8.42 &times; 0.6</small></td><td>73.8</td><td>2.06&times;10<sup>-4</sup></td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td>no: &Gamma;, U<sub>max</sub></td></tr>
+<tr><td>17</td><td>Pirozzoli (2009, 2012)</td><td>250</td><td>56.2</td><td>17.8</td><td>288</td><td>&mdash;</td><td>&mdash;</td><td>5.12</td><td>&mdash;</td><td>60.6</td><td>&mdash;</td><td>&mdash;</td><td>whole</td><td>DNS, isotropic</td><td>no</td></tr>
+<tr><td>18</td><td>Ghira et al. (2022)<sup>c</sup></td><td>292</td><td>56.2</td><td>17.8</td><td>256</td><td>101</td><td>25.9</td><td>4.55</td><td>5.70<br><small>= 9.49 &times; 0.6</small></td><td>76.8</td><td>2.28&times;10<sup>-4</sup></td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td>no: &Gamma;, U<sub>max</sub></td></tr>
+<tr><td>19</td><td>Mouri et al. (2004)<sup>a</sup></td><td>295</td><td>554</td><td>26</td><td>3370</td><td>136</td><td>32.0</td><td>6.08</td><td>5.23</td><td>6.37</td><td>4.05&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>20</td><td>Ghira et al. (2022)<sup>c</sup></td><td>314</td><td>56.2</td><td>17.8</td><td>256</td><td>101</td><td>25.8</td><td>4.55</td><td>5.67<br><small>= 9.45 &times; 0.6</small></td><td>76.8</td><td>2.27&times;10<sup>-4</sup></td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td>no: &Gamma;, U<sub>max</sub></td></tr>
+<tr><td>21</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>332</td><td>539</td><td>26.2</td><td>2680</td><td>191</td><td>36.2</td><td>4.97<br><small>= 8.45 &times; 0.588</small></td><td>7.29<br><small>= 2.43 &times; 3</small></td><td>9.87</td><td>4.48&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>22</td><td>Mouri et al. (2007)<sup>a</sup></td><td>332</td><td>539</td><td>26.2</td><td>2790</td><td>199</td><td>39.4</td><td>5.18</td><td>7.60</td><td>9.09</td><td>4.88&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>23</td><td>Mouri et al. (2007)<sup>a</sup></td><td>332</td><td>539</td><td>26.2</td><td>3520</td><td>147</td><td>36.6</td><td>6.53</td><td>5.61</td><td>5.72</td><td>4.53&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>24</td><td>Ghira et al. (2022)<sup>c</sup></td><td>399</td><td>56.2</td><td>17.8</td><td>253</td><td>111</td><td>28.1</td><td>4.50</td><td>6.23<br><small>= 10.39 &times; 0.6</small></td><td>78.4</td><td>2.46&times;10<sup>-4</sup></td><td>&mdash;</td><td>intense</td><td>DNS, forced isotropic</td><td>no: &Gamma;, U<sub>max</sub></td></tr>
+<tr><td>25</td><td>Mouri et al. (2004)<sup>a</sup></td><td>430</td><td>331</td><td>43.8</td><td>2000</td><td>243</td><td>34.0</td><td>6.04</td><td>5.55</td><td>18.2</td><td>4.33&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>26</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>488</td><td>335</td><td>42.3</td><td>1670</td><td>303</td><td>35.6</td><td>4.98<br><small>= 8.47 &times; 0.588</small></td><td>7.17<br><small>= 2.39 &times; 3</small></td><td>25.5</td><td>4.45&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>27</td><td>Mouri et al. (2007)<sup>a</sup></td><td>488</td><td>335</td><td>42.3</td><td>1760</td><td>354</td><td>43.9</td><td>5.24</td><td>8.37</td><td>23.1</td><td>5.48&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>28</td><td>Mouri et al. (2007)<sup>a</sup></td><td>488</td><td>335</td><td>42.3</td><td>2160</td><td>253</td><td>38.5</td><td>6.44</td><td>5.98</td><td>15.3</td><td>4.8&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>29</td><td>Mouri et al. (2004)<sup>a</sup></td><td>655</td><td>197</td><td>73.7</td><td>1240</td><td>465</td><td>40.0</td><td>6.28</td><td>6.31</td><td>47.7</td><td>5.09&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>30</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>716</td><td>198</td><td>71.6</td><td>1000</td><td>530</td><td>37.4</td><td>5.05<br><small>= 8.59 &times; 0.588</small></td><td>7.41<br><small>= 2.47 &times; 3</small></td><td>71</td><td>4.67&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>31</td><td>Mouri et al. (2007)<sup>a</sup></td><td>716</td><td>198</td><td>71.6</td><td>1100</td><td>682</td><td>53.0</td><td>5.56</td><td>9.53</td><td>58.7</td><td>6.61&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>32</td><td>Mouri et al. (2007)<sup>a</sup></td><td>716</td><td>198</td><td>71.6</td><td>1370</td><td>476</td><td>46.0</td><td>6.92</td><td>6.65</td><td>37.9</td><td>5.74&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>33</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>719</td><td>288</td><td>48.9</td><td>1450</td><td>356</td><td>36.7</td><td>5.04<br><small>= 8.56 &times; 0.588</small></td><td>7.29<br><small>= 2.43 &times; 3</small></td><td>33.6</td><td>4.55&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>34</td><td>Mouri et al. (2007)<sup>a</sup></td><td>719</td><td>288</td><td>48.9</td><td>1500</td><td>424</td><td>45.2</td><td>5.21</td><td>8.67</td><td>31.4</td><td>5.6&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>35</td><td>Mouri et al. (2007)<sup>a</sup></td><td>719</td><td>288</td><td>48.9</td><td>1870</td><td>299</td><td>39.7</td><td>6.50</td><td>6.11</td><td>20.2</td><td>4.92&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>36</td><td>Mouri et al. (2004)<sup>a</sup></td><td>861</td><td>154</td><td>95.5</td><td>1100</td><td>678</td><td>51.0</td><td>7.14</td><td>7.10</td><td>61.1</td><td>6.59&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>37</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>945</td><td>152</td><td>93.4</td><td>823</td><td>765</td><td>44.3</td><td>5.42<br><small>= 9.21 &times; 0.588</small></td><td>8.19<br><small>= 2.73 &times; 3</small></td><td>105</td><td>5.52&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>38</td><td>Mouri et al. (2007)<sup>a</sup></td><td>945</td><td>152</td><td>93.4</td><td>907</td><td>991</td><td>63.3</td><td>5.97</td><td>10.60</td><td>86.7</td><td>7.9&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>39</td><td>Mouri et al. (2007)<sup>a</sup></td><td>945</td><td>152</td><td>93.4</td><td>1120</td><td>680</td><td>53.7</td><td>7.38</td><td>7.28</td><td>56.7</td><td>6.7&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>40</td><td>Mouri et al. (2004)<sup>a</sup></td><td>1054</td><td>123</td><td>122</td><td>861</td><td>940</td><td>54.0</td><td>6.98</td><td>7.73</td><td>102</td><td>7.11&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>41</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>1080</td><td>120</td><td>118</td><td>630</td><td>1000</td><td>44.6</td><td>5.25<br><small>= 8.93 &times; 0.588</small></td><td>8.49<br><small>= 2.83 &times; 3</small></td><td>180</td><td>5.57&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>42</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1080</td><td>120</td><td>118</td><td>679</td><td>1380</td><td>66.2</td><td>5.66</td><td>11.70</td><td>155</td><td>8.26&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>43</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1080</td><td>120</td><td>118</td><td>857</td><td>926</td><td>55.9</td><td>7.14</td><td>7.83</td><td>97.2</td><td>6.97&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>44</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>1098</td><td>177</td><td>79.8</td><td>927</td><td>613</td><td>40.2</td><td>5.24<br><small>= 8.91 &times; 0.588</small></td><td>7.68<br><small>= 2.56 &times; 3</small></td><td>82.5</td><td>4.98&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>45</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1098</td><td>177</td><td>79.8</td><td>997</td><td>798</td><td>56.4</td><td>5.64</td><td>10.00</td><td>71.3</td><td>6.99&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>46</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1098</td><td>177</td><td>79.8</td><td>1170</td><td>545</td><td>45.2</td><td>6.61</td><td>6.83</td><td>51.9</td><td>5.6&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>47</td><td>Ishihara et al. (2011, 2013)</td><td>1131</td><td>56.2</td><td>17.8</td><td>281</td><td>&mdash;</td><td>&mdash;</td><td>5.00</td><td>&mdash;</td><td>63.6</td><td>&mdash;</td><td>&mdash;</td><td>whole</td><td>DNS, isotropic 4096^3</td><td>no</td></tr>
+<tr><td>48</td><td>Mouri et al. (2004)<sup>a</sup></td><td>1258</td><td>106</td><td>141</td><td>781</td><td>1180</td><td>62.0</td><td>7.37</td><td>8.37</td><td>123</td><td>8.11&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>49</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>1304</td><td>104</td><td>137</td><td>509</td><td>1180</td><td>42.0</td><td>4.87<br><small>= 8.28 &times; 0.588</small></td><td>8.64<br><small>= 2.88 &times; 3</small></td><td>278</td><td>5.28&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>50</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1304</td><td>104</td><td>137</td><td>642</td><td>1750</td><td>78.7</td><td>6.15</td><td>12.80</td><td>174</td><td>9.89&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>51</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1304</td><td>104</td><td>137</td><td>751</td><td>1170</td><td>61.3</td><td>7.19</td><td>8.53</td><td>128</td><td>7.7&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>52</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>1416</td><td>133</td><td>107</td><td>714</td><td>893</td><td>44.8</td><td>5.36<br><small>= 9.12 &times; 0.588</small></td><td>8.37<br><small>= 2.79 &times; 3</small></td><td>140</td><td>5.59&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>53</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1416</td><td>133</td><td>107</td><td>728</td><td>1210</td><td>61.8</td><td>5.47</td><td>11.30</td><td>135</td><td>7.71&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>54</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1416</td><td>133</td><td>107</td><td>921</td><td>803</td><td>52.1</td><td>6.92</td><td>7.53</td><td>84.2</td><td>6.5&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>55</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>1693</td><td>111</td><td>128</td><td>567</td><td>1120</td><td>44.8</td><td>5.13<br><small>= 8.72 &times; 0.588</small></td><td>8.73<br><small>= 2.91 &times; 3</small></td><td>222</td><td>5.59&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>56</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1693</td><td>111</td><td>128</td><td>649</td><td>1640</td><td>75.1</td><td>5.87</td><td>12.80</td><td>170</td><td>9.37&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>57</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1693</td><td>111</td><td>128</td><td>747</td><td>1080</td><td>56.9</td><td>6.76</td><td>8.41</td><td>128</td><td>7.1&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>58</td><td>Mouri and Hori (2009)<sup>a,e</sup></td><td>1934</td><td>95.5</td><td>149</td><td>495</td><td>1420</td><td>49.4</td><td>5.18<br><small>= 8.81 &times; 0.588</small></td><td>9.54<br><small>= 3.18 &times; 3</small></td><td>291</td><td>6.16&times;10<sup>-3</sup></td><td>&mdash;</td><td>whole</td><td>hot wire, 1D velocity increments</td><td>no: r<sub>max</sub>, U<sub>max</sub></td></tr>
+<tr><td>59</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1934</td><td>95.5</td><td>149</td><td>592</td><td>2080</td><td>86.8</td><td>6.20</td><td>14.00</td><td>203</td><td>1.08&times;10<sup>-2</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>60</td><td>Mouri et al. (2007)<sup>a</sup></td><td>1934</td><td>95.5</td><td>149</td><td>671</td><td>1360</td><td>64.5</td><td>7.03</td><td>9.17</td><td>158</td><td>8.04&times;10<sup>-3</sup></td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments</td><td>no</td></tr>
+<tr><td>61</td><td>Mouri et al. (2003)<sup>a</sup></td><td>105&ndash;329</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>6.50</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>intense</td><td>hot wire, 1D velocity increments, grid</td><td>no</td></tr>
+<tr><td>62</td><td>Belin et al. (1996)<sup>d</sup></td><td>151&ndash;718</td><td>56.2</td><td>17.8</td><td>312</td><td>&mdash;</td><td>&mdash;</td><td>5.55</td><td>&mdash;</td><td>51.6</td><td>&mdash;</td><td>&mdash;</td><td>intense</td><td>hot film, 1D velocity derivative, helium</td><td>no</td></tr>
+<tr><td>63</td><td>Sassa and Makita (2005)<sup>d</sup></td><td>19&ndash;2391</td><td>56.2</td><td>17.8</td><td>281</td><td>&mdash;</td><td>&mdash;</td><td>5.00</td><td>&mdash;</td><td>63.6</td><td>&mdash;</td><td>&mdash;</td><td>whole</td><td>probe records, conditional sampling</td><td>no</td></tr>
+<tr><td>64</td><td>Pirozzoli (2009, 2012)<sup>d</sup></td><td>&mdash;</td><td>56.2</td><td>17.8</td><td>337</td><td>35.6</td><td>12.0</td><td>6.00</td><td>2.00</td><td>44.1</td><td>1.05&times;10<sup>-4</sup></td><td>&mdash;</td><td>whole</td><td>DNS, isotropic</td><td>no</td></tr>
+<tr><td>65</td><td>Das, Miyauchi, Wang (2006, 2007)<sup>d</sup></td><td>&mdash;</td><td>56.2</td><td>17.8</td><td>309</td><td>&mdash;</td><td>&mdash;</td><td>5.50</td><td>&mdash;</td><td>52.5</td><td>&mdash;</td><td>&mdash;</td><td>whole</td><td>DNS, channel and mixing layer</td><td>no</td></tr>
+<tr><td>66</td><td>Das, Miyauchi, Wang (2006, 2007)<sup>d</sup></td><td>&mdash;</td><td>56.2</td><td>17.8</td><td>259</td><td>32.9</td><td>8.5</td><td>4.60</td><td>1.85</td><td>75.1</td><td>7.47&times;10<sup>-5</sup></td><td>&mdash;</td><td>whole</td><td>DNS, channel and mixing layer</td><td>no</td></tr>
+<tr><td>67</td><td>Das, Miyauchi, Wang (2006, 2007)<sup>d</sup></td><td>&mdash;</td><td>56.2</td><td>17.8</td><td>225</td><td>28.5</td><td>6.4</td><td>4.00</td><td>1.60</td><td>99.3</td><td>5.62&times;10<sup>-5</sup></td><td>&mdash;</td><td>whole</td><td>DNS, channel and mixing layer</td><td>no</td></tr>
+</tbody></table></div>
+
+<h2>8. Tube model with Kolmogorov-scaled swirl</h2>
+<p>Section 6 closed the model with a spacing law \(\Gamma=c\,U(d)\,d\) containing an unknown constant. Here the closure comes from measured tube kinematics: radius, peak swirl and circulation expressed in Kolmogorov units, with the circulation growing slowly with the Taylor-scale Reynolds number. The data are those of section 7 and the appendix, which also explains which tubes (whole or intense) each value refers to. The constants of the closure are fitted in section 9. Everything else follows from the dissipation budget of sections 2 to 5.</p>
+
+<h3>Step 1: what is given, assumed, fitted and derived</h3>
+<div class="tablebox"><table>
+<thead><tr><th>Quantity</th><th>Role</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>\(U,\ L\)</td><td>given</td><td>speed and size of the eddy-generating element (Step 2)</td></tr>
+<tr><td>\(\varepsilon,\ \nu\)</td><td>given</td><td>local dissipation at the generator; fix \(\eta,\ U_\eta,\ \gamma_\eta\)</td></tr>
+<tr><td>\(a,\ p,\ q,\ s\)</td><td>fitted (section 9)</td><td>circulation prefactor, growth exponent of the circulation with \(Re_\lambda\), and the two exponents of the swirl</td></tr>
+<tr><td>\(\beta=r_{\max}/\eta\)</td><td>derived</td><td>from \(R_\Gamma\) (Step 4)</td></tr>
+<tr><td>\(\gamma,\ V_f,\ d,\ \text{shares}\)</td><td>derived</td><td>Steps 5 and 6</td></tr>
+</tbody></table></div>
+
+<h3>Step 2: Reynolds numbers of the eddy generator</h3>
+<p>Take \(L\) as the length scale of the element that generates the eddies and \(U\) as the speed there: for a feed pipe \(L=d_{\text{pipe}}\) and \(U=U_{\text{feed}}\); for an impeller \(L=D\) or the blade width \(W\) (depending on the blade angle) and \(U\) the blade-edge speed, for example \(\pi ND\). Define the process Reynolds number</p>
+$$Re=\frac{U\,L}{\nu}.$$
+<p>The local dissipation at the generator is \(\varepsilon=U^3/L\) (the same power balance as \(N_pN^3D^5/V\) when \(V\) is the dissipation zone around the impeller, \(V_z=N_pD^3/\pi^3\)). The Taylor-scale Reynolds number of that local turbulence follows from \(Re_\lambda=U'\lambda/\nu\), the isotropic relation \(\varepsilon=15\,\nu U'^2/\lambda^2\), and \(U'=U\):</p>
+$$\lambda^2=\frac{15\,\nu\,U^2}{U^3/L}=\frac{15\,\nu L}{U}\;\Rightarrow\;Re_\lambda=\frac{U}{\nu}\sqrt{\frac{15\,\nu L}{U}}=\sqrt{15}\,Re^{1/2}.$$
+<p>The Kolmogorov scale is \(\eta=(\nu^3L/U^3)^{1/4}\), so \(L/\eta=Re^{3/4}\). The relation \(Re_\lambda=\sqrt{15}\,(U'/U_\eta)^2\) checks against the data: Makihara et al. quote an rms velocity of \(4.67\,U_K\) at \(Re_\lambda=85\) (\(\sqrt{15}\times4.67^2=84.5\)), and Mouri and Hori's run B1 gives 330 against the listed 332. The assumption \(U'=U\) is an upper bound; inside a jet or impeller zone the rms fluctuation is a fraction of \(U\), which lowers \(Re_\lambda\).</p>
+<div class="tablebox"><table>
+<thead><tr><th>Case (water, \(\nu=10^{-6}\) m²/s)</th><th>\(L\)</th><th>\(U\)</th><th>\(Re\)</th><th>\(\varepsilon=U^3/L\)</th><th>\(Re_\lambda\)</th><th>\(\eta\)</th></tr></thead>
+<tbody>
+<tr><td>feed pipe</td><td>5 mm</td><td>1 m/s</td><td>5.0×10³</td><td>200 W/kg</td><td>274</td><td>8.4 µm</td></tr>
+<tr><td>impeller at 600 rpm</td><td>\(D=0.1\) m</td><td>\(\pi ND=3.14\) m/s</td><td>3.1×10⁵</td><td>310 W/kg</td><td>2170</td><td>7.5 µm</td></tr>
+</tbody></table></div>
+
+<h3>Step 3: core radius, peak swirl and the circulation they imply</h3>
+<p>Write the core radius and peak swirl in Kolmogorov units,</p>
+$$r_{\max}=\beta\,\eta,\qquad U_{\max}=\beta^{\,q}\,U_\eta .$$
+<p>In section 9 the swirl also carries a factor \(Re_\lambda^{\,s}\), \(U_{\max}=\beta^{\,q}Re_\lambda^{\,s}U_\eta\) (here \(s=0\)); which tubes the swirl refers to is explained in section 7.</p>
+<p>Here \(r_{\max}=2.24\sqrt{\nu/\gamma}\) is the radius of maximum swirl of the Burgers vortex (section 1), the same quantity as \(R_0\) in Mouri and Hori and, up to the factor \(r_{\max}=1.12\,R_B\), the Burgers radius \(R_B=2\sqrt{\nu/\gamma}\) used by Ghira et al. The tube Reynolds number and circulation follow from the Burgers peak velocity \(U_{\max}=(1-e^{-x})\Gamma/(2\pi r_{\max})\), with \(x=1.2564\), \(1-e^{-x}=0.7153\) (section 5) and \(U_\eta\eta=\nu\):</p>
+$$Re_c=\frac{U_{\max}r_{\max}}{\nu}=\beta^{\,1+q},\qquad \Gamma=\frac{2\pi\,r_{\max}U_{\max}}{1-e^{-x}}=8.78\,\beta^{\,1+q}\nu\;\Rightarrow\;R_\Gamma=\frac{\Gamma}{\nu}=8.78\,\beta^{\,1+q},\qquad \beta=\left(\frac{R_\Gamma}{8.78}\right)^{1/(1+q)} .$$
+<p>\(Re_c\) is the same quantity as \(Re_0=R_0U_0/\nu\) of Mouri and Hori. Two populations appear in the literature and the model follows the first: intense vorticity structures (the 1% of the volume with the highest vorticity), whose swirl scales with the rms velocity \(U'\), and all tubes, whose swirl scales with \(U_\eta\). The radius of the intense structures (\(r_{\max}\approx4.5\)–5 \(\eta\)) is smaller than the radius of all tubes measured with other definitions (\(r_{\max}\approx8\,\eta\) by Mouri and Hori, and by Kida et al. if their core boundary is taken as a Burgers vortex).</p>
+
+<h3>Step 4: circulation from the Reynolds number</h3>
+<p>The circulation Reynolds number rises weakly with \(Re_\lambda\): Mouri and Hori's \(Re_0\) rises as \(Re_\lambda^{0.18}\), Kida et al.'s \(\Gamma/\nu\) as \(Re_\lambda^{0.16}\), and the intense-structure circulation of Ghira et al. as \(Re_\lambda^{0.28}\). Take</p>
+$$R_\Gamma=a\,Re_\lambda^{\,p},\qquad p=0.145\;(\text{fitted, section 9; equivalent to }Re^{0.07}\text{ for the process }Re).$$
+<p>Then \(\beta\) follows from Step 3 and \(\gamma=4x\gamma_\eta/\beta^2\).</p>
+
+<h3>Step 5: dissipation budget and volume fraction</h3>
+<p>The two sinks are the background strain and the vortices (the swirling flow in the shear layer around each core). From sections 3 and 5 the strain share is \(\varepsilon_{\text{strain}}/\varepsilon=48x^2/\beta^4=75.8/\beta^4\). The vortex term is \(0.977\,L_eQ\,U_{\max}^2\) with \(L_eQ=V_f\gamma\) (sections 2 and 4). Substituting \(\gamma=4x\gamma_\eta/\beta^2\), \(U_{\max}^2=\beta^{2q}U_\eta^2\) and \(\gamma_\eta U_\eta^2=\varepsilon\):</p>
+$$\frac{\varepsilon_{\text{vortex}}}{\varepsilon}=0.977\cdot4x\,V_f\,\beta^{\,2q-2}=4.91\,V_f\,\beta^{\,2q-2}.$$
+<p>Closing the budget \(1=75.8/\beta^4+4.91\,V_f\beta^{2q-2}\) gives</p>
+$$\boxed{\;V_f=\frac{\left(1-75.8/\beta^{4}\right)\beta^{\,2-2q}}{4.91},\qquad \text{vortex share}=1-\frac{75.8}{\beta^4},\qquad \frac{d}{\eta}=\beta\sqrt{\frac{\pi}{V_f}}\;}$$
+<p>with \(L_e=V_f/(\pi r_{\max}^2)=1/d^2\) (section 5). The volume fraction is that of the cylinders of radius \(r_{\max}\).</p>
+
+<h3>Step 6: evidence</h3>
+<p>The table lists every published value I could compare with the model, with the model value from the fit of section 9 (\(a=76.8\), \(p=0.145\), \(q=0.30\), \(s=0.18\)) at the same \(Re_\lambda\). Only rows marked "fitted" entered the fit; the source data, with the model value and \(\sigma_{	ext{norm}}^2\) of each fitted row, are in section 9 and the appendix.</p>
+<div class="tablebox"><table class="ev">
+<thead><tr><th>Quantity</th><th></th><th>Value</th><th>Status</th></tr></thead>
+<tbody>
+<tr class="m"><td rowspan="2">Core radius law \(r_{\max}=2.24\sqrt{\nu/\gamma}\)</td><td class="lab">Model</td><td class="c">exact for a Burgers vortex</td><td rowspan="2">supports</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Burgers; Moffatt, Kida and Ohkitani; same \(R_0\) in Mouri and Hori; \(R_{ivs}/R_B=0.96\)–0.98 in Ghira et al. (2022)</td></tr>
+<tr class="m"><td rowspan="2">\(r_{\max}/\eta\) (intense tubes)</td><td class="lab">Model</td><td class="c">4.8 (83), 4.7 (170), 4.6 (332)</td><td rowspan="2">fitted; ratio 0.78–1.09</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Ghira (2022): 5.0 → 4.5 (\(Re_\lambda\) 90 → 399); Jiménez et al. (1993): 1/e radius 4.22, 4.16, 4.16, 3.85 \(\eta\) at \(Re_\lambda\) 36, 63, 95, 168 (\(r_{\max}=1.12\times\) that); Tanahashi (2001, mixing layer; 2004, channel flow at \(Re_\tau\) 180–800): \(D\approx8\)–10 \(\eta\) between the points of maximum swirl, so 4–5, independent of \(Re\); Moisy and Jiménez: structures above 6 times the rms vorticity have mean volume about \(100\,\eta^3\), a length scale of about 5 \(\eta\); Aligolzadeh et al. (2023, experiment, \(Re_\lambda=179\)): mean radius \(R=5.1\,\eta\) and \(R/R_B=0.95\), so \(r_{\max}=1.12\,R/0.95=6.0\) (boundary of an objectively defined vortex, PIV resolution about \(1\,\eta\))</td></tr>
+<tr class="m"><td rowspan="2">\(r_{\max}/\eta\) (all tubes)</td><td class="lab">Model</td><td class="c">as above</td><td rowspan="2">not matched (factor 1.7)</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Mouri and Hori: \(R_0=8.3\)–9.2 (biased high); Kida et al.: core boundary \(D/2=5.2\)–5.4, i.e. \(r_{\max}\approx8\,\eta\) for a Burgers vortex</td></tr>
+<tr class="m"><td rowspan="2">Strain \(\gamma/\gamma_\eta\)</td><td class="lab">Model</td><td class="c">0.22 (83), 0.23 (170), 0.24 (332)</td><td rowspan="2">supports</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Ghira (2022): \((2\eta/R_B)^2=0.20\)–0.25; Tanahashi (2001): eigenvalues of order \(U'/\lambda=0.26\,\gamma_\eta\); Tanahashi (2004): the strain at the tube centre is smaller than the mean strain of the whole flow, eigenvalue ratio \(-5:1:4\); Moffatt: Burgers radius \(\sim\eta\) if \(\gamma\) is the typical strain</td></tr>
+<tr class="m"><td rowspan="2">Circulation \(R_\Gamma\)</td><td class="lab">Model</td><td class="c">146 (83), 162 (170), 179 (332), 231 (1934)</td><td rowspan="2">fitted; ratio 0.89–1.08</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Ghira (2022): 136, 158, 168, 176, 194, 207 (\(Re_\lambda\) 90 → 399); Mouri and Hori: \(8.78\,Re_0=180\)–246 (332 → 1934)</td></tr>
+<tr class="m"><td rowspan="2">Growth exponent of \(R_\Gamma\) with \(Re_\lambda\)</td><td class="lab">Model</td><td class="c">0.145 ± 0.017 (fitted)</td><td rowspan="2">fitted</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Ghira 0.28; Mouri and Hori 0.18; Kida et al. 0.16</td></tr>
+<tr class="m"><td rowspan="2">Tube Reynolds number \(Re_c\)</td><td class="lab">Model</td><td class="c">16.6 (83) → 26.3 (1934)</td><td rowspan="2">fitted; ratio 0.94–1.09</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Mouri and Hori \(Re_0=20\)–28</td></tr>
+<tr class="m"><td rowspan="2">Peak swirl \(U_{\max}/U_\eta\) (all tubes)</td><td class="lab">Model</td><td class="c">3.5 (83), 3.9 (170)</td><td rowspan="2">not fitted (Kida et al.); ratio 0.96–1.02; sources spread over 1.2–14</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Kida et al.: 3.1, 3.3 at the core boundary (3.6, 3.9 at \(r_{\max}\) for a Burgers vortex); Makihara et al.: about 3; Mouri and Hori: 2.4–3.2 (biased low); Tanahashi (2004, channel flow): 1.2–2.0 \(U_K\) (most expected); Tanahashi (2001, mixing layer): about half the rms velocity (2.5–3 \(U_\eta\) at \(Re_\lambda\approx100\))</td></tr>
+<tr class="m"><td rowspan="2">Peak swirl (intense tubes)</td><td class="lab">Model</td><td class="c">—</td><td rowspan="2">not modelled</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Ghira (2022): \(U_{ivs}=6\)–10 \(U_\eta\), growing as \(Re_\lambda^{1/2}\) (\(U_{ivs}\approx U'\)); the Burgers value from their \(\Gamma\) and radius is 3.1–5.2; Tanahashi (2004): the swirl of the intense eddies of diameter about 8 \(\eta\) also scales with \(u_{rms}\)</td></tr>
+<tr class="m"><td rowspan="2">Tube spacing \(d/\eta\)</td><td class="lab">Model</td><td class="c">14.8 (83), 16.9 (170)</td><td rowspan="2">not fitted (Kida et al.); ratio 0.95–0.98</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Kida et al.: 15.6, 17.2, from \(V_{\text{core}}/V\) and \(D\)</td></tr>
+<tr class="m"><td rowspan="2">Tube length density \(L_e\eta^2\)</td><td class="lab">Model</td><td class="c">\(4.5\times10^{-3}\) (83), \(3.5\times10^{-3}\) (170)</td><td rowspan="2">supports for all tubes</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Kida et al.: \(4.1\), \(3.4\times10^{-3}\); intense structures (Ghira et al. 2025): \(3.3\times10^{-4}\), ten times fewer</td></tr>
+<tr class="m"><td rowspan="2">Tube diameter</td><td class="lab">Model</td><td class="c">\(2r_{\max}=9.5\)–9.2 \(\eta\)</td><td rowspan="2">supports</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Makihara et al., Kida et al.: about 10 \(\eta\); Tanahashi (2001, 2004): 8–10; Baldyga and Bourne: 12–15 \(\eta\)</td></tr>
+<tr class="m"><td rowspan="2">Core volume fraction \(V_f\)</td><td class="lab">Model</td><td class="c">32% (83), 24% (170), to \(r_{\max}\)</td><td rowspan="2">model 32–24% is close to the 25% above \(\omega'\); not a clean test (radius and threshold differ)</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Kida et al.: 35%, 31% to the core boundary (smaller radius); Hosokawa and Yamamoto: 20% at a low vorticity threshold, 0.8% at a high one; intense structures: 1% by definition; Jiménez et al. (1993): vorticity above the rms value \(\omega'\) fills 25% of the volume, above \(3.1\,\omega'\) (their intense 1%); Moisy and Jiménez (\(Re_\lambda=168\)): the set \(\omega>\omega'\) is 25–30% of the volume, and the vorticity set percolates into one structure of about 4% of the volume at about \(2\,\omega'\)</td></tr>
+<tr class="m"><td rowspan="2">Vortex share of the dissipation</td><td class="lab">Model</td><td class="c">85% (83) → 80% (1934)</td><td rowspan="2">model 85–84% (83–170) matches 80% in 25% of the volume (Jiménez et al.) and 75% in 20% (Hosokawa and Yamamoto); conflicts with core-only values (31%) and with the intense subset</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Kida et al.: 31% inside the cores; Hosokawa and Yamamoto: 14% (0.8% of the volume) and 75% (20%); Jiménez et al. (1993): vorticity above \(\omega'\) (25% of the volume) holds 80% of the enstrophy, which equals the dissipation in homogeneous turbulence, and the intense 1% holds 15%; removing the worms (\(|\omega|>2.5\,\omega'\)) leaves the decay of the energy unchanged; Jiménez and Wray (1998): intense filaments carry a share falling as \(Re_\lambda^{-1}\); Farge et al.: strong dissipation outside the coherent tubes; Makihara et al. and Tanahashi: dissipation concentrated in the spiral layers around the core, small at the centre</td></tr>
+<tr class="m"><td rowspan="2">Where the dissipation sits</td><td class="lab">Model</td><td class="c">in the shear layer around each core (98.7% of the Burgers excess lies outside \(r=\sqrt2\,\delta\)); uniform strain elsewhere</td><td rowspan="2">supports (location)</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Moisy and Jiménez (2004): intense dissipation structures are sheets or ribbons (box-counting dimension \(1.7\pm0.1\)), not tubes (\(1.1\pm0.1\) for the vorticity); dissipation is concentrated in stretched vortex layers and at the periphery of the tubes; Makihara et al. and Tanahashi: spiral layers, small at the tube centre</td></tr>
+<tr class="m"><td rowspan="2">Spatial distribution of the tubes</td><td class="lab">Model</td><td class="c">uniform: spacing \(d=1/\sqrt{L_e}\)</td><td rowspan="2">limit of the model</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Moisy and Jiménez: intense structures cluster, with clusters of inertial-range extent; Tanahashi (2001): aggregations grow with \(Re\)</td></tr>
+<tr class="m"><td rowspan="2">Tube length</td><td class="lab">Model</td><td class="c">not used (infinite straight tubes)</td><td rowspan="2">limit of the model</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Ghira (2022): \(L_{ivs}\approx55\,\eta\) for \(Re_\lambda\gtrsim200\); Makihara et al.: at least the Taylor length</td></tr>
+<tr class="m"><td rowspan="2">\(Re_\lambda=\sqrt{15}\,(U'/U_\eta)^2\)</td><td class="lab">Model</td><td class="c">derived</td><td rowspan="2">supports</td></tr>
+<tr><td class="lab">Lit.</td><td class="c">Makihara et al.: 84.5 against 85; Mouri and Hori run B1: 330 against 332</td></tr>
+</tbody>
+</table></div>
+
+<h2>9. Four-parameter closure: swirl growing with \(Re_\lambda\)</h2>
+<p>Section 8 writes the swirl of the tube in Kolmogorov units, \(U_{\max}=\beta^{\,q}U_\eta\), so that it depends on the Reynolds number only through \(\beta\). The measured swirl grows with \(Re_\lambda\) at a nearly constant radius (the radius falls slowly, 4.28 to 3.90 \(\eta\) in Ghira et al. 2022, while the circulation rises), so this section adds one exponent to the swirl law, \(U_{\max}=\beta^{\,q}Re_\lambda^{\,s}U_\eta\), and fits the closure to the source data of section 7 and the appendix. The fit uses rows of both sets of section 7 (whole and intense tubes); it is to be split into one fit per set.</p>
+<h3>The closure</h3>
+<p>The total circulation keeps its growth law, and the swirl gets a Reynolds-number factor:</p>
+$$R_\Gamma=\frac{\Gamma}{\nu}=a\,Re_\lambda^{\,p},\qquad \frac{U_{\max}}{U_\eta}=\beta^{\,q}\,Re_\lambda^{\,s}.$$
+<p>For a Burgers vortex \(R_\Gamma=8.78\,\beta\,U_{\max}/U_\eta\) (section 8, Step 3), so \(\beta\) follows from the two laws:</p>
+$$\beta^{\,1+q}=\frac{a\,Re_\lambda^{\,p-s}}{8.78},\qquad Re_c=\beta\,\frac{U_{\max}}{U_\eta}=\frac{R_\Gamma}{8.78}.$$
+<p>Two consequences are worth noting. The tube Reynolds number \(Re_c\) is fixed by the circulation alone, so the Mouri and Hori values and the Ghira et al. circulations constrain the same function \(R_\Gamma(Re_\lambda)\), that is \(a\) and \(p\). The radius data then fix \(q\) and \(s\) through \(\beta\). The dissipation budget of section 8, Step 5, is unchanged, but with the swirl written \(U=U_{\max}/U_\eta\) the volume fraction is
+
+$$V_f=\frac{\left(1-75.8/\beta^{4}\right)\beta^{2}}{4.91\,U^{2}},\qquad \text{vortex share}=1-\frac{75.8}{\beta^4},\qquad \frac{d}{\eta}=\beta\sqrt{\frac{\pi}{V_f}},$$
+<p>which reduces to Step 5 of section 8 when \(s=0\). A swirl that grows with \(Re_\lambda\) therefore lowers \(V_f\): for a given share of the dissipation fewer tubes are needed when each carries more.</p>
+<h3>Fit</h3>
+<p>The four constants were found by minimising the sum of squared normalised residuals \(\chi^2\) was minimised with a global minimiser and \(\sigma_{\text{ref}}\) was iterated with the fit (footnote † of the table). The Ghira et al. radius group is then fitted almost exactly and its \(\sigma_{\text{ref}}\) collapses (0.4% in a trial run), so a floor of 5% was applied to \(\sigma_{\text{ref}}\); the circulation and the tube Reynolds number, and so \(a\) and \(p\), are the same with or without the floor. Three searches from different seeds agree.</p>
+$$\boxed{\;a=76.8\pm8.7,\quad p=0.145\pm0.017,\quad q=0.30\pm0.10,\quad s=0.18\pm0.03\;}\qquad\left(R_\Gamma=76.8\,Re_\lambda^{0.145},\quad \frac{U_{\max}}{U_\eta}=\beta^{0.30}Re_\lambda^{0.18}\right)$$
+<p>The mean of \(\sigma_{\text{norm}}^2\) is \(\chi^2/N=1.05\) (\(N=33\)). The parameters are correlated, \(a\)–\(p\) \(-0.99\) and in particular \(q\)–\(s\) \(-0.98\): the radius data fix the combination of \(q\) and \(s\) that sets the radius trend, not each separately. A trial run without the floor gave \(q=0.12\), \(s=0.23\) with the same \(a\) and \(p\) and the same model values to within a few per cent, so \(q\) and \(s\) should not be quoted on their own.</p>
+<h3>Data and model</h3>
+<p>The literature values are those of the appendix. Rows are listed for each measure, then by paper, in ascending \(Re_\lambda\). Red rows (Kida et al.) are shown for comparison and were not used.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Quantity</th><th>Source</th><th>\(Re_\lambda\)</th><th>Literature</th><th class="msep">Model</th><th>\(\sigma_{\text{ref}}\)<sup>†</sup></th><th>\(\sigma_{\text{norm}}^2\)</th><th>Model mean ± <em>x</em><sup>*</sup></th></tr></thead>
+<tbody>
+<tr><td rowspan="9">\(R_\Gamma=\Gamma/\nu\)</td><td rowspan="7">Ghira et al. (2022)</td><td>90</td><td>136</td><td class="msep">148</td><td>7.6%</td><td>1.12</td><td rowspan="9">168 ± 7.9%</td></tr>
+<tr><td>148</td><td>158</td><td class="msep">159</td><td>7.6%</td><td>0.00</td></tr>
+<tr><td>191</td><td>168</td><td class="msep">165</td><td>7.6%</td><td>0.09</td></tr>
+<tr><td>242</td><td>176</td><td class="msep">170</td><td>7.6%</td><td>0.18</td></tr>
+<tr><td>292</td><td>194</td><td class="msep">175</td><td>7.6%</td><td>1.75</td></tr>
+<tr><td>314</td><td>194</td><td class="msep">177</td><td>7.6%</td><td>1.36</td></tr>
+<tr><td>399</td><td>207</td><td class="msep">183</td><td>7.6%</td><td>2.49</td></tr>
+<tr class="nu"><td rowspan="2">Kida et al. (2002)<sup>‡</sup></td><td>83</td><td>110</td><td class="msep">146</td><td>—</td><td>—</td></tr>
+<tr class="nu"><td>170</td><td>123</td><td class="msep">162</td><td>—</td><td>—</td></tr>
+<tr><td rowspan="17">\(r_{\max}/\eta\)</td><td rowspan="7">Ghira et al. (2022)</td><td>90</td><td>4.99</td><td class="msep">4.75</td><td>5.0%</td><td>0.97</td><td rowspan="17">4.71 ± 7.9%</td></tr>
+<tr><td>148</td><td>4.83</td><td class="msep">4.70</td><td>5.0%</td><td>0.34</td></tr>
+<tr><td>191</td><td>4.73</td><td class="msep">4.67</td><td>5.0%</td><td>0.08</td></tr>
+<tr><td>242</td><td>4.64</td><td class="msep">4.64</td><td>5.0%</td><td>0.00</td></tr>
+<tr><td>292</td><td>4.55</td><td class="msep">4.62</td><td>5.0%</td><td>0.10</td></tr>
+<tr><td>314</td><td>4.55</td><td class="msep">4.61</td><td>5.0%</td><td>0.07</td></tr>
+<tr><td>399</td><td>4.50</td><td class="msep">4.58</td><td>5.0%</td><td>0.13</td></tr>
+<tr><td rowspan="2">Ghira et al. (2025)</td><td>54</td><td>4.95</td><td class="msep">4.81</td><td>7.6%</td><td>0.14</td></tr>
+<tr><td>54</td><td>4.88</td><td class="msep">4.81</td><td>7.6%</td><td>0.04</td></tr>
+<tr><td rowspan="4">Jiménez et al. (1993)</td><td>35.8</td><td>4.73</td><td class="msep">4.86</td><td>5.0%</td><td>0.31</td></tr>
+<tr><td>62.8</td><td>4.66</td><td class="msep">4.79</td><td>5.0%</td><td>0.33</td></tr>
+<tr><td>94.5</td><td>4.66</td><td class="msep">4.75</td><td>5.0%</td><td>0.14</td></tr>
+<tr><td>168.1</td><td>4.31</td><td class="msep">4.68</td><td>5.0%</td><td>2.71</td></tr>
+<tr><td rowspan="1">Tanahashi et al. (2001)</td><td>200</td><td>4.50</td><td class="msep">4.66</td><td>7.6%</td><td>0.22</td></tr>
+<tr><td rowspan="1">Aligolzadeh et al. (2023)</td><td>179</td><td>6.01</td><td class="msep">4.67</td><td>7.6%</td><td>10.95</td></tr>
+<tr class="nu"><td rowspan="2">Kida et al. (2002)<sup>‡</sup></td><td>83</td><td>5.20</td><td class="msep">4.76</td><td>—</td><td>—</td></tr>
+<tr class="nu"><td>170</td><td>5.40</td><td class="msep">4.68</td><td>—</td><td>—</td></tr>
+<tr><td rowspan="11">\(Re_c\)</td><td rowspan="11">Mouri and Hori</td><td>332</td><td>20.5</td><td class="msep">20.3</td><td>5.4%</td><td>0.03</td><td rowspan="11">23.7 ± 5.4%</td></tr>
+<tr><td>488</td><td>20.2</td><td class="msep">21.5</td><td>5.4%</td><td>1.32</td></tr>
+<tr><td>716</td><td>21.2</td><td class="msep">22.7</td><td>5.4%</td><td>1.65</td></tr>
+<tr><td>719</td><td>20.8</td><td class="msep">22.7</td><td>5.4%</td><td>2.72</td></tr>
+<tr><td>945</td><td>25.1</td><td class="msep">23.7</td><td>5.4%</td><td>1.20</td></tr>
+<tr><td>1080</td><td>25.3</td><td class="msep">24.1</td><td>5.4%</td><td>0.78</td></tr>
+<tr><td>1098</td><td>22.8</td><td class="msep">24.2</td><td>5.4%</td><td>1.18</td></tr>
+<tr><td>1304</td><td>23.8</td><td class="msep">24.8</td><td>5.4%</td><td>0.57</td></tr>
+<tr><td>1416</td><td>25.4</td><td class="msep">25.1</td><td>5.4%</td><td>0.05</td></tr>
+<tr><td>1693</td><td>25.4</td><td class="msep">25.7</td><td>5.4%</td><td>0.06</td></tr>
+<tr><td>1934</td><td>28.0</td><td class="msep">26.3</td><td>5.4%</td><td>1.43</td></tr>
+<tr class="nu"><td rowspan="2">\(U_{\max}/U_\eta\)</td><td rowspan="2">Kida et al. (2002)<sup>‡</sup></td><td>83</td><td>3.64</td><td class="msep">3.49</td><td>—</td><td>—</td><td rowspan="2">—</td></tr>
+<tr class="nu"><td>170</td><td>3.88</td><td class="msep">3.94</td><td>—</td><td>—</td></tr>
+<tr class="nu"><td rowspan="2">\(d/\eta\)</td><td rowspan="2">Kida et al. (2002)<sup>‡</sup></td><td>83</td><td>15.6</td><td class="msep">14.8</td><td>—</td><td>—</td><td rowspan="2">—</td></tr>
+<tr class="nu"><td>170</td><td>17.2</td><td class="msep">16.9</td><td>—</td><td>—</td></tr>
+<tr><td colspan="6"><strong>Mean of \(\sigma_{\text{norm}}^2\), \(\chi^2/N\) (\(N=33\), red rows excluded)</strong></td><td><strong>1.05</strong></td><td></td></tr>
+</tbody></table></div>
+<p class="note"><sup>†</sup> \(\sigma_{\text{ref}}\) is the reference relative uncertainty of an observation: the standard deviation of \(\ln(\text{model}/\text{literature})\). For each source and quantity with three or more observations it is the rms of that group's own \(\ln(\text{model}/\text{literature})\) at the fit, with a floor of 5%; a group with fewer observations (Ghira et al. 2025, Tanahashi et al., Aligolzadeh et al.) takes the largest \(\sigma_{\text{ref}}\) of the groups with three or more. The fit and \(\sigma_{\text{ref}}\) were iterated together until neither changed. Because \(\sigma_{\text{ref}}\) comes from the residuals themselves, \(\chi^2/N\) is below 1 and the parameter errors are approximate.<br>
+<sup>*</sup> The model mean is the average of the model values at the observed \(Re_\lambda\) of that quantity, and \(x=100\,\sqrt{\sum(M_i-M_{i,\text{lit}})^2/n}\,/\,\overline{M_{\text{lit}}}\) is the RMSE as a percentage of the literature average.<br>
+<sup>‡</sup> Red rows were not used in the fit and have no \(\sigma_{\text{ref}}\): Kida et al. define the tube by the boundary of its vortex core (diameter about 10.4–10.8 \(\eta\)), a different and larger population than the intense structures of Ghira et al., Jiménez et al. and Tanahashi et al.; the swirl is read at that boundary and converted to the Burgers peak with an assumed factor of 1.175; the circulation is that inside the boundary; and each quantity has only two points (see the appendix).</p>
+<h3>Results</h3>
+<p>For \(R_\Gamma=76.8\,Re_\lambda^{0.145}\) and \(U_{\max}/U_\eta=\beta^{0.30}Re_\lambda^{0.18}\):</p>
+<div class="tablebox"><table>
+<thead><tr><th>\(Re_\lambda\)</th><th>\(R_\Gamma\)</th><th>\(\beta=r_{\max}/\eta\)</th><th>\(Re_c\)</th><th>\(U_{\max}/U_\eta\)</th><th>\(\gamma/\gamma_\eta\)</th><th>\(V_f\)</th><th>vortex share</th><th>\(d/\eta\)</th></tr></thead>
+<tbody>
+<tr><td>54</td><td>137</td><td>4.81</td><td>15.6</td><td>3.24</td><td>0.22</td><td>39%</td><td>86%</td><td>13.7</td></tr>
+<tr><td>83</td><td>146</td><td>4.76</td><td>16.6</td><td>3.49</td><td>0.22</td><td>32%</td><td>85%</td><td>14.8</td></tr>
+<tr><td>170</td><td>162</td><td>4.68</td><td>18.4</td><td>3.94</td><td>0.23</td><td>24%</td><td>84%</td><td>16.9</td></tr>
+<tr><td>274 (feed pipe)</td><td>174</td><td>4.63</td><td>19.8</td><td>4.27</td><td>0.23</td><td>20%</td><td>83%</td><td>18.4</td></tr>
+<tr><td>332</td><td>179</td><td>4.60</td><td>20.3</td><td>4.41</td><td>0.24</td><td>18%</td><td>83%</td><td>19.0</td></tr>
+<tr><td>1000</td><td>210</td><td>4.48</td><td>23.9</td><td>5.32</td><td>0.25</td><td>12%</td><td>81%</td><td>23.2</td></tr>
+<tr><td>1934</td><td>231</td><td>4.41</td><td>26.3</td><td>5.95</td><td>0.26</td><td>9%</td><td>80%</td><td>26.1</td></tr>
+<tr><td>2170 (impeller)</td><td>234</td><td>4.40</td><td>26.7</td><td>6.07</td><td>0.26</td><td>9%</td><td>80%</td><td>26.7</td></tr>
+</tbody></table></div>
+<p>For the two process cases of Step 2, with their local \(\varepsilon\):</p>
+<div class="tablebox"><table>
+<thead><tr><th>Quantity</th><th>Feed pipe</th><th>Impeller</th></tr></thead>
+<tbody>
+<tr><td>\(U_\eta\), \(\gamma_\eta\)</td><td>0.119 m/s, 14 100 s⁻¹</td><td>0.133 m/s, 17 600 s⁻¹</td></tr>
+<tr><td>core radius \(r_{\max}\)</td><td>39 µm</td><td>33 µm</td></tr>
+<tr><td>peak swirl \(U_{\max}\)</td><td>0.51 m/s</td><td>0.81 m/s</td></tr>
+<tr><td>strain on the tube \(\gamma\)</td><td>3 320 s⁻¹</td><td>4 570 s⁻¹</td></tr>
+<tr><td>circulation \(\Gamma\)</td><td>1.7×10<sup>-4</sup> m²/s</td><td>2.3×10<sup>-4</sup> m²/s</td></tr>
+<tr><td>\(V_f\), vortex share</td><td>20%, 83%</td><td>9%, 80%</td></tr>
+<tr><td>tube spacing \(d\), length density \(L_e\)</td><td>154 µm, 4.2×10<sup>7</sup> m/m³</td><td>201 µm, 2.5×10<sup>7</sup> m/m³</td></tr>
+</tbody></table></div>
+<div class="result"><p>With four fitted constants (\(\chi^2/N=1.05\), 33 observations) the Ghira et al. radius residuals are within \(\pm5\)%, and the RMSE is 7.9% (circulation), 7.9% (radius), 5.4% (tube Reynolds number) of the literature averages. The experimental radius of Aligolzadeh et al. (\(Re_\lambda=179\), 6.0 \(\eta\) by the Burgers-equivalent definition) is the largest residual, with the model 22% below it, and lies above all the DNS radii (4.3–5.0 \(\eta\)). The unused values of Kida et al. differ from the model by at most 4% (swirl), 5% (spacing), 13% (radius, half the core diameter) and 33% (circulation inside their core boundary). The tube radius is nearly independent of \(Re_\lambda\) (\(\beta=4.8\) to 4.4 over \(Re_\lambda=83\)–1934), the swirl grows (\(U_{\max}/U_\eta=3.5\) to 6.0), and as a result the volume fraction of the tubes falls from 32% to 9% and the share of the dissipation in the tubes from 85% to 80%, which is the direction of the fall of the share of the intense filaments with \(Re_\lambda\) reported by Jiménez and Wray, though that share is a different quantity. The circulation trend of Ghira et al. is not removed: their \(\Gamma\) grows faster than the \(Re_0\) of Mouri and Hori allows (residuals \(+8\)% to \(-11\)%).</p></div>
+<ul>
+<li><strong>Extrapolation.</strong> The swirl, and with it \(V_f\), \(d\) and the share, extrapolate with the fitted \(Re_\lambda\) dependence. The data constrain the swirl only through the circulation and radius (Ghira et al., \(Re_\lambda\le399\)) and the tube Reynolds number (Mouri and Hori, \(Re_\lambda\) 332–1934). The impeller case (\(Re_\lambda=2170\)) lies above all of these.</li>
+<li><strong>Circulation reading.</strong> The listed circulation of Ghira et al. is taken as the total (see the appendix and the limits below).</li>
+<li><strong>Mixed tube sets.</strong> The fitted rows are radii of intense tubes (Ghira, Jiménez, Aligolzadeh) and one of whole tubes (Tanahashi), the circulation of intense tubes (Ghira) and the tube Reynolds number of whole tubes (Mouri and Hori 2009). The intense-tube Reynolds numbers of Mouri et al. (2004, 2007), 32&ndash;87, are 2&ndash;3 times the model values and are not fitted (section 7).</li>
+</ul>
+<h3>Limits of this model</h3>
+<ul>
+<li><strong>Dissipation share.</strong> The vortex share is a result of the budget, \(1-75.8/\beta^4\), and rests on one uniform strain \(\gamma\) for the whole volume outside the tubes. The measurements give 14–75% depending on threshold and definition (core only, intense subset, wavelet-coherent part). Tube plus surrounding shear layer has not been measured as one quantity.</li>
+<li><strong>Two sets of tubes.</strong> The measured swirl and tube Reynolds number differ by a factor 2&ndash;3 between whole and intense tubes (section 7), and one tube with one swirl law cannot describe both. The all-tube radius of Mouri and Hori (8&ndash;9 \(\eta\)) is biased high by their own statement and is larger than every other radius in the data. The experimental radius of Aligolzadeh et al. (6.0 \(\eta\) at \(Re_\lambda=179\), objectively defined vortex boundary) is the largest residual of the fit.</li>
+<li><strong>Circulation definition.</strong> The circulation of Ghira et al. is listed as \(\Gamma_{ivs}=2\pi\langle U_{ivs}\rangle R_{ivs}\), the circulation inside \(R_{ivs}\) for a Burgers vortex, and is taken here as the total circulation of the model. With that reading the model agrees in magnitude with Kida et al. and Mouri and Hori, but the swirl listed by Ghira et al. (\(U_{ivs}/u_\eta=6.0\)&ndash;10.2) is 1.5&ndash;2.5 times the model's \(U_{\max}/U_\eta\), so the model describes the circulation of the intense tubes and not their swirl (see the appendix).</li>
+<li><strong>Volume fraction.</strong> \(V_f\) is the volume within \(r_{\max}\) and is not the quantity reported as a threshold volume (1% for intense structures, 0.8&ndash;20% at Hosokawa and Yamamoto's thresholds) or as the core volume (31&ndash;35%, Kida et al.).</li>
+<li><strong>Isolated straight Burgers tubes.</strong> Measured tubes are about \(55\,\eta\) long (Ghira et al.), curved, and wrapped by spiral vortex layers (Kida et al., Makihara et al.). Axial outflow and end effects are not modelled.</li>
+<li><strong>Extrapolation.</strong> The fit covers \(Re_\lambda=36\)&ndash;1934. The feed-pipe case (274) lies inside that range; the impeller case (2170) lies just above the highest laboratory value and about twice the highest DNS in the sources. Jiménez and Wray note that the intense-structure trends cannot continue indefinitely.</li>
+<li><strong>Process mapping.</strong> \(\varepsilon=U^3/L\) is a scale estimate good to a factor of a few, and \(U'=U\) is an upper bound. The vessel-average \(\varepsilon\) is lower (2.4 W/kg for the impeller example) and corresponds to larger tubes.</li>
+</ul>
+
+<h2>References</h2>
+<p>Papers cited in this page, with the DOI where one was found in the paper itself or in the Scopus export. Entries marked "not checked" give a reference or DOI I could not confirm from a copy of the paper.</p>
+<ol style="padding-left:1.4em">
+<li style="margin:8px 0">Aligolzadeh, F., Holzner, M. and Dawson, J. R. (2023). Entrainment, detrainment and enstrophy transport by small-scale vortex structures. <em>J. Fluid Mech.</em> 973, A5. DOI: <a href="https://doi.org/10.1017/jfm.2023.745">10.1017/jfm.2023.745</a></li>
+<li style="margin:8px 0">Baldyga, J. and Bourne, J. R. (1984). A fluid mechanical approach to turbulent mixing and chemical reaction. Part II: Micromixing in the light of turbulence theory. <em>Chem. Eng. Commun.</em> 28, 243–258. DOI: <a href="https://doi.org/10.1080/00986448408940136">10.1080/00986448408940136</a></li>
+<li style="margin:8px 0">Belin, F., Maurer, J., Tabeling, P. and Willaime, H. (1996). Observation of intense filaments in fully developed turbulence. <em>J. Phys. II France</em> 6, 573–583. DOI: <a href="https://doi.org/10.1051/jp2:1996198">10.1051/jp2:1996198</a></li>
+<li style="margin:8px 0">Burgers, J. M. (1948). A mathematical model illustrating the theory of turbulence. <em>Adv. Appl. Mech.</em> 1, 171–199. Title and pages from memory (the copy is a scan I did not read); DOI not checked.</li>
+<li style="margin:8px 0">Cherry, R. S. and Kwon, K.-Y. (1990). Transient shear stresses on a suspension cell in turbulence. <em>Biotechnol. Bioeng.</em> 36, 563–571. DOI: <a href="https://doi.org/10.1002/bit.260360603">10.1002/bit.260360603</a></li>
+<li style="margin:8px 0">Da Silva, C. B., Dos Reis, R. J. N. and Pereira, J. C. F. (2011). The intense vorticity structures near the turbulent/non-turbulent interface in a jet. <em>J. Fluid Mech.</em> 685, 165. DOI: <a href="https://doi.org/10.1017/jfm.2011.296">10.1017/jfm.2011.296</a></li>
+<li style="margin:8px 0">Das, S. K., Tanahashi, M., Shoji, K. and Miyauchi, T. (2006). Statistical properties of coherent fine eddies in wall-bounded turbulent flows by direct numerical simulation. <em>Theor. Comput. Fluid Dyn.</em> 20, 55–71. DOI: <a href="https://doi.org/10.1007/s00162-006-0008-z">10.1007/s00162-006-0008-z</a></li>
+<li style="margin:8px 0">Elsinga, G. E., Ishihara, T. and Hunt, J. C. R. (2023). Intermittency across Reynolds numbers – the influence of large-scale shear layers on the scaling of the enstrophy and dissipation in homogeneous isotropic turbulence. <em>J. Fluid Mech.</em> 974, A17. DOI: <a href="https://doi.org/10.1017/jfm.2023.799">10.1017/jfm.2023.799</a></li>
+<li style="margin:8px 0">Enoki, R., Watanabe, T. and Nagata, K. (2023). Statistical properties of shear and nonshear velocity components in isotropic turbulence and turbulent jets. <em>Phys. Rev. Fluids</em> 8, 104602. DOI: <a href="https://doi.org/10.1103/PhysRevFluids.8.104602">10.1103/PhysRevFluids.8.104602</a></li>
+<li style="margin:8px 0">Farge, M., Schneider, K., Pellegrino, G., Wray, A. A. and Rogallo, R. S. (2003). Coherent vortex extraction in three-dimensional homogeneous turbulence: comparison between CVS-wavelet and POD-Fourier decompositions. <em>Phys. Fluids</em> 15, 2886–2898. DOI: <a href="https://doi.org/10.1063/1.1599857">10.1063/1.1599857</a></li>
+<li style="margin:8px 0">Ghira, A. A., Elsinga, G. E. and Da Silva, C. B. (2022). Characteristics of the intense vorticity structures in isotropic turbulence at high Reynolds numbers. <em>Phys. Rev. Fluids</em> 7, 104605. DOI: <a href="https://doi.org/10.1103/PhysRevFluids.7.104605">10.1103/PhysRevFluids.7.104605</a></li>
+<li style="margin:8px 0">Ghira, A. A., Elsinga, G. E. and Da Silva, C. B. (2025). Lifetime of the intense vorticity structures in isotropic turbulence. <em>J. Fluid Mech.</em> 1007, A62. DOI: <a href="https://doi.org/10.1017/jfm.2025.62">10.1017/jfm.2025.62</a></li>
+<li style="margin:8px 0">Ghira, A. A., Vela-Martin, A. and Da Silva, C. B. (2024). Temporal vortex tracking in isotropic turbulence. <em>J. Phys.: Conf. Ser.</em> 2753, 012011. DOI: <a href="https://doi.org/10.1088/1742-6596/2753/1/012011">10.1088/1742-6596/2753/1/012011</a></li>
+<li style="margin:8px 0">Hosokawa, I. and Yamamoto, K. (1989). Fine structure of a directly simulated isotropic turbulence. <em>J. Phys. Soc. Jpn.</em> 58, 20–23. DOI not checked (the copy has no text layer).</li>
+<li style="margin:8px 0">Ishihara, T., Hunt, J. C. R. and Kaneda, Y. (2011). Conditional analysis near strong shear layers in DNS of isotropic turbulence at high Reynolds number. <em>J. Phys.: Conf. Ser.</em> 318, 042004. DOI: <a href="https://doi.org/10.1088/1742-6596/318/4/042004">10.1088/1742-6596/318/4/042004</a></li>
+<li style="margin:8px 0">Ishihara, T., Kaneda, Y. and Hunt, J. C. R. (2013). Thin shear layers in high Reynolds number turbulence – DNS results. <em>Flow Turbul. Combust.</em> 91, 895. DOI: <a href="https://doi.org/10.1007/s10494-013-9499-z">10.1007/s10494-013-9499-z</a></li>
+<li style="margin:8px 0">Jiménez, J. and Wray, A. A. (1994). On the dynamics of small-scale vorticity in isotropic turbulence. Center for Turbulence Research, <em>Annual Research Briefs 1994</em>, 287–311 (NASA N95-22459). No DOI.</li>
+<li style="margin:8px 0">Jiménez, J. and Wray, A. A. (1998). On the characteristics of vortex filaments in isotropic turbulence. <em>J. Fluid Mech.</em> 373, 255–285. DOI: <a href="https://doi.org/10.1017/S0022112098002341">10.1017/S0022112098002341</a></li>
+<li style="margin:8px 0">Jiménez, J., Wray, A. A., Saffman, P. G. and Rogallo, R. S. (1993). The structure of intense vorticity in isotropic turbulence. <em>J. Fluid Mech.</em> 255, 65–90. DOI: <a href="https://doi.org/10.1017/S0022112093002393">10.1017/S0022112093002393</a></li>
+<li style="margin:8px 0">Kida, S., Goto, S. and Makihara, T. (2002). Low-pressure vortex analysis in turbulence: life, structure, and dynamical role of vortices. In: Bajer, K. and Moffatt, H. K. (eds), <em>Tubes, Sheets and Singularities in Fluid Dynamics</em>, Kluwer, 181–190. No DOI found.</li>
+<li style="margin:8px 0">Leung, T., Swaminathan, N. and Davidson, P. A. (2012). Geometry and interaction of structures in homogeneous isotropic turbulence. <em>J. Fluid Mech.</em> 710, 453. DOI: <a href="https://doi.org/10.1017/jfm.2012.373">10.1017/jfm.2012.373</a></li>
+<li style="margin:8px 0">Makihara, T., Kida, S. and Miura, H. (2002). Automatic tracking of low-pressure vortex. <em>J. Phys. Soc. Jpn.</em> 71, 1622–1625. DOI: <a href="https://doi.org/10.1143/JPSJ.71.1622">10.1143/JPSJ.71.1622</a></li>
+<li style="margin:8px 0">Miyauchi, T., Kang, S.-J. and Tanahashi, M. (2006). Coherent fine scale eddies in the logarithmic region of turbulent channel flows. <em>Fluid Mechanics and its Applications</em> 79, 71–80. DOI: <a href="https://doi.org/10.1007/1-4020-4181-0_7">10.1007/1-4020-4181-0_7</a> (abstract only).</li>
+<li style="margin:8px 0">Moffatt, H. K., Kida, S. and Ohkitani, K. (1994). Stretched vortices – the sinews of turbulence; large-Reynolds-number asymptotics. <em>J. Fluid Mech.</em> 259, 241–264. DOI: <a href="https://doi.org/10.1017/S002211209400011X">10.1017/S002211209400011X</a></li>
+<li style="margin:8px 0">Moisy, F. and Jiménez, J. (2004). Geometry and clustering of intense structures in isotropic turbulence. <em>J. Fluid Mech.</em> 513, 111–133. DOI: <a href="https://doi.org/10.1017/S0022112004009802">10.1017/S0022112004009802</a></li>
+<li style="margin:8px 0">Mouri, H. and Hori, A. (2009). Vortex tubes in turbulence velocity fields at high Reynolds numbers. <em>Fluid Dyn. Res.</em> 41, 021402. DOI: <a href="https://doi.org/10.1088/0169-5983/41/2/021402">10.1088/0169-5983/41/2/021402</a>. The file in the LIT folder is the preprint, arXiv:<a href="https://arxiv.org/abs/0801.2276">0801.2276</a>.</li>
+<li style="margin:8px 0">Mouri, H., Hori, A. and Kawashima, Y. (2003). Vortex tubes in velocity fields of laboratory isotropic turbulence: dependence on the Reynolds number. <em>Phys. Rev. E</em> 67, 016305. DOI: <a href="https://doi.org/10.1103/PhysRevE.67.016305">10.1103/PhysRevE.67.016305</a></li>
+<li style="margin:8px 0">Mouri, H., Hori, A. and Kawashima, Y. (2004). Vortex tubes in turbulence velocity fields at Reynolds numbers \(Re_\lambda\simeq300\)–1300. <em>Phys. Rev. E</em> 70, 066305. DOI: <a href="https://doi.org/10.1103/PhysRevE.70.066305">10.1103/PhysRevE.70.066305</a></li>
+<li style="margin:8px 0">Mouri, H., Hori, A. and Kawashima, Y. (2007). Laboratory experiments for intense vortical structures in turbulence velocity fields. <em>Phys. Fluids</em> 19, 055101. DOI: <a href="https://doi.org/10.1063/1.2720827">10.1063/1.2720827</a></li>
+<li style="margin:8px 0">Okamoto, N., Yoshimatsu, K., Schneider, K., Farge, M. and Kaneda, Y. (2007). Coherent vortices in high resolution direct numerical simulation of homogeneous isotropic turbulence: a wavelet viewpoint. <em>Phys. Fluids</em> 19, 115109. DOI: <a href="https://doi.org/10.1063/1.2771661">10.1063/1.2771661</a></li>
+<li style="margin:8px 0">Pirozzoli, S. (2009). A structural model for the vortex tubes of isotropic turbulence. <em>Theor. Comput. Fluid Dyn.</em> 23, 55–62. DOI: <a href="https://doi.org/10.1007/s00162-009-0092-y">10.1007/s00162-009-0092-y</a></li>
+<li style="margin:8px 0">Pirozzoli, S. (2012). On the velocity and dissipation signature of vortex tubes in isotropic turbulence. <em>Physica D</em> 241, 202. DOI: <a href="https://doi.org/10.1016/j.physd.2011.03.005">10.1016/j.physd.2011.03.005</a></li>
+<li style="margin:8px 0">Sassa, K. and Makita, H. (2005). Reynolds number dependence of elementary vortices in turbulence. In: <em>Engineering Turbulence Modelling and Experiments 6</em>, 431–440. DOI: <a href="https://doi.org/10.1016/B978-008044544-1/50041-8">10.1016/B978-008044544-1/50041-8</a></li>
+<li style="margin:8px 0">Tanahashi, M., Iwase, S. and Miyauchi, T. (2001). Appearance and alignment with strain rate of coherent fine scale eddies in turbulent mixing layer. <em>J. Turbulence</em> 2, 006. DOI: <a href="https://doi.org/10.1088/1468-5248/2/1/006">10.1088/1468-5248/2/1/006</a></li>
+<li style="margin:8px 0">Tanahashi, M., Kang, S.-J., Miyamoto, T., Shiokawa, S. and Miyauchi, T. (2004). Scaling law of fine scale eddies in turbulent channel flows up to \(Re_\tau=800\). <em>Int. J. Heat Fluid Flow</em> 25, 331–340. DOI: <a href="https://doi.org/10.1016/j.ijheatfluidflow.2004.02.016">10.1016/j.ijheatfluidflow.2004.02.016</a></li>
+<li style="margin:8px 0">Wang, Y., Tanahashi, M. and Miyauchi, T. (2007). Coherent fine scale eddies in turbulence transition of spatially-developing mixing layer. <em>Int. J. Heat Fluid Flow</em> 28, 1280–1290. DOI: <a href="https://doi.org/10.1016/j.ijheatfluidflow.2007.06.009">10.1016/j.ijheatfluidflow.2007.06.009</a></li>
+<li style="margin:8px 0">Watanabe, T. and Nagata, K. (2023). The response of small-scale shear layers to perturbations in turbulence. <em>J. Fluid Mech.</em> 963, A31. DOI: <a href="https://doi.org/10.1017/jfm.2023.316">10.1017/jfm.2023.316</a></li>
+<li style="margin:8px 0">Watanabe, T., Mori, T., Ishizawa, K. and Nagata, K. (2024). Scale dependence of local shearing motion in decaying turbulence generated by multiple-jet interaction. <em>J. Fluid Mech.</em> 997, A14. DOI: <a href="https://doi.org/10.1017/jfm.2024.727">10.1017/jfm.2024.727</a></li>
+<li style="margin:8px 0">Wojtas, K., Orciuch, W., Wysocki, Ł. and Makowski, Ł. (2017). Modeling and experimental validation of subgrid scale scalar variance at high Schmidt numbers. <em>Chem. Eng. Res. Des.</em> 123, 141–151. DOI: <a href="https://doi.org/10.1016/j.cherd.2017.05.003">10.1016/j.cherd.2017.05.003</a></li>
+</ol>
+<h2>Appendix: the source data, how it was converted, and what the model uses</h2>
+<p>Every literature value that enters or is compared with the model is listed here, source by source. For each paper there is a short discussion of how the tubes were selected and the equations that convert the tabulated numbers to the model quantities, followed by one table per measurement type, with the rows in ascending \(Re_\lambda\). Each table has the measurement type, \(Re_\lambda\), the kinematic viscosity \(\nu\) and the dissipation rate \(\varepsilon\) of the run (the two given quantities that fix \(\eta\) and \(u_\eta\); in the units of the paper, which differ: DNS code units, cm\(^2\)/s and m\(^2\)/s\(^3\); a dash where the paper does not give one), then the entries taken from the paper's table, then the value used in the model with the \(\nu\), \(\varepsilon\) and \(\eta\) used by the model in SI units, and the role: fitted in section 9, or not fitted with the reason. The model-side \(\nu\) and \(\varepsilon\) are measured for the laboratory experiments in air (Mouri et al.), derived from the Kolmogorov length for Aligolzadeh et al. (&Dagger;), and for all DNS rows a reference, water (\(\nu=10^{-6}\) m\(^2\)/s) at \(\varepsilon=0.1\) W/kg (&dagger;), explained in A0b. The tube set of each source (whole or intense) is explained in section 7.</p>
+<h3>A0. Conversions used for all sources</h3>
+<p>A Burgers vortex has \(u_\theta(r)=\dfrac{\Gamma}{2\pi r}\left(1-e^{-r^2/R_B^2}\right)\) with \(R_B=2\sqrt{\nu/\gamma}\), the radius at which the vorticity has fallen to \(1/e\) of its axis value. The swirl is maximal at \(r_{\max}=\sqrt{x}\,R_B=1.121\,R_B\), where \(x=1.2564\) is the root of \(e^x-2x-1=0\), and</p>
+$$U_{\max}=\frac{(1-e^{-x})\,\Gamma}{2\pi\,r_{\max}},\qquad \frac{\Gamma}{\nu}=\frac{2\pi}{1-e^{-x}}\,\frac{r_{\max}U_{\max}}{\nu}=8.78\,Re_c,\qquad Re_c=\frac{r_{\max}U_{\max}}{\nu}.$$
+<p>The circulation inside a radius \(r\) is \(\Gamma(r)=\Gamma\left(1-e^{-r^2/R_B^2}\right)\) and the swirl at \(r=k\,r_{\max}\) is \(U_{\max}f(k)\), with</p>
+$$f(k)=\frac{1-e^{-xk^2}}{k\,(1-e^{-x})}.$$
+<p>The Kolmogorov scales satisfy \(\nu=u_\eta\,\eta\), and for isotropic turbulence the rms velocity is \(u'/u_\eta=\left(Re_\lambda/\sqrt{15}\right)^{1/2}\) (the isotropic relation \(\varepsilon=15\nu u'^2/\lambda^2\)). All radii are in units of \(\eta\), all velocities in units of \(u_\eta\) (written \(U_\eta\) in the model), and \(\Gamma\) in units of \(\nu\).</p>
+<h3>A0b. Physical equivalents of the DNS rows</h3>
+<p>A DNS is solved in dimensionless variables, \(\tilde x=x/\ell_0\), \(\tilde u=u/u_0\), \(\tilde t=t\,u_0/\ell_0\), \(\tilde\nu=\nu/(u_0\ell_0)\), \(\tilde\varepsilon=\varepsilon\,\ell_0/u_0^3\). Ghira et al. fix the box at \(2\pi\times2\pi\times2\pi\) (so \(\ell_0=L_{\text{box}}/2\pi\) and the Fourier wavenumbers are integers) and impose a random body force, delta-correlated in time and concentrated at the wavenumbers around \(k_p=2\) (Alvelius's scheme), whose mean power \(P=\langle f_iu_i\rangle=10\) is the same in every run. There are no walls and no mean flow; at steady state the viscous dissipation balances the power, so \(\tilde\varepsilon\approx10\) (Table II: 9.5&ndash;11.9) and the integral length \(\tilde L_{11}\approx0.85\) is set by the forcing. Only \(\tilde\nu\) changes between the runs (0.0145 to 0.0010), and it sets \(Re_\lambda\); the Kolmogorov length \(\tilde\eta=(\tilde\nu^3/\tilde\varepsilon)^{1/4}\) is the value listed in Table II (0.0235 for the first run). One series is therefore the same stirrer in fluids of falling viscosity.</p>
+<p>To compare with a physical flow with kinematic viscosity \(\nu\) and dissipation rate \(\varepsilon\), the two scales \(\ell_0\) and \(u_0\) follow from two equations, \(\varepsilon=\tilde\varepsilon\,u_0^3/\ell_0\) and \(\nu=\tilde\nu\,u_0\ell_0\):</p>
+$$\ell_0=\frac{\eta_{\text{phys}}}{\tilde\eta}=\left(\frac{\nu^3/\varepsilon}{\tilde\nu^3/\tilde\varepsilon}\right)^{1/4},\qquad u_0=\frac{\nu}{\tilde\nu\,\ell_0},\qquad \eta_{\text{phys}}=\left(\frac{\nu^3}{\varepsilon}\right)^{1/4}.$$
+<p>The Reynolds number \(Re_\lambda\) is already used (through \(\tilde\nu\)), so one of \(\varepsilon\), \(\ell_0\) or \(u_0\) must be given besides \(\nu\). The model takes \(\varepsilon\) as given, as in section 5, and the reference used here is water, \(\nu=10^{-6}\) m\(^2\)/s, at \(\varepsilon=0.1\) W/kg, so \(\eta_{\text{phys}}=56.2\ \mu\)m. The results of the DNS in Kolmogorov units hold for any \(\varepsilon\); a different reference only rescales the lengths, and an \(r_{\max}\) of \(\beta\,\eta\) becomes \(\beta\times56.2\ \mu\)m. For the runs of Ghira et al. (2022), with the integral lengths of their Table II:</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>\(Re_\lambda\)</th><th>\(\tilde\nu\)</th><th>\(\tilde\varepsilon\)</th><th>\(\tilde\eta\)</th><th>\(\tilde L_{11}\) (DNS)</th><th>\(\ell_0\) (mm)</th><th>box \(2\pi\ell_0\) (mm)</th><th>\(u_0\) (mm/s)</th></tr></thead>
+<tbody>
+<tr><td>90</td><td>0.0145</td><td>9.98</td><td>0.02351</td><td>0.90</td><td>2.39</td><td>15</td><td>29</td></tr>
+<tr><td>148</td><td>0.0057</td><td>9.54</td><td>0.01180</td><td>0.84</td><td>4.76</td><td>30</td><td>37</td></tr>
+<tr><td>191</td><td>0.0034</td><td>9.88</td><td>0.00794</td><td>0.86</td><td>7.08</td><td>44</td><td>42</td></tr>
+<tr><td>242</td><td>0.0023</td><td>9.52</td><td>0.00598</td><td>0.84</td><td>9.41</td><td>59</td><td>46</td></tr>
+<tr><td>314</td><td>0.0014</td><td>9.84</td><td>0.00409</td><td>0.86</td><td>13.76</td><td>86</td><td>52</td></tr>
+<tr><td>292</td><td>0.0009</td><td>10.07</td><td>0.00292</td><td>0.60</td><td>19.28</td><td>121</td><td>58</td></tr>
+<tr><td>399</td><td>0.001</td><td>11.91</td><td>0.00303</td><td>0.96</td><td>18.58</td><td>117</td><td>54</td></tr>
+</tbody></table></div>
+<p class="note"><strong>Note on \(L_{11}\).</strong> \(L_{11}\) is the longitudinal integral length scale, the integral of the longitudinal velocity autocorrelation, the size of the energy-containing eddies (Ghira et al. compute it from the energy spectrum, their Appendix A). The column \(\tilde L_{11}\) is the DNS value (Ghira et al., Table II, in code units) and is given for information only: it is not converted to metres and is not used in the phenomenological turbulence model, whose inputs are \(\varepsilon\) and \(\nu\) (with \(\eta\) and the Kolmogorov scales following from them), and it enters none of the fits.</p>
+
+<h3>A0c. Corrections applied to the reported values</h3>
+<p>The values in the section 7 table are the values calculated from the papers (appendix A1 onwards) multiplied by the factors below, where a factor is applied; the table shows the calculated value and the factor under the corrected value. The tube Reynolds number and the circulation are recomputed from the corrected radius and swirl. The corrections are working choices, made to bring the experiments to the same tube as the simulations, and are listed with the reason for each:</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Source</th><th>Radius</th><th>Swirl</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>DNS: Ghira et al. 2022 (radius), 2025, Jim&eacute;nez, Da Silva, Tanahashi, Kida, Pirozzoli, Ishihara, Das et al.</td><td>none</td><td>none (Ghira 2022: &times;0.6)</td><td>3D fields: no one-dimensional cut, so no chord effect; the radius is read from the profile itself. The definitions differ (1/e radius, most expected value, core boundary) but not the geometry. Ghira 2022: see below.</td></tr>
+<tr><td>Mouri et al. 2003, 2004, 2007 (hot wire, intense)</td><td>none</td><td>none</td><td>A high threshold (the top 0.1&ndash;1% of the increments, 3&sigma; for 2003) favours crossings close to the axis, where the signal is largest; the authors say the radius is close to the true mean (5&ndash;7 \(\eta\)). The amplitude is then about 0.9 of the peak.</td></tr>
+<tr><td>Mouri and Hori 2009 (hot wire, all tubes)</td><td>&divide; 1.7</td><td>&times; 3</td><td>The average over all tubes includes off-axis and tilted crossings: radius too large, amplitude too small (see below).</td></tr>
+<tr><td>Belin et al. 1996 (hot film)</td><td>none</td><td>not used</td><td>The peak of the chord distribution (3.5 \(\eta\) as \(R\), 5.5 \(\eta\) as \(r_{\max}\)) is set by near-axis crossings; the mean (about 6 \(\eta\) as \(R\), 9.5 \(\eta\) as \(r_{\max}\)) divided by 1.7 gives 5.6 \(\eta\), the same value. The swirl needs \(1/(2\sin\alpha)\) with an assumed \(\alpha\), a factor of about 3.6, and is not used.</td></tr>
+<tr><td>Aligolzadeh et al. 2023 (3D PIV)</td><td>none</td><td>none</td><td>A 3D field, resolution about 1 \(\eta\) with no spatial averaging (Sec. 2.1), so neither a chord effect nor a smoothing correction applies. The radius is the boundary of the vortex, not \(r_{\max}\); this is not corrected yet.</td></tr>
+<tr><td>Sassa and Makita 2005 (probe records)</td><td>none</td><td>none</td><td>A moderate threshold (2.5&sigma;); the probe and its smoothing have not been checked.</td></tr>
+</tbody></table></div>
+<h4>The chord correction (hot wire, all tubes)</h4>
+<p>A single wire or crossed wire records one velocity component along a straight path through the flow. With Taylor's hypothesis the time is a distance \(s=Ut\), and a tube is a vortex with Gaussian vorticity \(\omega=\omega_0e^{-\rho^2/2R^2}\) (\(R\) its Gaussian width, \(R_B=\sqrt2\,R\), \(r_{\max}=\sqrt{2x}\,R=1.585\,R\)) and azimuthal velocity \(v_\theta=\omega_0R^2(1-e^{-\rho^2/2R^2})/\rho\). For a tube with axis \(\mathbf a\) crossed by a path with direction \(\mathbf e_x\) at impact parameter \(b\) (the distance between the path and the axis), the distance of the path from the axis is \(\rho^2=b^2+\sin^2\gamma\,(s-s_c)^2\), with \(\gamma\) the angle between path and axis, and the signal in the sensed direction \(\mathbf e_y\) is</p>
+$$S(s)=\frac{v_\theta(\rho)}{\rho}\;\mathbf e_y\cdot\left(\mathbf a\times\mathbf p(s)\right).$$
+<p>For a tube normal to the path and crossed through its axis the signal is \(v_\theta(|s|)\,\mathrm{sgn}\,s\): two extrema at \(\pm r_{\max}\), a spacing of \(2r_{\max}=3.17R\) (the rule \(R=0.31\,U\Delta t\) of Belin et al.) and an amplitude \(U_{\max}\). Off the axis the spacing grows and the amplitude falls (tube normal to the path):</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>\(b/r_{\max}\)</th><th>0</th><th>0.5</th><th>1</th><th>1.5</th><th>2</th><th>3</th></tr></thead>
+<tbody>
+<tr><td>spacing of the extrema \(/2r_{\max}\)</td><td>1.00</td><td>1.04</td><td>1.20</td><td>1.53</td><td>2.00</td><td>3.00</td></tr>
+<tr><td>amplitude \(/\) central amplitude</td><td>1.00</td><td>0.89</td><td>0.66</td><td>0.46</td><td>0.35</td><td>0.23</td></tr>
+</tbody></table></div>
+<p>A tilt of the axis stretches the path through the tube by \(1/\cos\alpha\) (mean 1.12 for a tilt uniform up to 45&deg;, 1.41 at 45&deg;) and adds an even part to the signal. Averaging over all orientations (isotropic, tilt up to 45&deg;) and a uniform offset \(b\), keeping the events whose peak is at least a fraction \(f\) of the central amplitude (the detection threshold relative to the strength of the tube), the means of the events that are kept are:</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>amplitude cut \(f\)</th><th>0.8</th><th>0.5</th><th>0.3</th><th>0.2</th></tr></thead>
+<tbody>
+<tr><td>mean radius ratio \(R_m/R\)</td><td>1.18</td><td>1.54</td><td>2.01</td><td>2.56</td></tr>
+<tr><td>mean amplitude ratio \(U'/U\)</td><td>0.89</td><td>0.71</td><td>0.56</td><td>0.45</td></tr>
+<tr><td>product (\(Re_c'/Re_c\))</td><td>1.05</td><td>1.05</td><td>1.01</td><td>0.96</td></tr>
+</tbody></table></div>
+<p>A high threshold (large \(f\)) keeps only near-axis crossings (ratio close to 1); the average over all tubes includes weak crossings (small \(f\)), and a mean ratio of about 1.7 corresponds to \(f\approx0.25\)&ndash;0.3. The same crossings lower the amplitude by a factor 1/0.56 = 1.8 and leave the product \(Re_c\) about unchanged (the circulation is roughly conserved). Checks: (i) the size distribution that Belin et al. measured with a hot film has its peak at \(R=3.5\,\eta\) and its mean near \(6\,\eta\) (read from his Fig. 5); the peak is set by near-axis crossings and corresponds to \(r_{\max}=5.5\,\eta\), the mean divided by 1.7 gives \(5.6\,\eta\); (ii) Mouri and Hori state that \(R_0\) is above the true mean radius for all tubes but close to it for intense tubes. The model assumes identical tubes; the width of the measured distribution comes mostly from a real spread of tube radii (lognormal, spread about 0.5 in \(\ln R\)).</p>
+<p>The probe has a finite length (1.25 mm sensing length and 1.4 mm wire separation for Mouri et al., against 0.2&ndash;3 \(\eta\) for the masked fibre of Belin et al.), which grows from 2 \(\eta\) at \(Re_\lambda=332\) to 13 \(\eta\) at 1934 and smooths the signal. A boxcar average over a length \(L\) adds \(L^2/6\) to \(R^2\) and conserves the circulation; for \(L=1\) mm and a true \(r_{\max}=5\,\eta\) it would give a radius of 5.1 \(\eta\) at \(Re_\lambda=332\) and 8.4 \(\eta\) at 1934. The hot-wire radii of Mouri et al. (2004, 2007) are below this estimate at high \(Re_\lambda\), and it is not applied.</p>
+<h4>Why not the same factor for the intense hot-wire classes</h4>
+<p>The intense classes of Mouri et al. are selected by the highest 0.1&ndash;1% of the increments, so the events that remain have a large amplitude relative to the cut and are mostly close to the axis; the authors write that the intense radius is close to the true mean radius. Dividing their radii (5.2&ndash;7.4 \(\eta\)) by 1.7 would give 3.1&ndash;4.4 \(\eta\), below the simulations. They are used as reported.</p>
+<h4>Ghira et al. (2022): the swirl</h4>
+<p>Their listed swirl \(U_{ivs}\), the mean tangential velocity at \(R_{ivs}\), is 1.0&ndash;1.25 \(u'\), against 0.86&ndash;0.99 for Jim&eacute;nez and Wray, 0.68&ndash;0.76 for Da Silva et al., 0.5 for the mixing layer and 0.5&ndash;0.8 for the hot wire. The swirl that a Burgers vortex has with their mean axis vorticity (\(\omega_{ivs}/\omega_{rms}=3.9\), 4.3, 4.4, 4.5, 4.8 at \(Re_\lambda=90\), 148, 191, 242, 314) and their Burgers radius is \(U_{\max}=0.319\,\omega_0R_B=5.5\), 5.9, 6.0, 6.0, 6.2 \(U_\eta\), nearly constant, while the listed swirl grows with \(u'\) from 6.1 to 9.5. The ratio of the vorticity-based to the listed swirl falls from 0.90 to 0.65. A constant factor that puts the Ghira swirl on the curve of the other sources, \(U_{\max}/U_\eta=0.79\,Re_\lambda^{0.34}\), is 0.58 (0.56&ndash;0.60 for the seven runs), and 0.6 is used. This is an empirical factor, closer to the vorticity argument at \(Re_\lambda\approx300\)&ndash;400 than at 90.</p>
+
+<h3>A1. Ghira, Elsinga and da Silva (2022) (intense tubes)</h3>
+<p><strong>Where in the paper:</strong> Table III (mean values for the intense vorticity structures, one row per simulation); Table II (\(\nu\) in code units); definitions in Sec. III, Eq. (8)&ndash;(10).</p>
+<p><strong>Method:</strong> DNS, forced isotropic</p>
+<p><strong>Which tubes:</strong> The structures are the points with the highest vorticity magnitude, 1% of the volume (the intense vorticity structures, IVS); the radius is where the azimuthal mean of the axial vorticity has fallen to \(1/e\) of its axis value.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=\sqrt{x}\,R_B=1.12\,\dfrac{R_{ivs}}{R_{ivs}/R_B}$$
+$$\dfrac{\Gamma}{\nu}=\dfrac{2\pi}{K_B}\,Re_c=8.78\,\dfrac{r_{\max}}{\eta}\dfrac{U_{\max}}{U_\eta}\qquad(\text{total circulation from the converted radius and swirl; the listed }Re_\Gamma\text{ is not used})$$
+$$\dfrac{U_{\max}}{U_\eta}=\dfrac{U_{ivs}/u_\eta}{f(k)},\quad k=\dfrac{R_{ivs}/R_B}{\sqrt{x}},\quad f(k)=\dfrac{1-e^{-xk^2}}{k\,(1-e^{-x})}$$</p>
+<p><strong>Notes:</strong> Their \(\Gamma_{ivs}=2\pi\langle U_{ivs}\rangle R_{ivs}\) (Eq. 9) is the circulation inside \(R_{ivs}\), about 61% of the total of a Burgers vortex, and is about 0.83 of \(2\pi U_{ivs}R_{ivs}\) from the same table (162 against 136 at \(Re_\lambda=90\)), probably because the paper averages the product per structure. The total circulation is therefore taken from the converted radius and swirl, \(\Gamma/\nu=8.78\,Re_c\) with \(Re_c=(r_{\max}/\eta)(U_{\max}/U_\eta)\); the listed \(Re_\Gamma Re_\lambda^{-1/2}\) is kept in the table as the source value. The swirl row converts the swirl listed at \(R_{ivs}\) to the Burgers peak; the tubes are intense, so \(Re_c\) is about twice that of the whole tubes.</p>
+<p><strong>Correction applied:</strong> Swirl multiplied by 0.6. The listed \(U_{ivs}/u'=1.0\)&ndash;1.25 is high against the other simulations of intense tubes (Jim&eacute;nez and Wray 0.86&ndash;0.99, Da Silva et al. 0.68&ndash;0.76, mixing layer 0.5) and the hot wire (0.5&ndash;0.8). Their own mean axis vorticity (\(\omega_{ivs}/\omega_{rms}=3.9\)&ndash;4.8, Table III) and the Burgers radius imply a peak swirl of 5.5&ndash;6.2 \(U_\eta\) at all \(Re_\lambda\), against the listed 6&ndash;9.5: the excess grows with \(u'\), which suggests that the swirl at \(R_{ivs}\) includes a velocity from the surrounding flow. A constant factor of 0.58 (0.56&ndash;0.60 for the seven runs) puts the swirl on the curve \(U_{\max}/U_\eta\propto Re_\lambda^{0.34}\) of the other sources; 0.6 is used. See A0c.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (code units)</th><th>\(\varepsilon\) (code units)</th><th>\(R_{ivs}/\eta\)</th><th>\(R_{ivs}/R_B\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="7">\(r_{\max}/\eta\)</td><td>90</td><td>0.0145</td><td>9.98</td><td>4.28</td><td>0.96</td><td class="msep">\(r_{\max}/\eta\)=4.99</td><td>fitted</td></tr>
+<tr><td>148</td><td>0.0057</td><td>9.54</td><td>4.23</td><td>0.98</td><td class="msep">\(r_{\max}/\eta\)=4.83</td><td>fitted</td></tr>
+<tr><td>191</td><td>0.0034</td><td>9.88</td><td>4.10</td><td>0.97</td><td class="msep">\(r_{\max}/\eta\)=4.73</td><td>fitted</td></tr>
+<tr><td>242</td><td>0.0023</td><td>9.52</td><td>4.06</td><td>0.98</td><td class="msep">\(r_{\max}/\eta\)=4.64</td><td>fitted</td></tr>
+<tr><td>292</td><td>0.0009</td><td>10.07</td><td>3.98</td><td>0.98</td><td class="msep">\(r_{\max}/\eta\)=4.55</td><td>fitted</td></tr>
+<tr><td>314</td><td>0.0014</td><td>9.84</td><td>3.98</td><td>0.98</td><td class="msep">\(r_{\max}/\eta\)=4.55</td><td>fitted</td></tr>
+<tr><td>399</td><td>0.001</td><td>11.91</td><td>3.90</td><td>0.97</td><td class="msep">\(r_{\max}/\eta\)=4.50</td><td>fitted</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (code units)</th><th>\(\varepsilon\) (code units)</th><th>\(Re_\Gamma Re_\lambda^{-1/2}\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="7">\(\Gamma/\nu\)</td><td>90</td><td>0.0145</td><td>9.98</td><td>14.36</td><td class="msep">\(\Gamma/\nu\)=161<br><small>= 268 &times; 0.6 (A0c)</small></td><td>not fitted: the listed Re<sub>&Gamma;</sub> is the circulation inside R<sub>ivs</sub>; the total, 8.78 r<sub>max</sub>U<sub>max</sub>, is used and awaits the intense-tube fit</td></tr>
+<tr><td>148</td><td>0.0057</td><td>9.54</td><td>13.01</td><td class="msep">\(\Gamma/\nu\)=184<br><small>= 306 &times; 0.6 (A0c)</small></td><td>not fitted: the listed Re<sub>&Gamma;</sub> is the circulation inside R<sub>ivs</sub>; the total, 8.78 r<sub>max</sub>U<sub>max</sub>, is used and awaits the intense-tube fit</td></tr>
+<tr><td>191</td><td>0.0034</td><td>9.88</td><td>12.19</td><td class="msep">\(\Gamma/\nu\)=198<br><small>= 331 &times; 0.6 (A0c)</small></td><td>not fitted: the listed Re<sub>&Gamma;</sub> is the circulation inside R<sub>ivs</sub>; the total, 8.78 r<sub>max</sub>U<sub>max</sub>, is used and awaits the intense-tube fit</td></tr>
+<tr><td>242</td><td>0.0023</td><td>9.52</td><td>11.32</td><td class="msep">\(\Gamma/\nu\)=206<br><small>= 343 &times; 0.6 (A0c)</small></td><td>not fitted: the listed Re<sub>&Gamma;</sub> is the circulation inside R<sub>ivs</sub>; the total, 8.78 r<sub>max</sub>U<sub>max</sub>, is used and awaits the intense-tube fit</td></tr>
+<tr><td>292</td><td>0.0009</td><td>10.07</td><td>11.34</td><td class="msep">\(\Gamma/\nu\)=228<br><small>= 379 &times; 0.6 (A0c)</small></td><td>not fitted: the listed Re<sub>&Gamma;</sub> is the circulation inside R<sub>ivs</sub>; the total, 8.78 r<sub>max</sub>U<sub>max</sub>, is used and awaits the intense-tube fit</td></tr>
+<tr><td>314</td><td>0.0014</td><td>9.84</td><td>10.92</td><td class="msep">\(\Gamma/\nu\)=227<br><small>= 378 &times; 0.6 (A0c)</small></td><td>not fitted: the listed Re<sub>&Gamma;</sub> is the circulation inside R<sub>ivs</sub>; the total, 8.78 r<sub>max</sub>U<sub>max</sub>, is used and awaits the intense-tube fit</td></tr>
+<tr><td>399</td><td>0.001</td><td>11.91</td><td>10.35</td><td class="msep">\(\Gamma/\nu\)=246<br><small>= 411 &times; 0.6 (A0c)</small></td><td>not fitted: the listed Re<sub>&Gamma;</sub> is the circulation inside R<sub>ivs</sub>; the total, 8.78 r<sub>max</sub>U<sub>max</sub>, is used and awaits the intense-tube fit</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (code units)</th><th>\(\varepsilon\) (code units)</th><th>\(U_{ivs}/u_\eta\)</th><th>\(R_{ivs}/R_B\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="7">\(U_{\max}/U_\eta\)</td><td>90</td><td>0.0145</td><td>9.98</td><td>6.01</td><td>0.96</td><td class="msep">\(U_{\max}/U_\eta\)=3.67<br><small>= 6.12 &times; 0.6 (A0c)</small></td><td>not fitted: swirl at R<sub>ivs</sub> of intense tubes; awaits the intense-tube fit (section 7)</td></tr>
+<tr><td>148</td><td>0.0057</td><td>9.54</td><td>7.11</td><td>0.98</td><td class="msep">\(U_{\max}/U_\eta\)=4.32<br><small>= 7.20 &times; 0.6 (A0c)</small></td><td>not fitted: swirl at R<sub>ivs</sub> of intense tubes; awaits the intense-tube fit (section 7)</td></tr>
+<tr><td>191</td><td>0.0034</td><td>9.88</td><td>7.83</td><td>0.97</td><td class="msep">\(U_{\max}/U_\eta\)=4.77<br><small>= 7.95 &times; 0.6 (A0c)</small></td><td>not fitted: swirl at R<sub>ivs</sub> of intense tubes; awaits the intense-tube fit (section 7)</td></tr>
+<tr><td>242</td><td>0.0023</td><td>9.52</td><td>8.31</td><td>0.98</td><td class="msep">\(U_{\max}/U_\eta\)=5.05<br><small>= 8.42 &times; 0.6 (A0c)</small></td><td>not fitted: swirl at R<sub>ivs</sub> of intense tubes; awaits the intense-tube fit (section 7)</td></tr>
+<tr><td>292</td><td>0.0009</td><td>10.07</td><td>9.37</td><td>0.98</td><td class="msep">\(U_{\max}/U_\eta\)=5.70<br><small>= 9.49 &times; 0.6 (A0c)</small></td><td>not fitted: swirl at R<sub>ivs</sub> of intense tubes; awaits the intense-tube fit (section 7)</td></tr>
+<tr><td>314</td><td>0.0014</td><td>9.84</td><td>9.33</td><td>0.98</td><td class="msep">\(U_{\max}/U_\eta\)=5.67<br><small>= 9.45 &times; 0.6 (A0c)</small></td><td>not fitted: swirl at R<sub>ivs</sub> of intense tubes; awaits the intense-tube fit (section 7)</td></tr>
+<tr><td>399</td><td>0.001</td><td>11.91</td><td>10.23</td><td>0.97</td><td class="msep">\(U_{\max}/U_\eta\)=6.23<br><small>= 10.39 &times; 0.6 (A0c)</small></td><td>not fitted: swirl at R<sub>ivs</sub> of intense tubes; awaits the intense-tube fit (section 7)</td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A2. Ghira, Elsinga and da Silva (2025) (intense tubes)</h3>
+<p><strong>Where in the paper:</strong> Table 2 (characteristics of the IVS of all simulations, obtained as in the 2022 paper); Table 1 and Ghira et al. (2024), Table 1, for \(\nu\).</p>
+<p><strong>Method:</strong> DNS, forced isotropic</p>
+<p><strong>Which tubes:</strong> As Ghira et al. (2022): the intense vorticity structures, 1% of the volume.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=1.12\,\dfrac{R_{ivs}}{R_{ivs}/R_B},\qquad R_{ivs}/R_B=0.97\ (\text{assumed})$$</p>
+<p><strong>Notes:</strong> Only the two \(Re_\lambda=54\) radii are new: the other rows of Table 2 (4.28, 4.23, 4.10, 4.06 at \(Re_\lambda=91\), 143, 189, 239) are the simulations of the 2022 paper. Table 2 gives no \(R_{ivs}/R_B\) for these runs (Table 11 gives 0.99 and 0.97 for a repeated \(512^3\) run), so the mean of the 2022 values, 0.97, is assumed. The paper gives no circulation.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (code units)</th><th>\(\varepsilon\) (code units)</th><th>\(R_{ivs}/\eta\)</th><th>\(R_{ivs}/R_B\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">\(r_{\max}/\eta\)</td><td>54</td><td>0.037</td><td>10.01</td><td>4.29</td><td>0.97 (assumed)</td><td class="msep">\(r_{\max}/\eta\)=4.95</td><td>fitted<br><small>128^3</small></td></tr>
+<tr><td>54</td><td>&mdash;</td><td>&mdash;</td><td>4.23</td><td>0.97 (assumed)</td><td class="msep">\(r_{\max}/\eta\)=4.88</td><td>fitted<br><small>256^3, forcing at k_p = 4</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A3. Jim&eacute;nez, Wray, Saffman and Rogallo (1993) (intense tubes)</h3>
+<p><strong>Where in the paper:</strong> Table 3 (average worm characteristics from the tracking algorithm, one row per simulation); the algorithm is described in the text above the table.</p>
+<p><strong>Method:</strong> DNS, forced isotropic</p>
+<p><strong>Which tubes:</strong> Worms: connected regions of vorticity above a threshold (the 1% of the volume of highest vorticity); the radius is the \(1/e\) radius of a Gaussian fitted to the azimuthal mean of the axial vorticity.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=\sqrt{x}\,R_B=1.12\,R$$</p>
+<p><strong>Notes:</strong> The \(1/e\) radius of a Gaussian vorticity profile is the Burgers radius. The circulation column of the table is not used. \(\nu\) is not read here because the copy of Table 1 is a scan.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(R/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">\(r_{\max}/\eta\)</td><td>35.8</td><td>&mdash;</td><td>&mdash;</td><td>4.22</td><td class="msep">\(r_{\max}/\eta\)=4.73</td><td>fitted</td></tr>
+<tr><td>62.8</td><td>&mdash;</td><td>&mdash;</td><td>4.16</td><td class="msep">\(r_{\max}/\eta\)=4.66</td><td>fitted</td></tr>
+<tr><td>94.5</td><td>&mdash;</td><td>&mdash;</td><td>4.16</td><td class="msep">\(r_{\max}/\eta\)=4.66</td><td>fitted</td></tr>
+<tr><td>168.1</td><td>&mdash;</td><td>&mdash;</td><td>3.85</td><td class="msep">\(r_{\max}/\eta\)=4.31</td><td>fitted</td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A4. Tanahashi, Iwase and Miyauchi (2001) (whole tubes)</h3>
+<p><strong>Where in the paper:</strong> Fig. 7 and the text around it (DNS of a turbulent mixing layer, \(Re_{\theta0}=500\)).</p>
+<p><strong>Method:</strong> DNS, mixing layer</p>
+<p><strong>Which tubes:</strong> Coherent fine-scale eddies educed with the second invariant of the velocity gradient and the vorticity, without a vorticity threshold; the radius is the distance from the centre to the maximum of the mean azimuthal velocity.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=\dfrac{D}{2}$$</p>
+<p><strong>Notes:</strong> The probability density function of the diameter peaks at \(D\approx9\,\eta\) (the text says the mean diameter stays about \(8\,\eta\)). The paper gives no \(Re_\lambda\) for the mixing layer; \(Re_\lambda=200\) is assumed.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(D/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="1">\(r_{\max}/\eta\)</td><td>200</td><td>&mdash;</td><td>&mdash;</td><td>9 (peak of the pdf)</td><td class="msep">\(r_{\max}/\eta\)=4.50</td><td>fitted<br><small>Re_lambda assumed</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A5. Aligolzadeh, Holzner and Dawson (2023) (intense tubes)</h3>
+<p><strong>Where in the paper:</strong> Sec. 2 (the von K&aacute;rm&aacute;n facility; DNS of Li et al. at \(Re_\lambda=418\)); Sec. 3.1 and the Conclusions (the mean radius); Fig. 12 and the text before it (the ratio \(R/R_B\)).</p>
+<p><strong>Method:</strong> 3D scanning PIV, water tank</p>
+<p><strong>Which tubes:</strong> Objectively defined vortices (Haller et al.) detected in 3D PIV data (resolution about \(1\,\eta\)); they occupy 1.4% of the volume. \(R\) is the distance from the axis to the boundary of the vortex, and \(R_B=(4\nu/\gamma_0)^{1/2}\) comes from the centre-line stretching rate (their Eq. 2.5).</p>
+<p><strong>Conversion:</strong>
+$$R_B=\dfrac{R}{R/R_B},\qquad r_{\max}=\sqrt{x}\,R_B=1.12\,\dfrac{R}{R/R_B}$$</p>
+<p><strong>Notes:</strong> Assumptions: the value 5.1 and the mean \(R/R_B=0.95\) are those of the experiment (the text gives the two means as 0.95 and 1.1, and says the experimental pdf is skewed to the left of 1). The DNS mean \(R/R_B=1.1\) cannot be used because the paper gives no separate DNS radius. The radius is larger than those of the DNS studies.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(R/\eta\)</th><th>mean \(R/R_B\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="1">\(r_{\max}/\eta\)</td><td>179</td><td>&mdash;</td><td>&mdash;</td><td>5.1</td><td>0.95</td><td class="msep">\(r_{\max}/\eta\)=6.01</td><td>fitted<br><small>experiment; water, nu not tabulated</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values use water (\(\nu=10^{-6}\) m\(^2\)/s) and the Kolmogorov length of the experiment, \(\eta=0.926\) mm, so \(\varepsilon=\nu^3/\eta^4=1.4\times10^{-6}\) W/kg.</p>
+<h3>A6. Da Silva, Dos Reis and Pereira (2011) (intense tubes)</h3>
+<p><strong>Where in the paper:</strong> Sec. 3 (the text before and after Table 1 and Fig. 3): forced isotropic turbulence (HIT) at \(Re_\lambda=111\) and the turbulent plane jet at \(Re_\lambda=120\) (deep inside the shear layer).</p>
+<p><strong>Method:</strong> DNS, isotropic and plane jet</p>
+<p><strong>Which tubes:</strong> Intense vorticity structures as in Ghira et al. (1% of the volume); \(R\) is the \(1/e\) radius of the vorticity, \(u_0\) the mean tangential velocity at \(R\), \(R_B\) the Burgers radius from the stretching rate.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=1.12\,\dfrac{R}{R/R_B}$$
+$$\dfrac{U_{ivs}}{u_\eta}=\dfrac{u_0}{u'}\left(\dfrac{Re_\lambda}{\sqrt{15}}\right)^{1/2},\qquad \dfrac{U_{\max}}{U_\eta}=\dfrac{U_{ivs}/u_\eta}{f(k)}$$</p>
+<p><strong>Notes:</strong> The text gives \(R/\eta=4.6\) for both flows, \(u_0/u'=0.68\) and 0.76, and \(R/R_B=0.99\) and 0.97. Table 1 of the paper (a compilation of IVS data from the literature) is an image and was not read, and the circulation Reynolds number quoted there uses a different definition (\(Re_\Gamma Re_\lambda^{-1/2}\approx28\)), so it is not used. Their \(u_0/u'\) (0.7&ndash;0.8) is lower than that of Ghira et al. (1.0&ndash;1.25).</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(R/\eta\)</th><th>\(R/R_B\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">\(r_{\max}/\eta\)</td><td>111</td><td>&mdash;</td><td>&mdash;</td><td>4.6</td><td>0.99</td><td class="msep">\(r_{\max}/\eta\)=5.20</td><td>not fitted: intense tubes, new data; awaits the intense-tube fit (section 7)<br><small>HIT</small></td></tr>
+<tr><td>120</td><td>&mdash;</td><td>&mdash;</td><td>4.6</td><td>0.97</td><td class="msep">\(r_{\max}/\eta\)=5.31</td><td>not fitted: intense tubes, new data; awaits the intense-tube fit (section 7)<br><small>jet</small></td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(u_0/u'\)</th><th>\(u'/u_\eta\)</th><th>\(R/R_B\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">\(U_{\max}/U_\eta\)</td><td>111</td><td>&mdash;</td><td>&mdash;</td><td>0.68</td><td>5.35</td><td>0.99</td><td class="msep">\(U_{\max}/U_\eta\)=3.68</td><td>not fitted: intense tubes, new data; awaits the intense-tube fit (section 7)<br><small>HIT</small></td></tr>
+<tr><td>120</td><td>&mdash;</td><td>&mdash;</td><td>0.76</td><td>5.57</td><td>0.97</td><td class="msep">\(U_{\max}/U_\eta\)=4.29</td><td>not fitted: intense tubes, new data; awaits the intense-tube fit (section 7)<br><small>jet</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A7. Mouri and Hori (2009) (whole tubes)</h3>
+<p><strong>Where in the paper:</strong> Table 2 (parameters of vortex tubes in boundary layers B1&ndash;B6 and duct flows D1&ndash;D5), \(Re_\lambda\) from Table 1 of the same paper; \(\nu\) from Table I of Mouri et al. (2007) for the same experiments. Published as Fluid Dyn. Res. 41, 021402 (the file is the preprint).</p>
+<p><strong>Method:</strong> hot wire, 1D velocity increments</p>
+<p><strong>Which tubes:</strong> All vortex tubes: the conditionally averaged spanwise velocity around moderate enhancements of the velocity increment is fitted with a Burgers profile; \(R_0\) and \(V_0\) are the radius and the maximum circulation velocity of the fit.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=R_0,\qquad \dfrac{U_{\max}}{U_\eta}=\dfrac{V_0}{u_K},\qquad Re_c=Re_0=\dfrac{R_0V_0}{\nu}$$</p>
+<p><strong>Notes:</strong> The authors say \(R_0\) is larger and \(V_0\) smaller than the true means, because off-centre and inclined tubes are included; the product \(Re_0\) is the least biased and is the one fitted. \(R_0\) and \(V_0\) are shown for comparison.</p>
+<p><strong>Correction applied:</strong> Radius divided by 1.7 and swirl multiplied by 3. A hot-wire path crosses a tube at a random offset from its axis and a random tilt, and the radius read is the spacing of the two extrema of the signal, which grows with the offset, so the radius is too large and, for the same crossings, the amplitude too small. Mouri and Hori say that \(R_0\) is greater than the true mean radius and \(V_0\) less than the true mean circulation velocity for all vortex tubes, because of tubes with \(|y_0|\gtrsim R_0\) and \(\theta_0\ne0\); the window \(x_0\approx6\,\eta\) used to find the tubes is itself a filter. A Burgers tube crossed by a straight path (A0c) gives a mean chord ratio of about 1.7 (tilt limit 45&deg;, signal cut at 25&ndash;30% of the central amplitude), which brings the radius to \(5.1\,\eta\), the DNS value; the same crossings lower the amplitude by a factor 1.8 on average, and the all-tube average also contains weaker tubes (the authors attribute most of the low \(V_0\) to the true mean circulation velocity). The factor 3 is a working value, not derived; with it the swirl lies within 3% of the common curve. See A0c.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>run</th><th>\(R_0/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="11">\(r_{\max}/\eta\)</td><td>332</td><td>0.141</td><td>0.0332</td><td>B1</td><td>8.45</td><td class="msep">\(r_{\max}/\eta\)=4.97<br><small>= 8.45 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>488</td><td>0.142</td><td>0.226</td><td>B2</td><td>8.47</td><td class="msep">\(r_{\max}/\eta\)=4.98<br><small>= 8.47 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>716</td><td>0.142</td><td>1.85</td><td>B3</td><td>8.59</td><td class="msep">\(r_{\max}/\eta\)=5.05<br><small>= 8.59 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>719</td><td>0.141</td><td>0.405</td><td>D1</td><td>8.56</td><td class="msep">\(r_{\max}/\eta\)=5.04<br><small>= 8.56 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>945</td><td>0.142</td><td>5.37</td><td>B4</td><td>9.21</td><td class="msep">\(r_{\max}/\eta\)=5.42<br><small>= 9.21 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1080</td><td>0.142</td><td>13.8</td><td>B5</td><td>8.93</td><td class="msep">\(r_{\max}/\eta\)=5.25<br><small>= 8.93 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1098</td><td>0.141</td><td>2.87</td><td>D2</td><td>8.91</td><td class="msep">\(r_{\max}/\eta\)=5.24<br><small>= 8.91 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1304</td><td>0.143</td><td>24.6</td><td>B6</td><td>8.28</td><td class="msep">\(r_{\max}/\eta\)=4.87<br><small>= 8.28 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1416</td><td>0.142</td><td>9.13</td><td>D3</td><td>9.12</td><td class="msep">\(r_{\max}/\eta\)=5.36<br><small>= 9.12 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1693</td><td>0.142</td><td>19.2</td><td>D4</td><td>8.72</td><td class="msep">\(r_{\max}/\eta\)=5.13<br><small>= 8.72 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1934</td><td>0.142</td><td>34.4</td><td>D5</td><td>8.81</td><td class="msep">\(r_{\max}/\eta\)=5.18<br><small>= 8.81 &times; 0.588 (A0c)</small></td><td>not fitted: R<sub>0</sub> biased high by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>run</th><th>\(V_0/u_K\)</th><th>\(V_0/\langle v^2\rangle^{1/2}\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="11">\(U_{\max}/U_\eta\)</td><td>332</td><td>0.141</td><td>0.0332</td><td>B1</td><td>2.43</td><td>0.263</td><td class="msep">\(U_{\max}/U_\eta\)=7.29<br><small>= 2.43 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>488</td><td>0.142</td><td>0.226</td><td>B2</td><td>2.39</td><td>0.213</td><td class="msep">\(U_{\max}/U_\eta\)=7.17<br><small>= 2.39 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>716</td><td>0.142</td><td>1.85</td><td>B3</td><td>2.47</td><td>0.182</td><td class="msep">\(U_{\max}/U_\eta\)=7.41<br><small>= 2.47 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>719</td><td>0.141</td><td>0.405</td><td>D1</td><td>2.43</td><td>0.179</td><td class="msep">\(U_{\max}/U_\eta\)=7.29<br><small>= 2.43 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>945</td><td>0.142</td><td>5.37</td><td>B4</td><td>2.73</td><td>0.175</td><td class="msep">\(U_{\max}/U_\eta\)=8.19<br><small>= 2.73 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1080</td><td>0.142</td><td>13.8</td><td>B5</td><td>2.83</td><td>0.169</td><td class="msep">\(U_{\max}/U_\eta\)=8.49<br><small>= 2.83 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1098</td><td>0.141</td><td>2.87</td><td>D2</td><td>2.56</td><td>0.152</td><td class="msep">\(U_{\max}/U_\eta\)=7.68<br><small>= 2.56 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1304</td><td>0.143</td><td>24.6</td><td>B6</td><td>2.88</td><td>0.157</td><td class="msep">\(U_{\max}/U_\eta\)=8.64<br><small>= 2.88 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1416</td><td>0.142</td><td>9.13</td><td>D3</td><td>2.79</td><td>0.146</td><td class="msep">\(U_{\max}/U_\eta\)=8.37<br><small>= 2.79 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1693</td><td>0.142</td><td>19.2</td><td>D4</td><td>2.91</td><td>0.138</td><td class="msep">\(U_{\max}/U_\eta\)=8.73<br><small>= 2.91 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+<tr><td>1934</td><td>0.142</td><td>34.4</td><td>D5</td><td>3.18</td><td>0.143</td><td class="msep">\(U_{\max}/U_\eta\)=9.54<br><small>= 3.18 &times; 3 (A0c)</small></td><td>not fitted: V<sub>0</sub> biased low by the authors' account; only Re<sub>0</sub> is fitted</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>run</th><th>\(Re_0\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="11">\(Re_c\)</td><td>332</td><td>0.141</td><td>0.0332</td><td>B1</td><td>20.5</td><td class="msep">\(Re_c\)=36.2<br><small>= 20.5 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>488</td><td>0.142</td><td>0.226</td><td>B2</td><td>20.2</td><td class="msep">\(Re_c\)=35.6<br><small>= 20.2 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>716</td><td>0.142</td><td>1.85</td><td>B3</td><td>21.2</td><td class="msep">\(Re_c\)=37.4<br><small>= 21.2 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>719</td><td>0.141</td><td>0.405</td><td>D1</td><td>20.8</td><td class="msep">\(Re_c\)=36.7<br><small>= 20.8 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>945</td><td>0.142</td><td>5.37</td><td>B4</td><td>25.1</td><td class="msep">\(Re_c\)=44.3<br><small>= 25.1 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>1080</td><td>0.142</td><td>13.8</td><td>B5</td><td>25.3</td><td class="msep">\(Re_c\)=44.6<br><small>= 25.3 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>1098</td><td>0.141</td><td>2.87</td><td>D2</td><td>22.8</td><td class="msep">\(Re_c\)=40.2<br><small>= 22.8 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>1304</td><td>0.143</td><td>24.6</td><td>B6</td><td>23.8</td><td class="msep">\(Re_c\)=42.0<br><small>= 23.8 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>1416</td><td>0.142</td><td>9.13</td><td>D3</td><td>25.4</td><td class="msep">\(Re_c\)=44.8<br><small>= 25.4 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>1693</td><td>0.142</td><td>19.2</td><td>D4</td><td>25.4</td><td class="msep">\(Re_c\)=44.8<br><small>= 25.4 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+<tr><td>1934</td><td>0.142</td><td>34.4</td><td>D5</td><td>28.0</td><td class="msep">\(Re_c\)=49.4<br><small>= 28.0 &times; 1.76 (A0c)</small></td><td>fitted</td></tr>
+</tbody></table></div>
+<p class="note">Model values use the measured \(\nu\) and \(\varepsilon\) of each run (air; \(\nu\) in the column \(\times10^{-4}\) m\(^2\)/s, \(\varepsilon\) in W/kg), so \(\eta=(\nu^3/\varepsilon)^{1/4}\) differs from run to run (e.g. 0.54 mm at the lowest and 0.10 mm at the highest \(\varepsilon\)).</p>
+<h3>A8. Mouri, Hori and Kawashima (2007) (intense tubes)</h3>
+<p><strong>Where in the paper:</strong> Table II (parameters for intense vortical structures: radius \(R_0\), maximum circulation velocity \(V_0\), \(Re_0=R_0V_0/\nu\), for the 0.1% and the 1% threshold; columns 1&ndash;5 duct flows, 6&ndash;11 boundary layers); Table I (\(Re_\lambda\), \(\nu\)).</p>
+<p><strong>Method:</strong> hot wire, 1D velocity increments</p>
+<p><strong>Which tubes:</strong> Intense vortical structures: the highest 0.1% or 1% of the absolute spanwise-velocity increments; the averaged profile is fitted with a Burgers vortex. The table is a scrambled text layer: the columns were read in order and checked against the radii that Pirozzoli (2009, Table 1) quotes from the same table (5.18, 5.24, 5.56, 5.97, 5.66 at \(Re_\lambda\) 332, 488, 716, 945, 1080).</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=R_0,\qquad \dfrac{U_{\max}}{U_\eta}=\dfrac{V_0}{u_K},\qquad Re_c=Re_0=\dfrac{R_0V_0}{\nu}$$</p>
+<p><strong>Notes:</strong> These are the intense tubes of the same experiments as Mouri and Hori (2009): at the 0.1% threshold \(R_0=5.2\)&ndash;6.2 \(\eta\), \(V_0=7.6\)&ndash;14 \(u_K\) (0.6&ndash;0.8 of the r.m.s. velocity) and \(Re_0=39\)&ndash;87; at 1%, \(R_0=6.4\)&ndash;7.4, \(V_0=5.6\)&ndash;9.2 and \(Re_0=37\)&ndash;65. The swirl scales with the r.m.s. velocity and \(Re_0\propto Re_\lambda^{1/2}\) (their Fig. 7).</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>threshold, run</th><th>\(R_0/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="22">\(r_{\max}/\eta\)</td><td>332</td><td>0.141</td><td>0.0332</td><td>0.1% B1</td><td>5.18</td><td class="msep">\(r_{\max}/\eta\)=5.18</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>332</td><td>0.141</td><td>0.0332</td><td>1% B1</td><td>6.53</td><td class="msep">\(r_{\max}/\eta\)=6.53</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>488</td><td>0.142</td><td>0.226</td><td>0.1% B2</td><td>5.24</td><td class="msep">\(r_{\max}/\eta\)=5.24</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>488</td><td>0.142</td><td>0.226</td><td>1% B2</td><td>6.44</td><td class="msep">\(r_{\max}/\eta\)=6.44</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>716</td><td>0.142</td><td>1.85</td><td>0.1% B3</td><td>5.56</td><td class="msep">\(r_{\max}/\eta\)=5.56</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>716</td><td>0.142</td><td>1.85</td><td>1% B3</td><td>6.92</td><td class="msep">\(r_{\max}/\eta\)=6.92</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>719</td><td>0.141</td><td>0.405</td><td>0.1% D1</td><td>5.21</td><td class="msep">\(r_{\max}/\eta\)=5.21</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>719</td><td>0.141</td><td>0.405</td><td>1% D1</td><td>6.50</td><td class="msep">\(r_{\max}/\eta\)=6.50</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>945</td><td>0.142</td><td>5.37</td><td>0.1% B4</td><td>5.97</td><td class="msep">\(r_{\max}/\eta\)=5.97</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>945</td><td>0.142</td><td>5.37</td><td>1% B4</td><td>7.38</td><td class="msep">\(r_{\max}/\eta\)=7.38</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1080</td><td>0.142</td><td>13.8</td><td>0.1% B5</td><td>5.66</td><td class="msep">\(r_{\max}/\eta\)=5.66</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1080</td><td>0.142</td><td>13.8</td><td>1% B5</td><td>7.14</td><td class="msep">\(r_{\max}/\eta\)=7.14</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1098</td><td>0.141</td><td>2.87</td><td>0.1% D2</td><td>5.64</td><td class="msep">\(r_{\max}/\eta\)=5.64</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1098</td><td>0.141</td><td>2.87</td><td>1% D2</td><td>6.61</td><td class="msep">\(r_{\max}/\eta\)=6.61</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1304</td><td>0.143</td><td>24.6</td><td>0.1% B6</td><td>6.15</td><td class="msep">\(r_{\max}/\eta\)=6.15</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1304</td><td>0.143</td><td>24.6</td><td>1% B6</td><td>7.19</td><td class="msep">\(r_{\max}/\eta\)=7.19</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1416</td><td>0.142</td><td>9.13</td><td>0.1% D3</td><td>5.47</td><td class="msep">\(r_{\max}/\eta\)=5.47</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1416</td><td>0.142</td><td>9.13</td><td>1% D3</td><td>6.92</td><td class="msep">\(r_{\max}/\eta\)=6.92</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1693</td><td>0.142</td><td>19.2</td><td>0.1% D4</td><td>5.87</td><td class="msep">\(r_{\max}/\eta\)=5.87</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1693</td><td>0.142</td><td>19.2</td><td>1% D4</td><td>6.76</td><td class="msep">\(r_{\max}/\eta\)=6.76</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1934</td><td>0.142</td><td>34.4</td><td>0.1% D5</td><td>6.20</td><td class="msep">\(r_{\max}/\eta\)=6.20</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1934</td><td>0.142</td><td>34.4</td><td>1% D5</td><td>7.03</td><td class="msep">\(r_{\max}/\eta\)=7.03</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>threshold, run</th><th>\(V_0/u_K\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="22">\(U_{\max}/U_\eta\)</td><td>332</td><td>0.141</td><td>0.0332</td><td>0.1% B1</td><td>7.60</td><td class="msep">\(U_{\max}/U_\eta\)=7.60</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>332</td><td>0.141</td><td>0.0332</td><td>1% B1</td><td>5.61</td><td class="msep">\(U_{\max}/U_\eta\)=5.61</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>488</td><td>0.142</td><td>0.226</td><td>0.1% B2</td><td>8.37</td><td class="msep">\(U_{\max}/U_\eta\)=8.37</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>488</td><td>0.142</td><td>0.226</td><td>1% B2</td><td>5.98</td><td class="msep">\(U_{\max}/U_\eta\)=5.98</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>716</td><td>0.142</td><td>1.85</td><td>0.1% B3</td><td>9.53</td><td class="msep">\(U_{\max}/U_\eta\)=9.53</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>716</td><td>0.142</td><td>1.85</td><td>1% B3</td><td>6.65</td><td class="msep">\(U_{\max}/U_\eta\)=6.65</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>719</td><td>0.141</td><td>0.405</td><td>0.1% D1</td><td>8.67</td><td class="msep">\(U_{\max}/U_\eta\)=8.67</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>719</td><td>0.141</td><td>0.405</td><td>1% D1</td><td>6.11</td><td class="msep">\(U_{\max}/U_\eta\)=6.11</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>945</td><td>0.142</td><td>5.37</td><td>0.1% B4</td><td>10.60</td><td class="msep">\(U_{\max}/U_\eta\)=10.60</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>945</td><td>0.142</td><td>5.37</td><td>1% B4</td><td>7.28</td><td class="msep">\(U_{\max}/U_\eta\)=7.28</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1080</td><td>0.142</td><td>13.8</td><td>0.1% B5</td><td>11.70</td><td class="msep">\(U_{\max}/U_\eta\)=11.70</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1080</td><td>0.142</td><td>13.8</td><td>1% B5</td><td>7.83</td><td class="msep">\(U_{\max}/U_\eta\)=7.83</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1098</td><td>0.141</td><td>2.87</td><td>0.1% D2</td><td>10.00</td><td class="msep">\(U_{\max}/U_\eta\)=10.00</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1098</td><td>0.141</td><td>2.87</td><td>1% D2</td><td>6.83</td><td class="msep">\(U_{\max}/U_\eta\)=6.83</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1304</td><td>0.143</td><td>24.6</td><td>0.1% B6</td><td>12.80</td><td class="msep">\(U_{\max}/U_\eta\)=12.80</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1304</td><td>0.143</td><td>24.6</td><td>1% B6</td><td>8.53</td><td class="msep">\(U_{\max}/U_\eta\)=8.53</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1416</td><td>0.142</td><td>9.13</td><td>0.1% D3</td><td>11.30</td><td class="msep">\(U_{\max}/U_\eta\)=11.30</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1416</td><td>0.142</td><td>9.13</td><td>1% D3</td><td>7.53</td><td class="msep">\(U_{\max}/U_\eta\)=7.53</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1693</td><td>0.142</td><td>19.2</td><td>0.1% D4</td><td>12.80</td><td class="msep">\(U_{\max}/U_\eta\)=12.80</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1693</td><td>0.142</td><td>19.2</td><td>1% D4</td><td>8.41</td><td class="msep">\(U_{\max}/U_\eta\)=8.41</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1934</td><td>0.142</td><td>34.4</td><td>0.1% D5</td><td>14.00</td><td class="msep">\(U_{\max}/U_\eta\)=14.00</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1934</td><td>0.142</td><td>34.4</td><td>1% D5</td><td>9.17</td><td class="msep">\(U_{\max}/U_\eta\)=9.17</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>threshold, run</th><th>\(Re_0\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="22">\(Re_c\)</td><td>332</td><td>0.141</td><td>0.0332</td><td>0.1% B1</td><td>39.4</td><td class="msep">\(Re_c\)=39.4</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>332</td><td>0.141</td><td>0.0332</td><td>1% B1</td><td>36.6</td><td class="msep">\(Re_c\)=36.6</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>488</td><td>0.142</td><td>0.226</td><td>0.1% B2</td><td>43.9</td><td class="msep">\(Re_c\)=43.9</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>488</td><td>0.142</td><td>0.226</td><td>1% B2</td><td>38.5</td><td class="msep">\(Re_c\)=38.5</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>716</td><td>0.142</td><td>1.85</td><td>0.1% B3</td><td>53.0</td><td class="msep">\(Re_c\)=53.0</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>716</td><td>0.142</td><td>1.85</td><td>1% B3</td><td>46.0</td><td class="msep">\(Re_c\)=46.0</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>719</td><td>0.141</td><td>0.405</td><td>0.1% D1</td><td>45.2</td><td class="msep">\(Re_c\)=45.2</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>719</td><td>0.141</td><td>0.405</td><td>1% D1</td><td>39.7</td><td class="msep">\(Re_c\)=39.7</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>945</td><td>0.142</td><td>5.37</td><td>0.1% B4</td><td>63.3</td><td class="msep">\(Re_c\)=63.3</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>945</td><td>0.142</td><td>5.37</td><td>1% B4</td><td>53.7</td><td class="msep">\(Re_c\)=53.7</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1080</td><td>0.142</td><td>13.8</td><td>0.1% B5</td><td>66.2</td><td class="msep">\(Re_c\)=66.2</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1080</td><td>0.142</td><td>13.8</td><td>1% B5</td><td>55.9</td><td class="msep">\(Re_c\)=55.9</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1098</td><td>0.141</td><td>2.87</td><td>0.1% D2</td><td>56.4</td><td class="msep">\(Re_c\)=56.4</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1098</td><td>0.141</td><td>2.87</td><td>1% D2</td><td>45.2</td><td class="msep">\(Re_c\)=45.2</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1304</td><td>0.143</td><td>24.6</td><td>0.1% B6</td><td>78.7</td><td class="msep">\(Re_c\)=78.7</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1304</td><td>0.143</td><td>24.6</td><td>1% B6</td><td>61.3</td><td class="msep">\(Re_c\)=61.3</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1416</td><td>0.142</td><td>9.13</td><td>0.1% D3</td><td>61.8</td><td class="msep">\(Re_c\)=61.8</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1416</td><td>0.142</td><td>9.13</td><td>1% D3</td><td>52.1</td><td class="msep">\(Re_c\)=52.1</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1693</td><td>0.142</td><td>19.2</td><td>0.1% D4</td><td>75.1</td><td class="msep">\(Re_c\)=75.1</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1693</td><td>0.142</td><td>19.2</td><td>1% D4</td><td>56.9</td><td class="msep">\(Re_c\)=56.9</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1934</td><td>0.142</td><td>34.4</td><td>0.1% D5</td><td>86.8</td><td class="msep">\(Re_c\)=86.8</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1934</td><td>0.142</td><td>34.4</td><td>1% D5</td><td>64.5</td><td class="msep">\(Re_c\)=64.5</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+</tbody></table></div>
+<p class="note">Model values use the measured \(\nu\) and \(\varepsilon\) of each run (air; \(\nu\) in the column \(\times10^{-4}\) m\(^2\)/s, \(\varepsilon\) in W/kg), so \(\eta=(\nu^3/\varepsilon)^{1/4}\) differs from run to run (e.g. 0.54 mm at the lowest and 0.10 mm at the highest \(\varepsilon\)).</p>
+<h3>A9. Mouri, Hori and Kawashima (2004) (intense tubes)</h3>
+<p><strong>Where in the paper:</strong> Table I (experimental conditions, flow characteristics and parameters of vortex tubes; one column per data set; boundary layers, \(Re_\lambda=295\)&ndash;1258).</p>
+<p><strong>Method:</strong> hot wire, 1D velocity increments</p>
+<p><strong>Which tubes:</strong> The highest 1% of the absolute spanwise-velocity increments (intense tubes), fitted with a Burgers profile.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=R_0,\qquad \dfrac{U_{\max}}{U_\eta}=\dfrac{V_0}{u_K},\qquad Re_c=Re_0=\dfrac{R_0V_0}{\nu}$$</p>
+<p><strong>Notes:</strong> The table is a scrambled text layer; the six data sets were read in order of \(Re_\lambda\). \(V_0\) is about half the r.m.s. velocity (0.46&ndash;0.60) and \(Re_0\propto Re_\lambda^{1/2}\); these values agree with Mouri et al. (2007) at 1% threshold.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>data set</th><th>\(R_0/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="6">\(r_{\max}/\eta\)</td><td>295</td><td>0.144</td><td>0.0316</td><td>295</td><td>6.08</td><td class="msep">\(r_{\max}/\eta\)=6.08</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>430</td><td>0.145</td><td>0.254</td><td>430</td><td>6.04</td><td class="msep">\(r_{\max}/\eta\)=6.04</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>655</td><td>0.145</td><td>2.03</td><td>655</td><td>6.28</td><td class="msep">\(r_{\max}/\eta\)=6.28</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>861</td><td>0.147</td><td>5.65</td><td>861</td><td>7.14</td><td class="msep">\(r_{\max}/\eta\)=7.14</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1054</td><td>0.15</td><td>14.6</td><td>1054</td><td>6.98</td><td class="msep">\(r_{\max}/\eta\)=6.98</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1258</td><td>0.149</td><td>26.2</td><td>1258</td><td>7.37</td><td class="msep">\(r_{\max}/\eta\)=7.37</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>data set</th><th>\(V_0/u_K\)</th><th>\(V_0/\langle v^2\rangle^{1/2}\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="6">\(U_{\max}/U_\eta\)</td><td>295</td><td>0.144</td><td>0.0316</td><td>295</td><td>5.23</td><td>0.600</td><td class="msep">\(U_{\max}/U_\eta\)=5.23</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>430</td><td>0.145</td><td>0.254</td><td>430</td><td>5.55</td><td>0.526</td><td class="msep">\(U_{\max}/U_\eta\)=5.55</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>655</td><td>0.145</td><td>2.03</td><td>655</td><td>6.31</td><td>0.485</td><td class="msep">\(U_{\max}/U_\eta\)=6.31</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>861</td><td>0.147</td><td>5.65</td><td>861</td><td>7.10</td><td>0.476</td><td class="msep">\(U_{\max}/U_\eta\)=7.10</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1054</td><td>0.15</td><td>14.6</td><td>1054</td><td>7.73</td><td>0.469</td><td class="msep">\(U_{\max}/U_\eta\)=7.73</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1258</td><td>0.149</td><td>26.2</td><td>1258</td><td>8.37</td><td>0.464</td><td class="msep">\(U_{\max}/U_\eta\)=8.37</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>data set</th><th>\(Re_0\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="6">\(Re_c\)</td><td>295</td><td>0.144</td><td>0.0316</td><td>295</td><td>32</td><td class="msep">\(Re_c\)=32.0</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>430</td><td>0.145</td><td>0.254</td><td>430</td><td>34</td><td class="msep">\(Re_c\)=34.0</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>655</td><td>0.145</td><td>2.03</td><td>655</td><td>40</td><td class="msep">\(Re_c\)=40.0</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>861</td><td>0.147</td><td>5.65</td><td>861</td><td>51</td><td class="msep">\(Re_c\)=51.0</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1054</td><td>0.15</td><td>14.6</td><td>1054</td><td>54</td><td class="msep">\(Re_c\)=54.0</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+<tr><td>1258</td><td>0.149</td><td>26.2</td><td>1258</td><td>62</td><td class="msep">\(Re_c\)=62.0</td><td>not fitted: intense tubes; Re<sub>c</sub> is 2&ndash;3 times the model (section 7); awaits the intense-tube fit</td></tr>
+</tbody></table></div>
+<p class="note">Model values use the measured \(\nu\) and \(\varepsilon\) of each run (air; \(\nu\) in the column \(\times10^{-4}\) m\(^2\)/s, \(\varepsilon\) in W/kg), so \(\eta=(\nu^3/\varepsilon)^{1/4}\) differs from run to run (e.g. 0.54 mm at the lowest and 0.10 mm at the highest \(\varepsilon\)).</p>
+<h3>A10. Mouri, Hori and Kawashima (2003) (intense tubes)</h3>
+<p><strong>Where in the paper:</strong> Sec. IV (the text after Fig. 1) and Table I (ten grid-turbulence experiments, \(Re_\lambda=105\)&ndash;329, \(\nu=0.143\)&ndash;0.160 cm\(^2\)/s).</p>
+<p><strong>Method:</strong> hot wire, 1D velocity increments, grid</p>
+<p><strong>Which tubes:</strong> Vortex tubes from enhancements of the transverse-velocity increment (\(|v|>3\langle v^2\rangle^{1/2}\)), Burgers-profile comparison.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=r_0$$</p>
+<p><strong>Notes:</strong> Only a range is given in the text, \(r_0\approx(6\)&ndash;\(7)\,\eta\) regardless of \(Re_\lambda\); the paper has no per-run table of \(R_0\) or \(V_0\). The authors say that these radii are well above the resolution and represent typical radii.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (cm\(^2\)/s)</th><th>\(\varepsilon\) (m\(^2\)/s\(^3\))</th><th>\(r_0/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="1">\(r_{\max}/\eta\)</td><td>105&ndash;329</td><td>0.143&ndash;0.160</td><td>0.051&ndash;5.71</td><td>6&ndash;7 (text)</td><td class="msep">\(r_{\max}/\eta\)=6.50</td><td>not fitted: range only (6&ndash;7 &eta;), no per-run values<br><small>range</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values use the measured \(\nu\) and \(\varepsilon\) of each run (air; \(\nu\) in the column \(\times10^{-4}\) m\(^2\)/s, \(\varepsilon\) in W/kg), so \(\eta=(\nu^3/\varepsilon)^{1/4}\) differs from run to run (e.g. 0.54 mm at the lowest and 0.10 mm at the highest \(\varepsilon\)).</p>
+<h3>A11. Belin, Maurer, Tabeling and Willaime (1996) (intense tubes)</h3>
+<p><strong>Where in the paper:</strong> Sec. 4 (Burgers filament crossing the probe, Eqs. (6)&ndash;(8)); Sec. 5 and Fig. 5 (size distributions of the worms for \(Re_\lambda=151\)&ndash;718, mean size \(R=3.5\,\eta\)); Sec. 7 (\(Re_\lambda>700\)).</p>
+<p><strong>Method:</strong> hot film, 1D velocity derivative, helium</p>
+<p><strong>Which tubes:</strong> Intense events in the tails of the pdf of the velocity derivative, in helium gas between counter-rotating disks (hot film on a 7 \(\mu\)m carbon fibre, resolution 0.2&ndash;3 \(\eta\)), selected by conditional sampling and interpreted as Burgers filaments crossing the probe close to their axis; \(R\) is the Gaussian width of the vorticity, \(\omega=\omega_0e^{-r^2/2R^2}\).</p>
+<p><strong>Conversion:</strong>
+$$R=0.31\,U\,\Delta t\quad(\text{peak spacing }\Delta x=U\Delta t\approx3.2\,R=2\,r_{\max})$$
+$$r_{\max}=\sqrt{2x}\,R=1.585\,R\qquad(R_B=\sqrt{2}\,R)$$</p>
+<p><strong>Notes:</strong> The method measures a time record, which the mean velocity \(U\) turns into a distance (frozen flow); the radius follows from the spacing of the two extrema of the signal as the filament passes, and the peak amplitude gives \(U_{\max}\). The value \(R=3.5\,\eta\) is the position of the maximum of the size distribution seen by the probe (Fig. 5, which collapses for \(Re_\lambda=151\)&ndash;718), quoted by the authors as the mean worm size; the same distribution built from the DNS of Jim&eacute;nez et al. through the same probe geometry (their Eq. 9) peaks at 2.8 \(\eta\), so the probe sizes are 1.25 times the DNS sizes. The distribution is skewed with a tail to about 20 \(\eta\), and a rough reading of the figure puts its mean near 6 \(\eta\) and its median near 5 \(\eta\). The row uses the peak, \(r_{\max}=1.585\times3.5=5.5\,\eta\), as a range of \(Re_\lambda\). Above \(Re_\lambda\approx700\) the size distribution widens: the mean velocity increment across the filament decreases and its mean radius increases so that the circulation does not change; the authors read this as an instability of the filaments. The paper has no table of \(R\), \(U_{\max}\) or the circulation by \(Re_\lambda\).</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(R/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="1">\(r_{\max}/\eta\)</td><td>151&ndash;718</td><td>&mdash;</td><td>&mdash;</td><td>3.5 (text)</td><td class="msep">\(r_{\max}/\eta\)=5.55</td><td>not fitted: comparison<br><small>range</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A12. Kida, Goto and Makihara (2002) (whole tubes)</h3>
+<p><strong>Where in the paper:</strong> Table 2 (a table image; characteristic quantities of the low-pressure vortices at the two resolutions) and Table 1 (\(Re_\lambda\), \(\nu\) in code units); the core boundary is shown in Fig. 3(a).</p>
+<p><strong>Method:</strong> DNS, forced isotropic</p>
+<p><strong>Which tubes:</strong> Low-pressure vortices: the cores occupy 31&ndash;35% of the volume; \(D\) is the diameter of the (non-circular) core boundary, \(u_\theta\) the mean azimuthal velocity at the boundary, \(\Gamma\) the circulation along it.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=\dfrac{D}{2},\qquad \dfrac{\Gamma}{\nu}\ \text{as listed (inside the boundary)}$$
+$$\dfrac{U_{\max}}{U_\eta}=1.175\,\dfrac{u_\theta}{u_K}\ (\text{boundary taken at }0.6\,r_{\max}\text{, where }f=0.855)$$
+$$\dfrac{d}{\eta}=\dfrac{D}{2\eta}\sqrt{\dfrac{\pi}{V_{\text{core}}/V}}\qquad(L_e=\dfrac{V_{\text{core}}/V}{\pi(D/2)^2},\ d=L_e^{-1/2})$$</p>
+<p><strong>Notes:</strong> The factor 1.175 assumes that the boundary encloses 60% of the enstrophy of a Burgers vortex, which puts it at \(0.6\,r_{\max}\); then \(f(0.6)=0.855\). This is an assumption of mine, and the boundary radius is not the Burgers peak radius.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (code units)</th><th>\(\varepsilon\) (code units)</th><th>\(D/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">\(r_{\max}/\eta\)</td><td>83</td><td>0.0025</td><td>0.13</td><td>10.4</td><td class="msep">\(r_{\max}/\eta\)=5.20</td><td>not fitted: core-boundary radius D/2, not the Burgers peak; two points</td></tr>
+<tr><td>170</td><td>0.000625</td><td>0.12</td><td>10.8</td><td class="msep">\(r_{\max}/\eta\)=5.40</td><td>not fitted: core-boundary radius D/2, not the Burgers peak; two points</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (code units)</th><th>\(\varepsilon\) (code units)</th><th>\(\Gamma/\nu\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">\(\Gamma/\nu\)</td><td>83</td><td>0.0025</td><td>0.13</td><td>110</td><td class="msep">\(\Gamma/\nu\)=110</td><td>not fitted: circulation inside the core boundary, not the total; two points</td></tr>
+<tr><td>170</td><td>0.000625</td><td>0.12</td><td>123</td><td class="msep">\(\Gamma/\nu\)=123</td><td>not fitted: circulation inside the core boundary, not the total; two points</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (code units)</th><th>\(\varepsilon\) (code units)</th><th>\(u_\theta/u_K\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">\(U_{\max}/U_\eta\)</td><td>83</td><td>0.0025</td><td>0.13</td><td>3.1</td><td class="msep">\(U_{\max}/U_\eta\)=3.64</td><td>not fitted: swirl at the core boundary, factor 1.175 assumed; two points</td></tr>
+<tr><td>170</td><td>0.000625</td><td>0.12</td><td>3.3</td><td class="msep">\(U_{\max}/U_\eta\)=3.88</td><td>not fitted: swirl at the core boundary, factor 1.175 assumed; two points</td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\) (code units)</th><th>\(\varepsilon\) (code units)</th><th>\(D/\eta\)</th><th>\(V_{\text{core}}/V\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">\(d/\eta\)</td><td>83</td><td>0.0025</td><td>0.13</td><td>10.4</td><td>0.35</td><td class="msep">\(d/\eta\)=15.6</td><td>not fitted: from the core volume fraction and D; two points</td></tr>
+<tr><td>170</td><td>0.000625</td><td>0.12</td><td>10.8</td><td>0.31</td><td class="msep">\(d/\eta\)=17.2</td><td>not fitted: from the core volume fraction and D; two points</td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A13. Pirozzoli (2009, 2012) (whole tubes)</h3>
+<p><strong>Where in the paper:</strong> Pirozzoli (2009), Table 1 (average radius of vortex cores extracted from DNS and from the experiments of Mouri et al.); Pirozzoli (2012), Sec. 3 and Fig. 2 (pdfs of core radius and induced velocity, DNS at several \(Re_\lambda\)).</p>
+<p><strong>Method:</strong> DNS, isotropic</p>
+<p><strong>Which tubes:</strong> Vortex cores scanned out of the DNS database without a vorticity threshold (candidate centres from pressure minima, \(r_0\) the radius of maximum velocity); all classes of vortices.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=r_0$$</p>
+<p><strong>Notes:</strong> One DNS value, \(Re_\lambda=250\): \(r_0/\eta=5.12\). Pirozzoli (2012) states that typical tubes have \(r_0\approx6\,\eta\) and \(v_0\approx2\,u_K\) at all the \(Re_\lambda\) of his DNS, without a table. The experimental entries of the table (5.18, 5.24, 5.56, 5.97, 5.66 at \(Re_\lambda\) 332, 488, 716, 945, 1080) repeat the 0.1%-threshold radii of Mouri et al. (2007) and are not counted again.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(r_0/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">\(r_{\max}/\eta\)</td><td>250</td><td>&mdash;</td><td>&mdash;</td><td>5.12</td><td class="msep">\(r_{\max}/\eta\)=5.12</td><td>not fitted: whole-tube DNS radius; awaits the whole-tube fit (section 7)<br><small>DNS</small></td></tr>
+<tr><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>6 (typical, text 2012)</td><td class="msep">\(r_{\max}/\eta\)=6.00</td><td>not fitted: typical value without an Re<sub>&lambda;</sub><br><small>Pirozzoli 2012, DNS at several Re_lambda</small></td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(v_0/u_K\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="1">\(U_{\max}/U_\eta\)</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>2 (typical, text 2012)</td><td class="msep">\(U_{\max}/U_\eta\)=2.00</td><td>not fitted: typical value without an Re<sub>&lambda;</sub><br><small>Pirozzoli 2012</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A14. Ishihara, Hunt and Kaneda (2011); Ishihara, Kaneda and Hunt (2013) (whole tubes)</h3>
+<p><strong>Where in the paper:</strong> Abstracts and Sec. 3 of both papers (DNS to \(4096^3\), \(Re_\lambda=1131\)).</p>
+<p><strong>Method:</strong> DNS, isotropic 4096^3</p>
+<p><strong>Which tubes:</strong> Strong vortex tubes inside thin shear layers of thickness about \(\lambda\); typical diameter of the tubes of order \(10\,\eta\); peak vorticity up to \(35\,\omega_{\text{rms}}\).</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}\approx\dfrac{D}{2}\approx5$$</p>
+<p><strong>Notes:</strong> Only an order of magnitude (\(D\sim10\,\eta\)) is given, not a mean, so the row is a comparison of the right size, not a measurement.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(D/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="1">\(r_{\max}/\eta\)</td><td>1131</td><td>&mdash;</td><td>&mdash;</td><td>~10 (order of)</td><td class="msep">\(r_{\max}/\eta\)=5.00</td><td>not fitted: order of magnitude only (D ~ 10 &eta;)<br><small>order of magnitude</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A15. Sassa and Makita (2005) (whole tubes)</h3>
+<p><strong>Where in the paper:</strong> Chapter in Engineering Turbulence Modelling and Experiments 6, Table 1 (the flows), Sec. on results and Fig. 8 (dependence on \(Re_\lambda\)).</p>
+<p><strong>Method:</strong> probe records, conditional sampling</p>
+<p><strong>Which tubes:</strong> Elementary vortices from conditional sampling of the transverse-velocity change at a moderate threshold (\(C=2.5\)) in stably stratified grid turbulence, homogeneous shear turbulence and a nocturnal surface layer, \(Re_\lambda=19\)&ndash;2391.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=\dfrac{D}{2}\approx5,\qquad \dfrac{W_{\max}}{u_K}\propto Re_\lambda^{0.28}$$</p>
+<p><strong>Notes:</strong> The diameter is about \(10\,\eta\) at all \(Re_\lambda\); the maximum azimuthal velocity over \(u_K\) grows as \(Re_\lambda^{0.28}\) (about twice the exponent of Kida et al.), except in the shear flows, and Mouri et al. (2004) measure larger values with a higher threshold. Only the trends are given in the text (the values are in Fig. 8), so the radius is a single comparison row.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(D/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="1">\(r_{\max}/\eta\)</td><td>19&ndash;2391</td><td>&mdash;</td><td>&mdash;</td><td>~10 (text)</td><td class="msep">\(r_{\max}/\eta\)=5.00</td><td>not fitted: trend only; the values are in a figure<br><small>range</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>A16. Das et al. (2006); Miyauchi et al. (2006); Wang et al. (2007) (whole tubes)</h3>
+<p><strong>Where in the paper:</strong> Abstracts (Das et al., Theor. Comput. Fluid Dyn. 20, 55; Miyauchi et al., Fluid Mech. Appl. 79, 71; Wang et al., Int. J. Heat Fluid Flow 28, 1280).</p>
+<p><strong>Method:</strong> DNS, channel and mixing layer</p>
+<p><strong>Which tubes:</strong> Coherent fine-scale eddies in channel flow (\(Re_\tau\) up to 1270) and in a mixing layer (\(Re_{\omega0}=700\)), most expected values of the pdfs.</p>
+<p><strong>Conversion:</strong>
+$$r_{\max}=\dfrac{D}{2}$$</p>
+<p><strong>Notes:</strong> These flows have no isotropic \(Re_\lambda\), so the rows cannot be placed on the \(Re_\lambda\) axis. Das et al.: \(D=10\)&ndash;\(12\,\eta\) and a mean maximum azimuthal velocity \(0.5\)&ndash;\(0.6\,u'_{\text{rms}}\); Miyauchi et al.: \(D\approx10\,\eta\), \(2.0\,u_K\) near the wall and \(8.5\,\eta\), \(1.7\,u_K\) in the logarithmic region; Wang et al.: \(D\approx8\,\eta\), swirl \(2.0\to1.2\,u_K\) through the transition.</p>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(D/\eta\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">\(r_{\max}/\eta\)</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>10&ndash;12 (channel)</td><td class="msep">\(r_{\max}/\eta\)=5.50</td><td>not fitted: wall or mixing-layer flow, no isotropic Re<sub>&lambda;</sub><br><small>Das 2006</small></td></tr>
+<tr><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>10; 8.5 (channel)</td><td class="msep">\(r_{\max}/\eta\)=4.60</td><td>not fitted: wall or mixing-layer flow, no isotropic Re<sub>&lambda;</sub><br><small>Miyauchi 2006</small></td></tr>
+<tr><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>8 (mixing layer)</td><td class="msep">\(r_{\max}/\eta\)=4.00</td><td>not fitted: wall or mixing-layer flow, no isotropic Re<sub>&lambda;</sub><br><small>Wang 2007</small></td></tr>
+</tbody></table></div>
+<div class="tablebox"><table class="dt">
+<thead><tr><th>Meas. type</th><th>\(Re_\lambda\)</th><th>\(\nu\)</th><th>\(\varepsilon\)</th><th>\(u_{\theta,\max}/u_K\)</th><th class="msep">Model</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">\(U_{\max}/U_\eta\)</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>2.0; 1.7 (channel)</td><td class="msep">\(U_{\max}/U_\eta\)=1.85</td><td>not fitted: wall or mixing-layer flow, no isotropic Re<sub>&lambda;</sub><br><small>Miyauchi 2006</small></td></tr>
+<tr><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>2.0 to 1.2 (mixing layer)</td><td class="msep">\(U_{\max}/U_\eta\)=1.60</td><td>not fitted: wall or mixing-layer flow, no isotropic Re<sub>&lambda;</sub><br><small>Wang 2007</small></td></tr>
+</tbody></table></div>
+<p class="note">Model values refer to water (\(\nu=10^{-6}\) m\(^2\)/s) at the reference \(\varepsilon=0.1\) W/kg, \(\eta=56.2\ \mu\)m, \(u_\eta=17.8\) mm/s. The DNS results in Kolmogorov units hold for any \(\varepsilon\) (appendix A0b).</p>
+<h3>Papers read for which no row was used</h3>
+<p>Ghira et al. (2024) has the \(Re_\lambda=54\) DNS but no radius or swirl for it (its radius is that of Ghira et al. 2025, Table 2). Elsinga et al. (2023) has the enstrophy and dissipation scaling to \(Re_\lambda=1445\), with a change near \(Re_\lambda\approx250\) where large-scale shear layers develop, and no tube dimensions. Watanabe and Nagata (2023) and Watanabe et al. (2024) describe shear layers (half-width \(\ell_S/\eta\approx4\), velocity jump \(\Delta u_S/u_\eta\approx5\) at \(Re_\lambda\) 43&ndash;202; aspect ratio about 4.5 at \(Re_\lambda\) 400&ndash;900), not tubes. Enoki et al. (2023) give the r.m.s. shares of the shear and non-shear velocities (70% and 30%). Leung et al. (2012) analyse the geometry of educed structures at \(Re_\lambda=141\) without a tube radius. Okamoto et al. (2007) extract coherent vortices at \(Re_\lambda\) 167&ndash;732 by wavelets and report degrees of freedom, not a radius. Cherry and Kwon (1990) take a Burgers vortex as the Kolmogorov eddy, with strain \(0.18\,(\varepsilon/\nu)^{1/2}\) for stirred vessels, \(r_{\max}=2\sqrt{1.265\,\nu/\alpha}=5.3\,\eta\) (computed here), \(\omega_0=7.14\,(\varepsilon/\nu)^{1/2}\) and a half-spacing of \(20\,\eta\); this is a model eddy without a stated \(Re_\lambda\), and the half-spacing is close to the model \(d/\eta\) of 17&ndash;19 at \(Re_\lambda\) 170&ndash;330. Wojtas et al. (2017) has no tube data.</p>
+</main>

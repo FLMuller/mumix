@@ -14,9 +14,10 @@ ALL = list(it.OBS)
 USED = [o for o in ALL if o[0] != "Kida02 all"]
 KIDA = [o for o in ALL if o[0] == "Kida02 all"]
 USED += [("Ghira25 IVS", "beta", 54, 1.12 * 4.29 / 0.97, 0.12), ("Ghira25 IVS", "beta", 54, 1.12 * 4.23 / 0.97, 0.12)]
+USED += [("Aligolzadeh23 IVS", "beta", 179, 1.12 * 5.1 / 0.95, 0.12)]
 N = len(USED)
 NAMES = {("Ghira22 IVS", "R"): "Ghira R_G", ("Ghira22 IVS", "beta"): "Ghira r_max", ("Jimenez93 IVS", "beta"): "Jimenez r_max", ("Mouri09 all", "Rec"): "Mouri Re_c",
-         ("Tanahashi01", "beta"): "Tanahashi r_max", ("Ghira25 IVS", "beta"): "Ghira25 r_max"}
+         ("Tanahashi01", "beta"): "Tanahashi r_max", ("Ghira25 IVS", "beta"): "Ghira25 r_max", ("Aligolzadeh23 IVS", "beta"): "Aligolzadeh r_max"}
 GROUPS = defaultdict(list)
 for i, o in enumerate(USED): GROUPS[(o[0], o[1])].append(i)
 

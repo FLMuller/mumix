@@ -19,27 +19,40 @@ residuals (groups of three or more observations); groups with fewer take the lar
 `sigma_ref` are iterated together. Parameter errors come from the curvature of chi2 (Delta chi2 = 1) and are
 approximate because `sigma_ref` is taken from the residuals.
 
-## Results (N = 32 observations)
+## Results (N = 33 observations)
 
 | Model | a | p | q | s | chi2/N |
 |---|---|---|---|---|---|
-| Section 7, 3 parameters | 91.5 +- 10.1 | 0.119 +- 0.017 | 0.901 +- 0.030 | - | 1.05 |
-| Section 8, 4 parameters (5% sigma floor) | 76.8 +- 8.7 | 0.145 +- 0.017 | 0.29 +- 0.10 | 0.18 +- 0.03 | 0.72 |
+| Section 7, 3 parameters | 88.5 +- 9.6 | 0.124 +- 0.017 | 0.873 +- 0.031 | - | 1.22 |
+| Section 8, 4 parameters (5% sigma floor) | 76.8 +- 8.7 | 0.145 +- 0.017 | 0.30 +- 0.10 | 0.18 +- 0.03 | 1.05 |
 
-`q` and `s` are strongly degenerate (correlation -0.98); a run without the floor gives q = 0.12, s = 0.23 with the
-same a and p. The floor is needed because the Ghira et al. radius group otherwise collapses to sigma_ref = 0.4%.
+`q` and `s` are strongly degenerate (correlation -0.98); a run without the floor gave q = 0.12, s = 0.23 with the
+same a and p (before the Aligolzadeh row was added). The floor is needed because the Ghira et al. radius group otherwise collapses to sigma_ref = 0.4%.
 Kida et al. (2002) are listed in the tables (red rows) but not used.
+
+The last row added is the experimental radius of Aligolzadeh et al. (2023): R/eta = 5.1, R/R_B = 0.95 at Re_l = 179, so
+r_max = 1.12 R/0.95 = 6.01 eta. It is the largest residual in both fits (model 20% and 22% below it); with it the 3-parameter
+fit moved from a = 91.5, p = 0.119, q = 0.901 (chi2/N = 1.05, N = 32) to the values above, and a and p of the 4-parameter fit did not move.
 
 ## Run order (regenerates the page)
 
-1. `update_s7_v2.py` - refits the 3-parameter model and rewrites Step 7 to the Limits section of the page.
-2. `build_sec8.py` - refits the 4-parameter model (imports `fit4_floor.py`) and writes section 8.
-3. `make_appendix.py` - writes the appendix (data rows, paper locations, interpretation). It holds the numbers
-   as read from the papers; edit it to change a data value.
+The 3-parameter model (`update_s7_v2.py`, Step 7 of the old section 7) was dropped from the page; the script is kept
+but is no longer run. The page now has: section 7 (data: whole and intense tubes), section 8 (tube model, steps 1-6),
+section 9 (4-parameter closure, fit, results and limits), the references and the appendix.
 
-The observations of sections 7 and 8 are in `fit_aq.py` (Ghira 2022, Mouri and Hori, Kida, Tanahashi), `optimise2d.py`
-(Jimenez 1993) and, for Ghira 2025, `update_s7_v2.py` and `fit4.py`. `iterate_sigma.py` and `fit3d.py` hold the
-3-parameter model and the sigma_ref iteration.
+1. `sourcedata.py` - every value taken from a paper (tables, equations, conversions, nu and eps of the run, tube set,
+   role), the single source for sections 7 and the appendix. Edit it to change or add a data row.
+2. `build_data_sections.py` - writes section 7 (with the table of all measurements) and the appendix from `sourcedata.py`.
+3. `build_sec8.py` - refits the 4-parameter model (imports `fit4_floor.py`) and writes section 9, with its limits.
+4. `restructure_page.py` - one-off, guarded: removed the 3-parameter fit from the page, renamed section 7 to 8, moved the
+   evidence table to the 4-parameter model values and added the new references. Safe to run again.
+
+`make_appendix.py` is the earlier appendix generator, replaced by `build_data_sections.py`.
+
+New data of the last extension (Mouri 2003, 2004, 2007, Da Silva 2011, Pirozzoli, Sassa, Ishihara, Das, Wang) are in
+`sourcedata.py` as comparison rows (not fitted). `newrows_test.py` compares them with the models and with the
+swirl-proportional-to-u' law: both models give a tube Reynolds number 2-3 times too low against the intense tubes of
+Mouri et al., the u' law agrees within 30%.
 
 ## Trials and checks (not used by the page)
 
@@ -68,3 +81,27 @@ The observations of sections 7 and 8 are in `fit_aq.py` (Ghira 2022, Mouri and H
   the factor 1.175 converting Kida's swirl at the core boundary to a Burgers peak.
 - Candidate DNS papers not yet checked: Vincent and Meneveau, Ishihara et al. (review of high-Re isotropic DNS),
   Pullin and Saffman (review), Passot et al.
+
+
+## Page v47 (2026-11-11): sections 1, 2, 10 and 11, the corrections of the fitting tool
+
+The page has a new section 1 (summary of the literature, table and figure), a new section 2 (theory), and the old sections 1-7 are now 3-9
+(section 9 is the data); the old sections 8 and 9 (the tube model and the 4-parameter closure) are replaced by section 10 (every fit tried, as equations)
+and section 11 (the selected model). The old page is kept as `../zprev/vortex-energy-balance_v46.html`, the old scripts as `../zprev/sourcedata_v46.py` and
+`../zprev/build_data_sections_v46.py`.
+
+Order of a rebuild (each script replaces only its own blocks):
+1. `sourcedata.py` - the data and the corrections (`CORR`: Mouri and Hori 2009 radius / 1.75 and swirl x 3, Ghira et al. 2022 swirl x 0.6); `reason()` says which rows
+   the fitting tool fits (it reads `../fittingtool/data/tubes.csv` and `corrections.json`).
+2. `../fittingtool/exportdata.py` then `build_data_sections.py` - section 9 and the appendix (A0c has the chord model and the reasons of the corrections).
+3. `build_intro_sections.py` - sections 1 and 2 and the new references (merged by author).
+4. `build_fit_sections.py` - runs the fitting tool and writes sections 10 and 11 (needs matplotlib; takes about a minute).
+5. `restructure_v47.py` - one-off (already done): renumbering of the old sections.
+
+Analyses behind the corrections (not run by the page): `fit_threshold.py` (what the 0.1% and 1% threshold averages of Mouri et al. say about the true tube, with the
+chord model; selection by peak or by velocity increment with `--sep`), `fit_smoothing.py` (the same with the hot-wire length added; it does not settle the swirl
+factor), `compare_cases.py` (the two cases of section 10: Mouri and Hori x 3 with Ghira x 0.6, and x 5 with Ghira as listed; writes `compare_cases.svg` and `.png`),
+`fit_chord.py` (Belin's size distribution). Results are summarised in `../page_update_notes.md`.
+
+Publishing: `publish_page.py` copies the page to `../results/vortex-energy-balance_YYYY.MM.DD_HH;MM.html` (a new file each time, never overwritten, like the other results)
+and shows it through the report server; run it last in the rebuild order above.

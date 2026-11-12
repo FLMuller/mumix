@@ -56,11 +56,20 @@ tan = ("<h3>A3. Tanahashi, Iwase and Miyauchi (2001)</h3>\n"
        "<p><strong>Interpretation:</strong> \\(r_{\\max}=D/2=4.5\\,\\eta\\). The paper does not give a single \\(Re_\\lambda\\) for the mixing layer; I placed the value at \\(Re_\\lambda=200\\), which is an assumption. It is a single point.</p>\n"
        + table(["\\(Re_\\lambda\\)", "Fig. 7: peak of the diameter pdf", "\\(r_{\\max}/\\eta\\) used"], [["200 (assumed)", "\\(D/\\eta\\approx9\\)", "4.50"]]))
 
+
+# ---------------------------------------------------------------- Aligolzadeh et al. (2023)
+ali = (r"<h3>A4. Aligolzadeh, Holzner and Dawson (2023)</h3>" "\n"
+       r"<p><strong>Where:</strong> Sec. 2 (the von K&aacute;rm&aacute;n facility and the DNS: Taylor-scale Reynolds number \(Re_\lambda=179\), \(\eta=0.926\) mm, spatial resolution about \(1\,\eta\); the DNS of Li et al. at \(Re_\lambda=418\)); Sec. 3.1 and the Conclusions (the mean radius of the structures); Sec. 3, Fig. 12 and the text before it (the ratio of the measured radius to the equivalent Burgers radius).</p>" "\n"
+       r"<p><strong>Entries used:</strong> the mean normalised radius \(R/\eta=5.1\), where \(R\) is the distance from the axis of a structure to the boundary of the objectively defined vortex (evaluated at points along the contorted boundary), and the mean \(R/R_B=0.95\), where \(R_B=(4\nu/\gamma_0)^{1/2}\) is the Burgers radius from the centre-line stretching rate \(\gamma_0=\omega_i S_{ij}\omega_j/\omega_0^2\) (their Eq. 2.5). The text gives the two means as \(R/R_B=0.95\) and 1.1.</p>" "\n"
+       r"<p><strong>Interpretation:</strong> \(R_B=R/(R/R_B)=5.1/0.95=5.37\,\eta\) and \(r_{\max}=1.12\,R_B=6.01\,\eta\), where 1.12 is \(r_{\max}/R_B=\sqrt{x}\) for a Burgers vortex. Two assumptions of mine: the value 5.1 is that of the experiment (the paper quotes one value in the text and Fig. 4 shows both pdfs), and 0.95 is the experimental mean, because the text says the experimental pdf is more skewed to the left of \(R/R_B=1\). The DNS mean \(R/R_B=1.1\) cannot be used because the paper gives no separate DNS radius. The experiment is the only entry of the table that is not DNS; its radius, an objective boundary and not a \(1/e\) vorticity radius, is larger than those of the DNS studies (4.3&ndash;5.0 \(\eta\)). It is a single point, so it takes the largest \(\sigma_{\text{ref}}\) of the larger groups.</p>" "\n"
+       + table([r"\(Re_\lambda\)", r"Sec. 3.1: \(R/\eta\)", r"Fig. 12 text: mean \(R/R_B\)", r"\(R_B/\eta=R/(R/R_B)\)", r"\(r_{\max}/\eta=1.12\,R_B\) used"],
+               [["179 (experiment)", "5.1", "0.95", "%.2f" % (5.1 / 0.95), "%.2f" % (1.12 * 5.1 / 0.95)]]))
+
 # ---------------------------------------------------------------- Mouri and Hori, Table 2
 runs = [("B1", 332, 8.45, 2.43, 20.5), ("B2", 488, 8.47, 2.39, 20.2), ("B3", 716, 8.59, 2.47, 21.2), ("B4", 945, 9.21, 2.73, 25.1), ("B5", 1080, 8.93, 2.83, 25.3),
         ("B6", 1304, 8.28, 2.88, 23.8), ("D1", 719, 8.56, 2.43, 20.8), ("D2", 1098, 8.91, 2.56, 22.8), ("D3", 1416, 9.12, 2.79, 25.4), ("D4", 1693, 8.72, 2.91, 25.4),
         ("D5", 1934, 8.81, 3.18, 28.0)]
-mou = ("<h3>A4. Mouri and Hori (preprint, file Mouri (2009))</h3>\n"
+mou = ("<h3>A5. Mouri and Hori (preprint, file Mouri (2009))</h3>\n"
        "<p><strong>Where:</strong> Table 2 (parameters of vortex tubes in boundary layers B1–B6 and duct flows D1–D5), with \\(Re_\\lambda\\) from Table 1 (hot-wire measurements in a wind tunnel).</p>\n"
        "<p><strong>Entry used:</strong> \\(Re_0=R_0V_0/\\nu\\), where \\(R_0\\) and \\(V_0\\) come from fitting a Burgers vortex to the conditionally averaged spanwise velocity profile of tubes crossing the probe (Fig. 3), \\(R_0\\) being the radius and \\(V_0\\) the maximum circulation velocity.</p>\n"
        "<p><strong>Interpretation:</strong> \\(Re_c=U_{\\max}r_{\\max}/\\nu\\) of the model is the same quantity as \\(Re_0\\), so the value is used directly. The authors state that \\(R_0\\) (8–9 \\(\\eta\\)) is larger than the true mean radius and \\(V_0\\) smaller than the true circulation velocity, because tubes passing off-centre or at an angle are included; the product \\(Re_0\\) is the least biased quantity and is the one used, not \\(R_0\\) or \\(V_0\\) separately. The Reynolds numbers are the largest of the data set (332–1934), and these are the all-tube population.</p>\n"
@@ -71,15 +80,28 @@ mou = ("<h3>A4. Mouri and Hori (preprint, file Mouri (2009))</h3>\n"
 kida_rows = []
 for Rl, D, G, ut, vc in ((83, 10.4, 110, 3.1, 0.35), (170, 10.8, 123, 3.3, 0.31)):
     kida_rows.append(["%d" % Rl, "%.1f / %d / %.1f / %.2f" % (D, G, ut, vc), "%.1f" % (D / 2), "%.2f" % (ut * 1.175), "%d" % G, "%.1f" % (D / 2 * math.sqrt(math.pi / vc))])
-kid = ("<h3>A5. Kida, Goto and Makihara (2002) (shown in red in the data table, not used in the fit)</h3>\n"
+kid = ("<h3>A6. Kida, Goto and Makihara (2002) (shown in red in the data table, not used in the fit)</h3>\n"
        "<p><strong>Where:</strong> Table 2 (characteristic quantities of the low-pressure vortices at the two resolutions: \\(256^3\\), \\(Re_\\lambda=83\\), and \\(512^3\\), \\(Re_\\lambda=170\\), from Table 1); the core boundary is shown in Fig. 3(a).</p>\n"
        "<p><strong>Entries used:</strong> \\(D/l_K\\) (core diameter; the core is the region inside the boundary of the low-pressure vortex, which is not circular), \\(\\Gamma/\\nu\\) (circulation), \\(u_\\theta/u_K\\) (mean azimuthal velocity at the core boundary) and \\(V_{\\text{core}}/V\\) (volume fraction of the cores).</p>\n"
        "<p><strong>Interpretation:</strong> radius \\(=D/2\\); circulation \\(\\Gamma/\\nu\\) as listed (it is the value at the core boundary, not the total of a Burgers vortex); swirl \\(=1.175\\,u_\\theta/u_K\\), where 1.175 converts the swirl at the core boundary to the Burgers peak assuming the boundary encloses 60% of the enstrophy (the boundary then sits at 0.6 of the peak radius); spacing \\(d=(D/2)\\sqrt{\\pi/(V_{\\text{core}}/V)}\\), from the tube density \\(L_e=(V_{\\text{core}}/V)/(\\pi(D/2)^2)\\) and \\(d=1/\\sqrt{L_e}\\). The 1.175 factor is an assumption of mine, and the boundary radius is not the Burgers peak radius, which is why these rows are shown but not used.</p>\n"
        + table(["\\(Re_\\lambda\\)", "Table 2: \\(D/l_K\\) / \\(\\Gamma/\\nu\\) / \\(u_\\theta/u_K\\) / \\(V_{\\text{core}}/V\\)", "radius \\(D/2\\)", "swirl \\(1.175\\,u_\\theta/u_K\\)", "\\(\\Gamma/\\nu\\)", "spacing \\(d/\\eta\\)"], kida_rows))
 
+
+# ---------------------------------------------------------------- papers read with no rows in the table
+others = (r"<h3>A7. Papers read for which no row was used</h3>" "\n"
+          r"<p>These papers were read for tube radius, swirl or circulation by \(Re_\lambda\). They contain none that fits the quantities of the data table, for the reason given. Where a model comparison is possible it is stated.</p>" "\n"
+          + table(["Paper", "Where", "What it gives", "Why no row / comparison"],
+                  [[r"Ghira, Vela-Martin and da Silva (2024)", r"Table 1; Sec. 1", r"DNS at \(Re_\lambda=54\) (\(128^3\), \(\nu=0.0370\), \(u'=2.90\), \(\lambda=0.68\), \(\eta=0.0474\)); statement that \(R_{ivs}/\eta\approx4\)&ndash;5 and \(U_{ivs}/u'\approx1\)", r"no radius or swirl for this run; the \(Re_\lambda=54\) radii are those of Ghira et al. (2025), Table 2, already in the table"],
+                   [r"Elsinga, Ishihara and Hunt (2023)", r"Abstract; Sec. 2; Sec. 4", r"DNS up to \(Re_\lambda=1445\); the scaling exponents of enstrophy and dissipation change near \(Re_\lambda\approx250\), where large-scale shear layers develop", r"no tube dimensions; relevant to extrapolating the fit above \(Re_\lambda\approx250\)"],
+                   [r"Watanabe and Nagata (2023)", r"Table 1; Sec. 2 (Figs. 4&ndash;5); Conclusions", r"DNS \(Re_\lambda=43\)&ndash;202; typical <em>shear layers</em> have half-width \(\ell_S/\eta\approx4\) and velocity jump \(\Delta u_S/u_\eta\approx5\) with \(Re_S\approx20\), nearly independent of \(Re_\lambda\)", r"shear layers (Burgers vortex layers), not tubes; supports the dissipation sitting in sheets (Moisy and Jim&eacute;nez)"],
+                   [r"Watanabe et al. (2024)", r"Sec. 4.3 (Fig. 11); Sec. 5", r"PIV, \(Re_\lambda\approx400\)&ndash;900; shear layers at intermediate scales with aspect ratio about 4.5, surrounded by rotation", r"shear layers at scales above \(\eta\), not tubes"],
+                   [r"Enoki, Watanabe and Nagata (2023)", r"Abstract; Sec. IV B", r"r.m.s. of the shear and non-shear velocities about 70% and 30% of the total", r"a share of the velocity fluctuations, not a tube radius, swirl or circulation"],
+                   [r"Cherry and Kwon (1990)", r"Model flow field section: Eq. (13) and the results that follow", r"a Burgers eddy as the Kolmogorov eddy: strain \(\alpha=0.18\,(\varepsilon/\nu)^{1/2}\) for stirred vessels (0.26 as the r.m.s. strain of isotropic turbulence), \(\omega_0=7.14\,(\varepsilon/\nu)^{1/2}\), peak swirl at \(R=1.265\), i.e. \(r_{\max}=2\sqrt{1.265\nu/\alpha}=5.3\,\eta\) (computed here from \(\alpha=0.18\,(\varepsilon/\nu)^{1/2}\)), and a half-spacing of \(20\,\eta\) from the wavelength of the velocity-gradient spectrum", r"a model eddy without a stated \(Re_\lambda\), not a measurement. Model comparison: \(\gamma/\gamma_\eta=0.21\)&ndash;0.26 (0.18 stirred vessels), \(r_{\max}=4.4\)&ndash;4.9 \(\eta\) (5.3), spacing \(d/\eta=17\)&ndash;19 at \(Re_\lambda\) 170&ndash;330 (20)"],
+                   [r"Wojtas et al. (2017)", r"whole paper", r"subgrid scalar variance at high Schmidt number in impinging-jet reactors (LES and planar laser-induced fluorescence)", r"no vortex-tube data; relevant to the process mapping of the micromixing link"]]))
+
 app = ('<h2>Appendix: data rows, where they come from and how they were read</h2>\n'
        '<p>Every literature value in the data table of Step 7 is listed here, with the location in the paper (table, figure or equation), the raw entries and the arithmetic that gives the number in our table. Quantities are in Kolmogorov units (\\(\\eta\\), \\(u_\\eta\\), \\(\\nu\\)). The PDFs are in the LIT folder under the file names given in the references.</p>\n'
-       + ghira + jim + tan + mou + kid)
+       + ghira + jim + tan + ali + mou + kid + others)
 
 if "<h2>Appendix: data rows" in t:
     i = t.index("<h2>Appendix: data rows")
