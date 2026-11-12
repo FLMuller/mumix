@@ -177,6 +177,8 @@ CSS = """
 .pic{max-width:50%;border:1px solid #ccc;cursor:zoom-in}
 .cap{font-size:11px;color:#555;padding:2px 0}
 .guess{color:#c00;font-weight:bold}
+.okk{color:#0a7d2c;font-weight:bold}
+.used{color:#06c;font-weight:bold}
 .gindex{padding:4px 6px;margin-bottom:6px;color:#c00;font-size:12px}
 .glink{display:inline-block;min-width:16px;text-align:center;border:1px solid #c00;color:#c00;border-radius:3px;margin:0 2px;cursor:pointer}
 .tablebox{overflow-x:auto;max-width:100%}

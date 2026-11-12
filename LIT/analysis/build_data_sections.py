@@ -232,7 +232,7 @@ def tube_items(corrected=False):
             tag = r["raw"][0]
         elif r["src"] == "Pirozzoli09":
             tag = "2009" if isinstance(r["Re"], (int, float)) else "2012"
-        elif r["src"] in ("DaSilva11", "Wall", "Ghira25"):
+        elif r["src"] in ("DaSilva11", "Wall", "Ghira25", "Sassa05"):
             tag = r["note"]
         else:
             tag = ""

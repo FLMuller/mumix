@@ -10,10 +10,25 @@
       "r_divisor": 1.0,
       "u_factor": 0.6,
       "why": "The listed swirl U_ivs/u' = 1.0-1.25 (6-9.5 U_eta) lies above the other sources at the same Re_lambda (Da Silva 3.7-4.3, Kida 3.7-3.9 at Re_lambda 83-170) and above the swirl implied by their own mean axis vorticity (5.5-6.2 U_eta); a constant factor 0.58 (0.56-0.60) puts it on the curve of the other sources. More low-Re_lambda data support moving Ghira than moving the others (the fits with Ghira at x 1 leave it 25-34% off the curve whatever the Mouri factor, combined score 17-19% against 8.5%)."
+    },
+    "Ghira25": {
+      "r_divisor": 1.0,
+      "u_factor": 0.6,
+      "why": "The same method and group as Ghira et al. (2022) (U_ivs/u' of the 1% most intense vorticity): the same factor, so that the two are treated alike."
     }
   },
   "excluded": {
     "Mouri07": "Mouri et al. (2007) give the 0.1% and 1% threshold averages of the same chord distribution as Mouri and Hori (2009): two tails of it, not whole tubes. They are not corrected row by row; the pair calibrated the chord correction of the 2009 data (fit_threshold.py) and is left out of the fits.",
     "Mouri04": "Mouri et al. (2004) give the 1% threshold average of the same experiments (a tail of the chord distribution); left out of the fits as for Mouri et al. (2007)."
+  },
+  "excluded_quantities": {
+    "DaSilva11": {
+      "U": "The paper is not consistent: Table 1 prints <u0>/u_eta = 9.0 (HIT) and 7.15 (jet), and its circulation gives 10.5 and 10.7, while u0/u' = 0.68 and 0.76 give 3.6 and 4.2 with u'/u_eta = (Re_lambda/sqrt 15)^0.5. A factor 2.5 that the paper does not resolve: the swirl is shown but not fitted (found on the page image, 2026-11-12).",
+      "G": "follows from the swirl"
+    },
+    "Sassa05": {
+      "U": "Read by eye from Fig. 8(b) of the paper (within about 15 %): used as an independent check of the trend, not fitted.",
+      "G": "follows from the swirl"
+    }
   }
 }

@@ -82,13 +82,16 @@ g22["epsunit"] = "code units"
 
 # ----------------------------------------------------------------------------------------------- Ghira 2025
 g25 = source(key="Ghira25", cite="Ghira, Elsinga and da Silva (2025)", short="Ghira et al. (2025)", tubes="intense",
-             where=r"Table 2 (characteristics of the IVS of all simulations, obtained as in the 2022 paper); Table 1 and Ghira et al. (2024), Table 1, for \(\nu\).",
+             where=r"Table 2 (characteristics of the IVS of all simulations, obtained as in the 2022 paper: \(R_{ivs}/\eta\) and \(U_{ivs}/u'\)); Table 1 of the same paper for \(\nu\) and \(\varepsilon\).",
              selection=r"As Ghira et al. (2022): the intense vorticity structures, 1% of the volume.",
              eqs=[r"r_{\max}=1.12\,\dfrac{R_{ivs}}{R_{ivs}/R_B},\qquad R_{ivs}/R_B=0.97\ (\text{assumed})"],
              notes=r"Only the two \(Re_\lambda=54\) radii are new: the other rows of Table 2 (4.28, 4.23, 4.10, 4.06 at \(Re_\lambda=91\), 143, 189, 239) are the simulations of the 2022 paper. Table 2 gives no \(R_{ivs}/R_B\) for these runs (Table 11 gives 0.99 and 0.97 for a repeated \(512^3\) run), so the mean of the 2022 values, 0.97, is assumed. The paper gives no circulation.")
 row(g25, "rmax", 54, 0.0370, ["4.29", "0.97 (assumed)"], 1.12 * 4.29 / 0.97, "fit", "128^3", eps=10.01)
-row(g25, "rmax", 54, None, ["4.23", "0.97 (assumed)"], 1.12 * 4.23 / 0.97, "fit", "256^3, forcing at k_p = 4")
-g25["rawcols"] = {"rmax": [r"\(R_{ivs}/\eta\)", r"\(R_{ivs}/R_B\)"]}
+row(g25, "rmax", 54, 0.0145, ["4.23", "0.97 (assumed)"], 1.12 * 4.23 / 0.97, "fit", "256^3, forcing at k_p = 4", eps=10.03)
+# the swirl of the two Re_lambda = 54 runs (Table 2, U_ivs/u' = 1.11 and 1.13; checked on the page image 2026-11-12): converted as Ghira et al. (2022)
+for nu54, eps54, uu54, note54 in ((0.0370, 10.01, 1.11, "128^3"), (0.0145, 10.03, 1.13, "256^3, forcing at k_p = 4")):
+    row(g25, "swirl", 54, nu54, ["%.2f" % uu54, "%.2f" % uprime_over_ueta(54), "0.97 (assumed)"], peak_from_swirl_at(uu54 * uprime_over_ueta(54), 0.97), "cmp", note54, eps=eps54)
+g25["rawcols"] = {"rmax": [r"\(R_{ivs}/\eta\)", r"\(R_{ivs}/R_B\)"], "swirl": [r"\(U_{ivs}/u'\)", r"\(u'/u_\eta\)", r"\(R_{ivs}/R_B\)"]}
 g25["nuunit"] = "code units"
 g25["epsunit"] = "code units"
 
@@ -96,11 +99,14 @@ g25["epsunit"] = "code units"
 j93 = source(key="Jimenez93", cite="Jim&eacute;nez, Wray, Saffman and Rogallo (1993)", short="Jim&eacute;nez et al. (1993)", tubes="intense",
              where=r"Table 3 (average worm characteristics from the tracking algorithm, one row per simulation); the algorithm is described in the text above the table.",
              selection=r"Worms: connected regions of vorticity above a threshold (the 1% of the volume of highest vorticity); the radius is the \(1/e\) radius of a Gaussian fitted to the azimuthal mean of the axial vorticity.",
-             eqs=[r"r_{\max}=\sqrt{x}\,R_B=1.12\,R"],
-             notes=r"The \(1/e\) radius of a Gaussian vorticity profile is the Burgers radius. The circulation column of the table is not used. \(\nu\) is not read here because the copy of Table 1 is a scan.")
+             eqs=[r"r_{\max}=\sqrt{x}\,R_B=1.12\,R", r"\dfrac{\Gamma}{\nu}=\dfrac{Re_\gamma}{Re_\lambda^{1/2}}\,Re_\lambda^{1/2}"],
+             notes=r"The \(1/e\) radius of a Gaussian vorticity profile is the Burgers radius. The circulation of the table is that of the fitted Gaussian (the total circulation): \(\Gamma/\nu=Re_\gamma\). \(\nu\) is not read here because the copy of Table 1 is a scan.")
 for Re, R in ((35.8, 4.22), (62.8, 4.16), (94.5, 4.16), (168.1, 3.85)):
     row(j93, "rmax", Re, None, ["%.2f" % R], 1.12 * R, "fit")
-j93["rawcols"] = {"rmax": [r"\(R/\eta\)"]}
+# the circulation column of Table 3 (Re_gamma/Re_lambda^(1/2): the circulation of the fitted Gaussian, so the total circulation; checked on the page image 2026-11-12)
+for Re, RG in ((35.8, 21.1), (62.8, 17.0), (94.5, 18.1), (168.1, 16.5)):
+    row(j93, "gam", Re, None, ["%.1f" % RG], RG * math.sqrt(Re), "cmp")
+j93["rawcols"] = {"rmax": [r"\(R/\eta\)"], "gam": [r"\(Re_\gamma Re_\lambda^{-1/2}\)"]}
 j93["nuunit"] = ""
 
 # ----------------------------------------------------------------------------------------------- Tanahashi 2001
@@ -108,8 +114,8 @@ t01 = source(key="Tanahashi01", cite="Tanahashi, Iwase and Miyauchi (2001)", sho
              where=r"Fig. 7 and the text around it (DNS of a turbulent mixing layer, \(Re_{\theta0}=500\)).",
              selection=r"Coherent fine-scale eddies educed with the second invariant of the velocity gradient and the vorticity, without a vorticity threshold; the radius is the distance from the centre to the maximum of the mean azimuthal velocity.",
              eqs=[r"r_{\max}=\dfrac{D}{2}"],
-             notes=r"The probability density function of the diameter peaks at \(D\approx9\,\eta\) (the text says the mean diameter stays about \(8\,\eta\)). The paper gives no \(Re_\lambda\) for the mixing layer; \(Re_\lambda=200\) is assumed.")
-row(t01, "rmax", 200, None, ["9 (peak of the pdf)"], 4.5, "fit", "Re_lambda assumed")
+             notes=r"The probability density function of the diameter peaks at \(D\approx9\,\eta\) (the text says the mean diameter stays about \(8\,\eta\)). Fig. 1(b) of the paper gives \(Re_\lambda\) against time: about 80 (75&ndash;85, read from the figure) for \(Re_{\omega,0}=500\) at the times analysed (\(t=70\)&ndash;130); the text says the highest value is about 100, for \(Re_{\omega,0}=900\). Ghira et al. (2022), Table I, list this flow at \(Re_\lambda=80\)&ndash;100. (Until 2026-11-12 the page assumed 200.)")
+row(t01, "rmax", 80, None, ["9 (peak of the pdf)"], 4.5, "fit", "Re_lambda read from Fig. 1(b)")
 t01["rawcols"] = {"rmax": [r"\(D/\eta\)"]}
 t01["nuunit"] = ""
 
@@ -129,7 +135,7 @@ d11 = source(key="DaSilva11", cite="Da Silva, Dos Reis and Pereira (2011)", shor
              selection=r"Intense vorticity structures as in Ghira et al. (1% of the volume); \(R\) is the \(1/e\) radius of the vorticity, \(u_0\) the mean tangential velocity at \(R\), \(R_B\) the Burgers radius from the stretching rate.",
              eqs=[r"r_{\max}=1.12\,\dfrac{R}{R/R_B}",
                   r"\dfrac{U_{ivs}}{u_\eta}=\dfrac{u_0}{u'}\left(\dfrac{Re_\lambda}{\sqrt{15}}\right)^{1/2},\qquad \dfrac{U_{\max}}{U_\eta}=\dfrac{U_{ivs}/u_\eta}{f(k)}"],
-             notes=r"The text gives \(R/\eta=4.6\) for both flows, \(u_0/u'=0.68\) and 0.76, and \(R/R_B=0.99\) and 0.97. Table 1 of the paper (a compilation of IVS data from the literature) is an image and was not read, and the circulation Reynolds number quoted there uses a different definition (\(Re_\Gamma Re_\lambda^{-1/2}\approx28\)), so it is not used. Their \(u_0/u'\) (0.7&ndash;0.8) is lower than that of Ghira et al. (1.0&ndash;1.25).")
+             notes=r"<b>Conflict in the paper (found on the page image 2026-11-12):</b> Table 1 prints \(\langle u_0\rangle/u_\eta=9.0\) (HIT) and 7.15 (jet), and its \(Re_\Gamma Re_\lambda^{-1/2}=28.8\) and 28.3 with \(\Gamma=2\pi Ru_0\) give \(u_0/u_\eta=10.5\) and 10.7; the values used here, 3.6 and 4.2, come from \(u_0/u'\) times \(u'/u_\eta=(Re_\lambda/\sqrt{15})^{1/2}\). The two differ by a factor 2.5, so the swirl of this source is left out of the fits. The text gives \(R/\eta=4.6\) for both flows, \(u_0/u'=0.68\) and 0.76, and \(R/R_B=0.99\) and 0.97. Table 1 of the paper (a compilation of IVS data from the literature) is an image and was not read, and the circulation Reynolds number quoted there uses a different definition (\(Re_\Gamma Re_\lambda^{-1/2}\approx28\)), so it is not used. Their \(u_0/u'\) (0.7&ndash;0.8) is lower than that of Ghira et al. (1.0&ndash;1.25).")
 for Re, flow, R, rr, u0 in ((111, "HIT", 4.6, 0.99, 0.68), (120, "jet", 4.6, 0.97, 0.76)):
     row(d11, "rmax", Re, None, ["%.1f" % R, "%.2f" % rr], 1.12 * R / rr, "cmp", flow)
     U = u0 * uprime_over_ueta(Re)
@@ -268,7 +274,10 @@ s05 = source(key="Sassa05", cite="Sassa and Makita (2005)", short="Sassa and Mak
              eqs=[r"r_{\max}=\dfrac{D}{2}\approx5,\qquad \dfrac{W_{\max}}{u_K}\propto Re_\lambda^{0.28}"],
              notes=r"The diameter is about \(10\,\eta\) at all \(Re_\lambda\); the maximum azimuthal velocity over \(u_K\) grows as \(Re_\lambda^{0.28}\) (about twice the exponent of Kida et al.), except in the shear flows, and Mouri et al. (2004) measure larger values with a higher threshold. Only the trends are given in the text (the values are in Fig. 8), so the radius is a single comparison row.")
 row(s05, "rmax", "19&ndash;2391", None, ["~10 (text)"], 5.0, "cmp", "range")
-s05["rawcols"] = {"rmax": [r"\(D/\eta\)"]}
+# the maximum azimuthal velocity of Fig. 8(b), the present data of the paper, read by eye from the page image (2026-11-12; within about 15 %): not fitted
+for Re, W, field in ((19, 2.1, "LSG"), (19, 2.8, "LSG"), (190, 4.0, "LSE"), (300, 4.2, "LSE"), (586, 3.6, "ST2"), (820, 2.1, "ST1"), (2391, 6.5, "ATM")):
+    row(s05, "swirl", Re, None, ["%.1f (read from Fig. 8b)" % W], W, "cmp", field)
+s05["rawcols"] = {"rmax": [r"\(D/\eta\)"], "swirl": [r"\(w_{\max}/u_K\)"]}
 s05["nuunit"] = ""
 
 # ----------------------------------------------------------------------------------------------- wall-bounded and mixing-layer DNS (no Re_lambda)

@@ -75,13 +75,13 @@ METHOD = (r"The pdf is drawn with a logarithmic vertical axis, and the curves of
 
 def tanahashi2001(book, f):
     tab = next(t for t in book.tabs if t.id == "tanahashi2001")
-    tab.h("5. The figure we digitised: Fig. 7 of the paper (page 9 of the journal, page 10 of the pdf)")
+    tab.h("7. The figure we digitised: Fig. 7 of the paper (page 9 of the journal, page 10 of the pdf)")
     tab.img(pdfcrop("Tanahashi (2001).pdf", 10, (0.12, 0.40, 0.88, 0.61)), "Fig. 7 of Tanahashi et al. (2001): pdf of D* (left) and v*θ,m (right), Re_ω,0 = 500, at t = 70, 90, 110, 130. Both axes of P are logarithmic.")
     tab.p(r"The text next to it: the pdfs of \(D^*\) and \(u^*_\theta\) 'show peaks at \(D^*\approx9\) and \(u^*_\theta\approx0.5\)'. \(D^*\) is the diameter over the Kolmogorov length \(\eta\) and \(v^*_{\theta,m}\) the "
           r"maximum azimuthal velocity over \(u'_{rms}\), both as the text of section 3 says. The curves of the four times lie close: that is the band the digitiser works on.")
     tab.p("The figure as we digitised it (the screenshot you gave, not the pdf page):")
     tab.img("tanahashi2001_fig7.png", "tanahashi2001_fig7.png, the image the digitiser was run on")
-    tab.h("6. The simulation and the identification of the eddies")
+    tab.h("8. The simulation and the identification of the eddies")
     tab.img(pdfcrop("Tanahashi (2001).pdf", 5, (0.08, 0.15, 0.92, 0.33)), "Section 2 of the paper: the grids (216×325×144 for Re_ω,0 = 500; 288×433×192 for 700; 324×487×216 for 900) and the times analysed.")
     tab.table(["quantity", "value", "where in the paper"],
               [["flow", "temporally developing turbulent mixing layer, tanh(2y) initial profile", "section 2"],
@@ -97,13 +97,13 @@ def tanahashi2001(book, f):
           tab.guess(r"the reading Re_λ ≈ 80 for Re_ω,0 = 500", "it is read by eye from the figure, to about ±8; the paper prints no number for this case") +
           r" <b>The page assumed \(Re_\lambda=200\)</b> (sourcedata, Tanahashi01, 'the paper gives no \(Re_\lambda\)'): that was wrong, and the row would sit at about 80.")
     tab.p(tab.guess("the grid spacing in η of this mixing layer", "the paper gives no spacing in η: Fig. 2 shows the spectrum against k_x η, whose largest wavenumber would give it, but we have not read it") + " &mdash; not done.")
-    tab.h("7. Digitising the pdf")
+    tab.h("9. Digitising the pdf")
     tab.p(METHOD)
     tab.p("Rules of the digitiser: the points where the lower bound is below 2×10⁻⁴ are dropped (those are the noisy single-count tail lines of the figure); the curve starts at the first point above that and ends where the band falls to the floor of the plot.")
     tab.img("tanahashi2001_overlay.png", "The digitised curve (P = (top+bottom)/2) drawn on top of the figure, to check it: the left panel is the diameter, the right panel the swirl.")
     digitised_table(tab, "tanahashi2001_pdfs.csv", ("D_star", "pD_top", "pD_bottom", "pD"), 25, "The diameter pdf, D* = D/η.")
     digitised_table(tab, "tanahashi2001_pdfs.csv", ("v_star", "pv_top", "pv_bottom", "pv"), 25, "The swirl pdf, v* = v_θ,m/u_rms.")
-    tab.h("8. The radius, and the fit with two lognormals")
+    tab.h("10. The radius, and the fit with two lognormals")
     tab.p(r"The radius of maximum swirl is half the diameter: \(r_{\max}=D/2\), so \(p_r(r)=2\,p_D(2r)\). The curve is scaled to a total area of 1 (the digitised area, the rise below the first point and the "
           r"tail beyond the last point are all counted: summary_pdfs.normalise). A single lognormal does not fit (the curve has a narrow core and a long tail), so two are fitted in the "
           r"linear domain (a fit in log P weights the tail as much as the core, and the core is what we need), with the weight free, the medians ordered \(\mu_2>\mu_1\) and \(s_2\ge2s_1\) as you asked.")
@@ -115,7 +115,7 @@ def tanahashi2001(book, f):
           "about twice the size) <b>%.0f %%</b>, although the first has %.0f %% of the tubes." % (100 * vf, 100 * (1 - vf), 100 * r["a1"]))
     s = f[("t01", "swirl")]
     fit_block(tab, s, r"swirl v/u_rms", "u_rms", "(the swirl needs no width constraint).")
-    tab.h("9. What the page uses, and what it could use")
+    tab.h("11. What the page uses, and what it could use")
     tab.table(["statistic of the radius pdf", "r_max/η"], [["peak (mode) of the digitised curve", "%.2f" % r["mode"]], ["median", "%.2f" % r["median"]], ["mean", "%.2f" % r["mean"]],
               ["10 % and 90 %", "%.2f and %.2f" % (r["q10"], r["q90"])], ["the page's row (the peak of the pdf quoted in the text, D ≈ 9 η, halved)", "4.5"]], "The page took the peak: a tube radius that the text quotes.")
     tab.p(tab.guess("the table row uses the peak of the pdf (4.5)", "the paper's text quotes the peak of the diameter pdf; the whole-tube mean radius is %.1f, the median %.1f, and the pdf has a heavy tail, so the choice of the peak, not the mean, is ours" % (r["mean"], r["median"])))
@@ -165,13 +165,17 @@ def tanahashi2004(book, f, after):
           r"\(\Delta/\eta\) depends on the wall distance (near the wall \(\varepsilon^+\) is larger, \(\eta^+\) smaller): the pdf pools all the bands, so no single number describes it.")
 
 
+    tab.h("8. As used in the model")
+    tab.p(r"No number of this paper enters the fits: it has no \(Re_\lambda\). It is evidence for the width of the size and swirl distributions of all tubes (this tab), for the grid and detection of the channel simulations, and for the dissipation profile used to put the grid in Kolmogorov units.")
+
+
 def das2006(book, f):
     tab = next(t for t in book.tabs if t.id == "das2006")
-    tab.h("5. The figure we digitised: Fig. 7 (page 65)")
+    tab.h("7. The figure we digitised: Fig. 7 (page 65)")
     tab.img(pdfcrop("Das (2006).pdf", 11, (0.10, 0.07, 0.92, 0.60)), "Fig. 7 of Das et al. (2006): pdf of coherent fine eddies. (a) Diameter D*, (b) maximum azimuthal velocity <u*θ>max. Five bands of wall distance; the legend is in y⁺.")
     tab.p(r"The text under the figure: the circulation is \(\Gamma^*=\Gamma/(u'_{rms}\eta)\), 'normalized by Kolmogorov microscale, \(\eta\), and \(u'_{rms}\)'; Fig. 8 normalises the mean azimuthal velocity with \(u'_{rms}\). "
           r"So the swirl axis of Fig. 7(b) is in units of \(u'_{rms}\) (the text near Fig. 8 says the maximum mean azimuthal velocity is about 0.5&ndash;0.6 \(u'_{rms}\)) &mdash; the open point of the earlier list (the normalisation of the Das swirl) is settled by the paper's text.")
-    tab.h("6. The simulation: grid and detection")
+    tab.h("8. The simulation: grid and detection")
     tab.img(pdfcrop("Das (2006).pdf", 4, (0.08, 0.70, 0.92, 0.84)), "Section 2 of the paper: Re_τ = 100 and 180, domain 4πδ × 2δ × 2πδ, grids 128×129×128 and 192×193×160 'in x, y, z respectively'.")
     tab.table([r"\(Re_\tau\)", "grid", r"\(\Delta x^+\)", r"\(\Delta z^+\)"],
               [["100", "128 × 129 × 128", "4π·100/128 = 9.8", "2π·100/128 = 4.9"], ["180", "192 × 193 × 160", "4π·180/192 = 11.8", "2π·180/160 = 7.1"]],
@@ -181,7 +185,7 @@ def das2006(book, f):
           tab.guess("Fig. 7 is the Re_τ = 180 run, on the 192×193×160 grid", "the bands end at y⁺ = 180 = Re_τ, and the paper lists the grids in the order of the Reynolds numbers; the figure caption does not say which run it shows") +
           " So the resolution does not explain why the Das pdf lies far out from the others; the lower Re_τ and the different wall bands (y⁺ 110&ndash;180 at the centre of a Re_τ = 180 channel) are what is left.")
     tab.p("Identification: the local flow pattern method of Tanahashi et al. (the same as in the 2004 paper); η from the paper's Eq. (13), (ν³/ε)^(1/4).")
-    tab.h("7. Digitising: the open symbols only")
+    tab.h("9. Digitising: the open symbols only")
     tab.p(r"The figure has filled symbols (the bands near the wall) and open symbols (the bands <b>110 &lt; y⁺ &lt; 145 and 145 &lt; y⁺ &lt; 180</b>, the outer bands). You asked for the open ones only, because the others lie in the buffer region. "
           r"The two high-resolution crops you gave (das2006_fig7a.png, das2006_fig7b.png) were used.")
     tab.img("das2006_fig7a.png", "The high-resolution crop of panel (a), the diameter pdf.")
@@ -195,7 +199,7 @@ def das2006(book, f):
     tab.img("das2006_open_on_dots.png", "The final open-symbol curve (points) on the screenshot with the hand dots.")
     digitised_table(tab, "das2006_open_pdfs.csv", ("D_star", "pD_top", "pD_bottom", "pD"), 8, "The diameter pdf of the open symbols, D* = D/η.")
     digitised_table(tab, "das2006_open_pdfs.csv", ("u_star", "pv_top", "pv_bottom", "pv"), 8, "The swirl pdf of the open symbols, u* = u_θmax/u_rms.")
-    tab.h("8. Normalisation, the area, and the fits")
+    tab.h("10. Normalisation, the area, and the fits")
     tab.p(r"The pdf of Das et al. should integrate to 1. The digitised area of the diameter curve was 1.02 (with the straight tail) and its rise below the first point and the tail beyond the last add the rest: "
           r"the total is scaled to 1 (check_das_area.py, summary_pdfs.normalise). You asked for this because the first version of the curve did not integrate to 1 and the fit then lay under the data everywhere.")
     r = f[("das", "radius")]
@@ -208,11 +212,11 @@ def das2006(book, f):
 
 def pirozzoli(book, f):
     tab = next(t for t in book.tabs if t.id == "pirozzoli")
-    tab.h("5. The figure we digitised: Fig. 2")
+    tab.h("7. The figure we digitised: Fig. 2")
     tab.img(pdfcrop("Pirozzoli (2012).pdf", 3, (0.06, 0.06, 0.95, 0.275)), "Fig. 2 of Pirozzoli (2012): the pdf of the vortex core radius r0/η (a) and of the maximum induced velocity v0/u_K (b). Symbols: present DNS (the caption says test case D); line: Tanahashi et al. [24], Re_λ = 97.")
     tab.p(r"The text: 'typical vortex tubes have radii of a few Kolmogorov units (the expected value is \(\bar r_0\approx6\)), and the expected induced velocity is \(\bar v_0\approx2u_k\)'; 'excellent agreement between the present dataset and Tanahashi's gives confidence in the validity of our eduction algorithm'. "
           r"Reference [24] is Tanahashi, Miyauchi and Ikeda (2008), IUTAM Symposium, on isotropic turbulence, not the channel paper.")
-    tab.h("6. The simulation: Table 1 and the algorithm")
+    tab.h("8. The simulation: Table 1 and the algorithm")
     tab.img(pdfcrop("Pirozzoli (2012).pdf", 2, (0.06, 0.07, 0.52, 0.20)), "Table 1: the five test cases (Re_λ, mesh, k_max η, number of cores, symbol).")
     tab.table(["test case", "A", "B", "C", "D", "E"], [[r"\(Re_\lambda\)", "38.3", "71.3", "99.9", "98.6", "251.4"], ["mesh", "256³", "256³", "256³", "512³", "512³"],
               [r"\(k_{\max}\eta\)", "8.55", "3.81", "2.16", "4.49", "1.31"], [r"\(N_{sam}\)", "3826", "8019", "18 598", "28 087", "170 289"], ["symbol", "□", "◇", "▽", "△", "○"]],
@@ -222,13 +226,13 @@ def pirozzoli(book, f):
     tab.img(pdfcrop("Pirozzoli (2012).pdf", 2, (0.52, 0.58, 0.95, 0.97)), "The eduction algorithm: the planes are scanned, candidate centres are pressure minima, the velocity pattern around them must be a vortex, and the core is averaged in the azimuth; r0 is the radius of the maximum velocity.")
     tab.p(r"<b>A discrepancy.</b> The caption of Fig. 2 says the symbols are test case D (\(Re_\lambda=98.6\), △ in Table 1), but the plotted symbols are open <b>circles</b>, which Table 1 assigns to case E (\(Re_\lambda=251.4\)). " +
           tab.guess("Fig. 2 shows case D", "the caption says so, and the Tanahashi line it is compared with is at Re_λ = 97, close to D's 98.6; but the circle symbols are those of case E") + " If it were E, the pdf would belong to a larger Re_λ and the agreement with the Re_λ = 97 line would be less natural.")
-    tab.h("7. Digitising")
+    tab.h("9. Digitising")
     tab.p(METHOD + " Here the plotted DNS circles and the Tanahashi line are two series on one figure; our curve follows the markers (open circles) and the line where the circles are absent (the tail beyond r0/η ≈ 35).")
     tab.img("pirozzoli2012_overlay.png", "The digitised curve on the figure.")
     digitised_table(tab, "pirozzoli2012_pdfs.csv", ("r0_over_eta", "pr_top", "pr_bottom", "pr"), 20, "The radius pdf r0/η.")
     digitised_table(tab, "pirozzoli2012_pdfs.csv", ("v0_over_uk", "pv_top", "pv_bottom", "pv"), 20, "The swirl pdf v0/u_K.")
     tab.p(tab.guess("the digitised curve is the DNS circles, not the Tanahashi line", "the figure shows both; where the circles scatter in the tail (r0/η > 35) the line and the circles are mixed in the 'band', so the tail follows both") + " You noticed that the Tanahashi and Pirozzoli curves look alike: they are two curves of the same kind of flow (isotropic turbulence, Re_λ ≈ 97&ndash;99) drawn on one figure, so they agree by construction of the figure.")
-    tab.h("8. The fits")
+    tab.h("10. The fits")
     r = f[("pir", "radius")]
     fit_block(tab, r, "radius r0/η", "η")
     tab.p("Volume: the narrow family holds %.0f %% of the tube volume (%.0f %% of the tubes)." % (100 * volume_fraction(r["a1"], r["m1"], r["s1"], r["m2"], r["s2"]), 100 * r["a1"]))

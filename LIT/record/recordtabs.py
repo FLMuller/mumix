@@ -21,6 +21,7 @@ sys.path.insert(0, HERE)
 import sourcedata as sd                     # noqa: E402
 import build_data_sections as bds           # noqa: E402
 from recordbook import paper_line, plain      # noqa: E402
+import evidence                               # noqa: E402
 
 __all__ = ["fill"]
 
@@ -40,6 +41,48 @@ def number(v, fmt="%.4g"):
     return "&mdash;" if v is None else fmt % v
 
 
+def used_in_model(tab, key):
+    """The last step of a paper's tab: every row of the source as the model sees it (calculated from the paper, corrected, and whether it is fitted)."""
+    import json
+    sys.path.insert(0, os.path.join(os.path.dirname(HERE), "fittingtool"))
+    import fitdata
+    import modelselect
+    rows = [x for x in modelselect.load({}) if x["src"] == key]
+    with open(modelselect.CORR, encoding="utf-8") as f:
+        data = json.load(f)
+    tab.h("2. Data consolidation: every number of this paper, from the value in the paper to the value used in the model")
+    if not rows:
+        tab.p("This source has no row in the data of the fits.")
+        return
+    left = data.get("excluded", {}).get(key)
+    part = data.get("excluded_quantities", {}).get(key, {})
+    out = []
+    for x in rows:
+        def state(kind, value):
+            if value is None:
+                return "&mdash;"
+            if x["re"] is None:
+                return "shown, not fitted (no single Re)"
+            if left:
+                return "<span class=\"guess\">not used</span>"
+            if kind in part:
+                return "<span class=\"guess\">shown, not fitted</span>"
+            return "<span class=\"used\">fitted</span>"
+        re_text = "%g" % x["re"] if x["re"] is not None else ("%g&ndash;%g" % (x["re_lo"], x["re_hi"]) if x["re_lo"] is not None else "&mdash;")
+        out.append([re_text, number(x["r_raw"], "%.3f"), "&times; %.3f" % x["factor_r"], "<b>%s</b>" % number(x["r"], "%.3f"), state("r", x["r"]),
+                    number(x["u_raw"], "%.3f"), "&times; %.2f" % x["factor_u"], "<b>%s</b>" % number(x["u"], "%.3f"), state("U", x["u"])])
+    tab.table([r"\(Re_\lambda\)", r"\(r_{\max}/\eta\) from the paper", "correction", r"\(r_{\max}/\eta\) used", "radius in the fit", r"\(U_{\max}/U_\eta\) from the paper", "correction", r"\(U_{\max}/U_\eta\) used", "swirl in the fit"],
+              out, "These are the numbers the fits read (fittingtool/data/tubes.csv with corrections.json). The corrections and their rationale are in the tab Corrections.")
+    if left:
+        tab.p("<b>Why not used:</b> " + left)
+    for kind, why in part.items():
+        if kind != "G":
+            tab.p("<b>Why the swirl is not fitted:</b> " + why)
+    c = data["corrections"].get(key)
+    if c:
+        tab.p("<b>Rationale of the correction (as decided):</b> " + c["why"])
+
+
 def generic_tab(book, src):
     """The tab of a source made from sourcedata.py alone: the places in the paper, how its numbers were taken, and the chain of conversions to the table row."""
     tab = book.tab(TAB_ID[src["key"]], src["short"].replace("&eacute;", "é"))
@@ -48,12 +91,10 @@ def generic_tab(book, src):
     tab.p("<b>%s</b>. Tube set: <b>%s tubes</b>. Method: %s." % (plain(src["cite"]).replace("&eacute;", "é"), src["tubes"], src.get("method", "")))
     tab.p("Where in the paper: %s" % plain(src["where"]))
     tab.p("What was measured, and how the tubes were picked: %s" % plain(src["selection"]))
-    import srctabs
-    if tab.id in srctabs.SPECS:
-        tab.p("<i>The pages of the paper with these numbers are cut out of the pdf in step 5 below.</i>")
-    else:
-        tab.p("<i>No page of the paper is shown in this tab.</i> " + tab.guess("the numbers of this source were read from the text layer of the pdf, not from its page image", "no table or figure of this paper could be cut out by program (the caption is not in the text layer, or the numbers are in the running text); treat the numbers as unchecked against the page"))
-    tab.h("2. The numbers as we typed them from the paper")
+    used_in_model(tab, src["key"])
+    tab.h("3. The evidence: the pages of the paper and what was read from them")
+    evidence.evidence_steps(tab)
+    tab.h("4. The numbers taken from the paper")
     head = ["quantity", r"\(Re_\lambda\)", r"\(\nu\) (paper's units)", r"\(\varepsilon\) (paper's units)", "entries of the paper", "value used", "role", "note"]
     rows = []
     for r in src["rows"]:
@@ -65,13 +106,13 @@ def generic_tab(book, src):
     tab.table(head, rows, "One row for each number: the entries are the numbers printed in the paper (or read from its text), 'value used' is what the conversions below make of them.")
     if src.get("notes"):
         tab.p("Remarks in the page: %s" % plain(src["notes"]))
-    tab.h("3. The conversions")
+    tab.h("5. The conversions")
     for eq in src.get("eqs", []):
         tab.math(eq)
     tab.p(r"The Burgers vortex: \(x=1.2564312\) is the root of \(e^{x}-2x-1=0\), \(K_B=1-e^{-x}=0.71531\), \(r_{\max}=\sqrt{x}\,R_B=1.1209\,R_B\), "
           r"\(U_{\max}=K_B\,\Gamma/(2\pi r_{\max})\), so \(\Gamma/\nu=(2\pi/K_B)\,Re_c=8.784\,Re_c\) with \(Re_c=r_{\max}U_{\max}/\nu\).")
     items = [it for it in bds.tube_items(corrected=True) if it["src"] == src["key"]]
-    tab.h("4. From the entries to the row of the summary table")
+    tab.h("6. From the entries to the row of the summary table")
     if not items:
         tab.p("No row of the summary table (this source has no tube values that the table can complete).")
         return tab
@@ -124,10 +165,10 @@ def guess_index(book, tab):
 
 def fill(book):
     summary = summary_tab(book)
+    evidence.corrections_tab(book)
     for src in sd.SOURCES:
         generic_tab(book, src)
     import pdftabs
-    import srctabs
     pdftabs.fill(book)
-    srctabs.fill(book)
+    evidence.model_tab(book)
     guess_index(book, summary)

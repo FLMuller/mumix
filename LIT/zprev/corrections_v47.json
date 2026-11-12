@@ -1,0 +1,19 @@
+{
+  "about": "Corrections applied to the values calculated from the papers before the fits: used_value = raw value * factor. r_divisor divides the radius, u_factor multiplies the swirl. A source not listed is used as calculated. The reasons are in appendix A0c of the page.",
+  "corrections": {
+    "Mouri09": {
+      "r_divisor": 1.75,
+      "u_factor": 3.0,
+      "why": "All-tube average of hot-wire crossings (all local extrema of the Gaussian-smoothed velocity increment, scale about 6 eta): off-axis and tilted paths read a chord, so the radius is too large and the swirl too small (Mouri and Hori 2009: R0 above the true mean radius, V0 below the true mean circulation velocity). Swirl x 3, taken from the data: with Ghira et al. (2022) x 0.6 the D1 fit passes through Ghira, Da Silva, Kida and Mouri 2009 within 3% (combined 8.5%); the data would also allow 2.5. Other estimates: the chord model with the radius ratio gives 2-3.5 (tilt limit 20-70 degrees, true radius 4.5-5.4); the extrapolation of the four uncorrected DNS points (Re_lambda 83-170) gives only 1.6-1.9 but is poorly constrained in Re_lambda. The threshold averages of Mouri et al. (2007) and (2004) are left out of the fits: they are the tails (0.1% and 1% of the velocity increments) of the same experiments, and their difference from the all-tube values is most likely mostly the chord distribution (a high threshold keeps the near-central, near-normal crossings; Mouri and Hori 2009, Fig. 1b), with a possible real difference in tube strength that the data cannot separate. As the 0.1% row can only understate the tube, it gives a lower bound for the true swirl of 3.1 (Re_lambda 332) to 4.4 (1934) times the 2009 value: the factor 3 is at the lower end of that bound (2.5 is below it); the model-based true tube from the pairs depends on the tilt limit and on whether the cut acts on the peak or on the velocity increment, so it is not used as a calibration. Radius divided by 1.75: the raw radius 8.3-9.2 eta (mean 8.8) over a true radius of about 5 (the constant-radius fit of the other sources, 4.97), which is the chord-model radius ratio of an all-tube average (1.7-1.85 for a true radius 4.97, tilt limit 20-70 degrees)."
+    },
+    "Ghira22": {
+      "r_divisor": 1.0,
+      "u_factor": 0.6,
+      "why": "The listed swirl U_ivs/u' = 1.0-1.25 (6-9.5 U_eta) lies above the other sources at the same Re_lambda (Da Silva 3.7-4.3, Kida 3.7-3.9 at Re_lambda 83-170) and above the swirl implied by their own mean axis vorticity (5.5-6.2 U_eta); a constant factor 0.58 (0.56-0.60) puts it on the curve of the other sources. More low-Re_lambda data support moving Ghira than moving the others (the fits with Ghira at x 1 leave it 25-34% off the curve whatever the Mouri factor, combined score 17-19% against 8.5%)."
+    }
+  },
+  "excluded": {
+    "Mouri07": "Mouri et al. (2007) give the 0.1% and 1% threshold averages of the same chord distribution as Mouri and Hori (2009): two tails of it, not whole tubes. They are not corrected row by row; the pair calibrated the chord correction of the 2009 data (fit_threshold.py) and is left out of the fits.",
+    "Mouri04": "Mouri et al. (2004) give the 1% threshold average of the same experiments (a tail of the chord distribution); left out of the fits as for Mouri et al. (2007)."
+  }
+}

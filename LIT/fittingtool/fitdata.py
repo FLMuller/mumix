@@ -7,10 +7,12 @@ A row has: id, src, reference, group, tube_set, method, re (Re_lambda, None for 
 g (Gamma/nu = 8.784 r u from the corrected values, None without a swirl), factor_r, factor_u, d_over_eta.
 
 Corrections (data/corrections.json): used = raw / r_divisor (radius), raw * u_factor (swirl), per source.  Gamma/nu and Re_c = r u follow from
-the corrected values.  A quantity of each data point carries a weight: every (source, quantity) group has total weight 1 divided over its
+the corrected values.  A quantity of a source can be left out of the fits (key "excluded_quantities" of the corrections file: {source: {kind: reason}}, kind r, U or G:
+the rows stay in the data and in the plots).  A quantity of each data point carries a weight: every (source, quantity) group has total weight 1 divided over its
 rows, scaled so that the weights of a quantity average 1; a source with one row counts as much as a source with twenty.
 
-Versions  M01 m01.v01 (2026-11-11): first version.
+Versions  M01 m01.v02 (2026-11-12): excluded_quantities (a quantity of a source left out of the fits).
+          M01 m01.v01 (2026-11-11): first version.
 """
 import csv
 import json
@@ -19,6 +21,8 @@ import math
 import numpy as np
 
 __all__ = ["G0", "load", "observations", "BURGERS_X"]
+
+EXCLUDED_QUANTITIES = {}       # source -> {kind: reason}: a quantity of a source left out of the fits (corrections.json, key "excluded_quantities"); set by load
 
 BURGERS_X = 1.2564312086261697                       # the root of exp(x) - 2x - 1 = 0
 G0 = 2 * math.pi / (1 - math.exp(-BURGERS_X))        # Gamma/nu = G0 Re_c = 8.784 r_max U_max / nu
@@ -36,6 +40,8 @@ def load(csv_path, corr_path=None, corr=None, excluded=None):
             data = json.load(f)
         corr = data.get("corrections", {}) if corr is None else corr
         excluded = data.get("excluded", {}) if excluded is None else excluded
+        global EXCLUDED_QUANTITIES
+        EXCLUDED_QUANTITIES = data.get("excluded_quantities", {})
     corr = {} if corr is None else corr
     excluded = {} if excluded is None else excluded
     rows = []
@@ -61,7 +67,8 @@ def observations(rows, exclude=()):
     kind r is r_max/eta, U is U_max/U_eta, G is Gamma/nu = 8.784 r U.  Sources named in exclude, and rows flagged excluded by the corrections file (key "excluded"), are left out."""
     out = {}
     for kind, key in (("r", "r"), ("U", "u"), ("G", "g")):
-        sel = [x for x in rows if x["re"] is not None and x[key] is not None and x["src"] not in exclude and not x["excluded"]]
+        sel = [x for x in rows if x["re"] is not None and x[key] is not None and x["src"] not in exclude and not x["excluded"]
+               and kind not in EXCLUDED_QUANTITIES.get(x["src"], {})]
         count = {}
         for x in sel:
             count[x["src"]] = count.get(x["src"], 0) + 1

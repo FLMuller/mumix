@@ -1,0 +1,95 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Data to model</title><script>window.MathJax = { tex: { inlineMath: [['\(', '\)']], displayMath: [['$$', '$$']] }, svg: { fontCache: 'global' } };</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script><style>
+.rpanel{padding:6px 10px 40px 10px;font:13px Verdana,Arial,sans-serif;max-width:1100px}
+.ln{display:flex;gap:8px;padding:3px 4px;cursor:pointer;border-radius:3px}
+.ln:hover{background:#fdeedd}
+.ln.sel{outline:2px solid #e8650f}
+.ln .no{flex:0 0 34px;text-align:right;color:#999;font-size:10px;padding-top:3px;user-select:none}
+.ln .body{flex:1;min-width:0}
+.k-h .body{font-weight:bold;font-size:15px;margin-top:10px;border-bottom:1px solid #ddd}
+.k-w .body{font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
+.k-eq .body{text-align:center;padding:4px 0;overflow-x:auto}
+.k-p .body{line-height:1.45}
+.pic{max-width:50%;border:1px solid #ccc;cursor:zoom-in}
+.cap{font-size:11px;color:#555;padding:2px 0}
+.guess{color:#c00;font-weight:bold}
+.okk{color:#0a7d2c;font-weight:bold}
+.used{color:#06c;font-weight:bold}
+.gindex{padding:4px 6px;margin-bottom:6px;color:#c00;font-size:12px}
+.glink{display:inline-block;min-width:16px;text-align:center;border:1px solid #c00;color:#c00;border-radius:3px;margin:0 2px;cursor:pointer}
+.tablebox{overflow-x:auto;max-width:100%}
+table.dt{border-collapse:collapse;font-size:11px}
+table.dt th,table.dt td{border:1px solid #ccc;padding:2px 5px;text-align:left;vertical-align:top}
+table.dt th{background:#eee}
+.nt{margin-left:48px}
+.nterr{color:#c00;font-size:12px}
+.path{font-family:Consolas,monospace;font-size:11px;color:#555}
+.plink{color:#06c;cursor:pointer;text-decoration:underline}
+.note{border-left:3px solid #06c;margin:2px 0 4px 0;padding:2px 8px;font-size:12px;color:#134;cursor:pointer;white-space:pre-wrap;background:#eef5ff}
+.note .who{color:#06c;font-weight:bold;margin-right:6px}
+</style></head><body>
+<div class="rpanel" id="p-model"><div id="nterr" class="nterr"></div>
+<div class="ln k-h" id="L-model-1" data-file="model" data-line="1" onclick="pick(this, event)"><span class="no">1</span><div class="body">1. Which numbers enter the fits</div></div><div class="nt" id="nt-model-1"></div>
+<div class="ln k-p" id="L-model-2" data-file="model" data-line="2" onclick="pick(this, event)"><span class="no">2</span><div class="body">The fits use the rows of the summary table that have one \(Re_\lambda\), after the corrections (tab Corrections). Each source has the same total weight in each quantity, however many rows it has.</div></div><div class="nt" id="nt-model-2"></div>
+<div class="ln k-t" id="L-model-3" data-file="model" data-line="3" onclick="pick(this, event)"><span class="no">3</span><div class="body"><div class="cap">The data of the fits: 32 radius points and 22 swirl points from 14 source-quantity groups.</div><div class="tablebox"><table class="dt"><thead><tr><th>quantity</th><th>source</th><th>rows</th><th>\(Re_\lambda\)</th><th>values (corrected)</th></tr></thead><tbody><tr><td>\(r_{\max}/\eta\)</td><td>Aligolzadeh23</td><td>1</td><td>179&ndash;179</td><td>6.01&ndash;6.01</td></tr><tr><td>\(r_{\max}/\eta\)</td><td>DaSilva11</td><td>2</td><td>111&ndash;120</td><td>5.20&ndash;5.31</td></tr><tr><td>\(r_{\max}/\eta\)</td><td>Ghira22</td><td>7</td><td>90&ndash;399</td><td>4.50&ndash;4.99</td></tr><tr><td>\(r_{\max}/\eta\)</td><td>Ghira25</td><td>2</td><td>54&ndash;54</td><td>4.88&ndash;4.95</td></tr><tr><td>\(r_{\max}/\eta\)</td><td>Ishihara13</td><td>1</td><td>1131&ndash;1131</td><td>5.00&ndash;5.00</td></tr><tr><td>\(r_{\max}/\eta\)</td><td>Jimenez93</td><td>4</td><td>35.8&ndash;168.1</td><td>4.31&ndash;4.73</td></tr><tr><td>\(r_{\max}/\eta\)</td><td>Kida02</td><td>2</td><td>83&ndash;170</td><td>5.20&ndash;5.40</td></tr><tr><td>\(r_{\max}/\eta\)</td><td>Mouri09</td><td>11</td><td>332&ndash;1934</td><td>4.73&ndash;5.26</td></tr><tr><td>\(r_{\max}/\eta\)</td><td>Pirozzoli09</td><td>1</td><td>250&ndash;250</td><td>5.12&ndash;5.12</td></tr><tr><td>\(r_{\max}/\eta\)</td><td>Tanahashi01</td><td>1</td><td>80&ndash;80</td><td>4.50&ndash;4.50</td></tr><tr><td>\(U_{\max}/U_\eta\)</td><td>Ghira22</td><td>7</td><td>90&ndash;399</td><td>3.67&ndash;6.23</td></tr><tr><td>\(U_{\max}/U_\eta\)</td><td>Ghira25</td><td>2</td><td>54&ndash;54</td><td>2.52&ndash;2.57</td></tr><tr><td>\(U_{\max}/U_\eta\)</td><td>Kida02</td><td>2</td><td>83&ndash;170</td><td>3.64&ndash;3.88</td></tr><tr><td>\(U_{\max}/U_\eta\)</td><td>Mouri09</td><td>11</td><td>332&ndash;1934</td><td>7.17&ndash;9.54</td></tr></tbody></table></div></div></div><div class="nt" id="nt-model-3"></div>
+<div class="ln k-h" id="L-model-4" data-file="model" data-line="4" onclick="pick(this, event)"><span class="no">4</span><div class="body">2. The selection of the model (model I: one population, the corrections as decided)</div></div><div class="nt" id="nt-model-4"></div>
+<div class="ln k-p" id="L-model-5" data-file="model" data-line="5" onclick="pick(this, event)"><span class="no">5</span><div class="body">Every candidate is fitted to the same data by least squares of the log residuals. Three criteria: AICc and BIC (information criteria; a difference under 2 is no evidence, over 10 is decisive), counted with one unit a source-quantity group, and LOSO: each source in turn is left out, the model fitted to the rest predicts it, and the rms of those errors is the score. LOSO penalises a parameter that follows the noise of one source, so the penalty on complexity comes from the data. (The earlier rule was: the fewest parameters within 25% of the best rms.)</div></div><div class="nt" id="nt-model-5"></div>
+<div class="ln k-t" id="L-model-6" data-file="model" data-line="6" onclick="pick(this, event)"><span class="no">6</span><div class="body"><div class="cap">Scenario: the corrections as decided. Sorted by LOSO.</div><div class="tablebox"><table class="dt"><thead><tr><th>model</th><th>parameters</th><th>rms %</th><th>LOSO %</th><th>&Delta;AICc</th><th>&Delta;BIC</th><th>what it is</th></tr></thead><tbody><tr><td>L1</td><td>2</td><td>8.2</td><td>9.0</td><td>0.0</td><td>0.0</td><td>radius 5, swirl a + b ln Re_lambda</td></tr><tr><td>L3</td><td>3</td><td>8.2</td><td>9.5</td><td>3.3</td><td>2.6</td><td>constant radius (fitted), swirl a + b ln Re_lambda</td></tr><tr><td>L2</td><td>2</td><td>8.2</td><td>9.5</td><td>0.1</td><td>0.1</td><td>radius 5, circulation a + b ln Re_lambda</td></tr><tr><td>D6</td><td>1</td><td>9.3</td><td>10.4</td><td>0.7</td><td>0.8</td><td>radius 5, swirl c Re^(1/3) (exponent fixed)</td></tr><tr><td>D8</td><td>3</td><td>9.3</td><td>10.9</td><td>6.6</td><td>6.0</td><td>radius a + b ln Re_lambda, swirl c Re^(1/3)</td></tr><tr><td>C1</td><td>2</td><td>8.8</td><td>11.1</td><td>2.0</td><td>2.0</td><td>circulation c Re^Q, radius 5</td></tr><tr><td>D1</td><td>2</td><td>8.8</td><td>11.4</td><td>2.0</td><td>2.0</td><td>radius 5, swirl a power of Re_lambda</td></tr><tr><td>D2</td><td>3</td><td>8.8</td><td>11.8</td><td>5.3</td><td>4.6</td><td>constant radius (fitted), swirl a power</td></tr><tr><td>D3</td><td>4</td><td>8.8</td><td>11.9</td><td>9.2</td><td>7.1</td><td>radius and swirl both powers of Re_lambda</td></tr><tr><td>K5</td><td>4</td><td>10.9</td><td>13.9</td><td>15.2</td><td>13.1</td><td>closure: swirl a + b ln Re, circulation c Re^Q, radius G/(G0 U)</td></tr><tr><td>D4</td><td>1</td><td>12.6</td><td>14.3</td><td>9.2</td><td>9.3</td><td>radius 5, swirl proportional to u' (k = 1/2)</td></tr></tbody></table></div></div></div><div class="nt" id="nt-model-6"></div>
+<div class="ln k-p" id="L-model-7" data-file="model" data-line="7" onclick="pick(this, event)"><span class="no">7</span><div class="body"><b>Reading.</b> L1 (radius 5, swirl \(a+b\ln Re_\lambda\), two parameters) predicts left-out sources best (9.0%); D6 (radius 5, swirl \(c\,Re_\lambda^{1/3}\), one parameter) follows at 10.4%, and the information criteria cannot separate them (&Delta;AICc 0.7). No model with three or four parameters does better out of sample than these two: the extra parameters fit noise. With the penalty on complexity the one-parameter model stays: \(U_{\max}/U_\eta=0.769\,Re_\lambda^{1/3}\), \(r_{\max}=5\,\eta\). L1 is \(U_{\max}/U_\eta=-4.61+1.80\ln Re_\lambda\); it goes negative below \(Re_\lambda\approx13\), which a power law cannot.</div></div><div class="nt" id="nt-model-7"></div>
+<div class="ln k-h" id="L-model-8" data-file="model" data-line="8" onclick="pick(this, event)"><span class="no">8</span><div class="body">3. How the choice depends on the corrections</div></div><div class="nt" id="nt-model-8"></div>
+<div class="ln k-t" id="L-model-9" data-file="model" data-line="9" onclick="pick(this, event)"><span class="no">9</span><div class="body"><div class="cap">The same comparison under other corrections.</div><div class="tablebox"><table class="dt"><thead><tr><th>scenario</th><th>best by LOSO</th><th>D6 LOSO</th><th>D6 coefficient c</th></tr></thead><tbody><tr><td>as used: Mouri-Hori r/1.75, U x 3; Ghira U x 0.6</td><td>L1 (9.0%)</td><td>10.4%</td><td>0.769</td></tr><tr><td>Mouri-Hori U x 2.5</td><td>L1 (9.7%)</td><td>10.6%</td><td>0.735</td></tr><tr><td>Mouri-Hori U x 2</td><td>D6 (15.5%)</td><td>15.5%</td><td>0.695</td></tr><tr><td>Ghira as listed (x 1), Mouri-Hori U x 3</td><td>L2 (21.2%)</td><td>21.9%</td><td>0.993</td></tr><tr><td>Ghira as listed (x 1), Mouri-Hori U x 5</td><td>D4 (20.6%)</td><td>21.8%</td><td>1.128</td></tr><tr><td>Mouri-Hori r/1.6</td><td>L1 (9.2%)</td><td>10.6%</td><td>0.769</td></tr><tr><td>Mouri-Hori r/1.9</td><td>L1 (9.2%)</td><td>10.6%</td><td>0.769</td></tr></tbody></table></div></div></div><div class="nt" id="nt-model-9"></div>
+<div class="ln k-p" id="L-model-10" data-file="model" data-line="10" onclick="pick(this, event)"><span class="no">10</span><div class="body"><b>Reading.</b> The radius divisor hardly matters (1.6 to 1.9). The swirl factors decide everything: with Ghira as listed no single law fits (errors of 21&ndash;23%), and with Mouri and Hori &times; 2 the errors grow to 16%. Model I stands or falls with the pair (&times; 3, &times; 0.6).</div></div><div class="nt" id="nt-model-10"></div>
+<div class="ln k-h" id="L-model-11" data-file="model" data-line="11" onclick="pick(this, event)"><span class="no">11</span><div class="body">4. Model II: two populations, no swirl correction</div></div><div class="nt" id="nt-model-11"></div>
+<div class="ln k-p" id="L-model-12" data-file="model" data-line="12" onclick="pick(this, event)"><span class="no">12</span><div class="body">The swirl as calculated from the papers splits into two families. <b>Intense tubes</b> (the 1% of highest vorticity in DNS: Ghira et al.; the 0.1% threshold of the hot wire: Mouri et al. 2007): \(U_{\max}/U_\eta=1.29\,Re_\lambda^{0.32}\), rms 12%, 20 points, no correction. <b>All tubes</b> (Kida et al.; Mouri and Hori with one fitted chord factor): \(U_{\max}/U_\eta=2.00\,Re_\lambda^{0.13}\) with a chord factor 1.84, rms 1.3%. The exponent inside Mouri and Hori alone is 0.15 and inside Kida et al. alone 0.09: the all-tube swirl grows slowly, as Mouri and Hori say (it scales with \(u_K\)).</div></div><div class="nt" id="nt-model-12"></div>
+<div class="ln k-t" id="L-model-13" data-file="model" data-line="13" onclick="pick(this, event)"><span class="no">13</span><div class="body"><div class="cap">The all-tube swirl against the chord factor: the factor 3 of model I is not preferred by these data.</div><div class="tablebox"><table class="dt"><thead><tr><th>chord factor of Mouri and Hori (swirl)</th><th>fitted law of all tubes</th><th>rms %</th></tr></thead><tbody><tr><td>1.0</td><td>\(6.30\,Re_\lambda^{-0.118}\)</td><td>4.9</td></tr><tr><td>1.5</td><td>\(2.95\,Re_\lambda^{0.048}\)</td><td>2.0</td></tr><tr><td>1.8 (free fit)</td><td>\(2.00\,Re_\lambda^{0.132}\)</td><td>1.3</td></tr><tr><td>2.0</td><td>\(1.72\,Re_\lambda^{0.165}\)</td><td>1.4</td></tr><tr><td>2.5</td><td>\(1.13\,Re_\lambda^{0.256}\)</td><td>2.7</td></tr><tr><td>3.0</td><td>\(0.80\,Re_\lambda^{0.330}\)</td><td>3.9</td></tr></tbody></table></div></div></div><div class="nt" id="nt-model-13"></div>
+<div class="ln k-h" id="L-model-14" data-file="model" data-line="14" onclick="pick(this, event)"><span class="no">14</span><div class="body">5. Independent checks (data not used in any fit)</div></div><div class="nt" id="nt-model-14"></div>
+<div class="ln k-t" id="L-model-15" data-file="model" data-line="15" onclick="pick(this, event)"><span class="no">15</span><div class="body"><div class="cap">The volume fraction of the model is \(V_f=(1-75.8/\beta^4)\,\beta^2/(4.91\,U^2)\) with \(\beta=5\).</div><div class="tablebox"><table class="dt"><thead><tr><th>check</th><th>measured</th><th>model I (D6)</th><th>model II (all tubes)</th></tr></thead><tbody><tr><td>volume fraction of the tubes, Kida et al., \(R_\lambda=83\)</td><td>0.35</td><td>0.36</td><td>0.35</td></tr><tr><td>volume fraction of the tubes, Kida et al., \(R_\lambda=170\)</td><td>0.31</td><td>0.22</td><td>0.29</td></tr><tr><td>swirl exponent, Sassa and Makita (conditional sampling, \(R_\lambda\) 19&ndash;2391)</td><td>0.28</td><td>1/3</td><td>0.13 (all), 0.32 (intense)</td></tr><tr><td>swirl of all tubes at \(Re_\lambda\approx80\), Tanahashi et al. (2001) pdf, mean</td><td>3.7</td><td>3.3</td><td>3.6</td></tr><tr><td>swirl of all tubes at \(Re_\lambda\approx99\), Pirozzoli (2012) pdf, mean</td><td>2.5</td><td>3.6</td><td>3.7</td></tr></tbody></table></div></div></div><div class="nt" id="nt-model-15"></div>
+<div class="ln k-p" id="L-model-16" data-file="model" data-line="16" onclick="pick(this, event)"><span class="no">16</span><div class="body">Kida et al. also report that the vortex cores hold 31% of the dissipation. A Burgers vortex has only 10% of its swirl dissipation inside \(r_{\max}\) (37% inside \(1.5\,r_{\max}\), 61% inside \(2\,r_{\max}\)): most of the dissipation of a tube is in the annulus around the core, as Kida et al. describe. The model's vortex share of the dissipation (88% at \(\beta=5\)) is the whole swirl field, so the two numbers are not in conflict, but they are not a quantitative check either.</div></div><div class="nt" id="nt-model-16"></div>
+</div>
+<script>var TAB = 'model';
+
+function pick(el, e){
+  if (e && e.target && e.target.tagName === 'IMG' && document.opentab){ document.opentab(e.target.getAttribute('src')); }      // a click on a picture: it opens at full size in a tab of its own
+  var old = document.querySelectorAll('.ln.sel'), i;
+  for (i = 0; i < old.length; i++) old[i].classList.remove('sel');
+  el.classList.add('sel');
+  document.noteline(el.getAttribute('data-file'), el.getAttribute('data-line'));
+}
+function openpaper(path, doi){
+  if (!document.openfile){ return; }
+  document.openfile(path, doi).then(function(why){ var box = document.getElementById('nterr'); if (box) box.textContent = why ? 'the pdf was not opened: ' + why : ''; });
+}
+function jump(id){
+  var el = document.getElementById(id);
+  if (el) el.scrollIntoView({block: 'center'});
+}
+function addNote(box, n){
+  var div = document.createElement('div'), who = document.createElement('span'), text = document.createElement('span');
+  div.className = 'note'; who.className = 'who';
+  who.textContent = (n.who || 'user') + ' ' + String(n.ts || '').slice(5, 16).replace('T', ' ');
+  text.textContent = n.text;
+  div.appendChild(who); div.appendChild(text);
+  div.addEventListener('click', function(e){ e.stopPropagation(); document.noteselect(n); });
+  box.appendChild(div);
+}
+function showNotes(list){
+  var boxes = document.querySelectorAll('.nt'), i, k, box;
+  for (i = 0; i < boxes.length; i++) boxes[i].textContent = '';
+  for (k = 0; k < list.length; k++){
+    box = document.getElementById('nt-' + list[k].file + '-' + list[k].line);
+    if (box) addNote(box, list[k]);
+  }
+}
+function reload(){
+  document.notes(TAB, function(list, err){
+    var box = document.getElementById('nterr');
+    if (err){ if (box){ box.textContent = 'the notes of this tab could not be read: ' + err; } return; }
+    if (box) box.textContent = '';
+    showNotes(list);
+  });
+}
+document.addEventListener('DOMContentLoaded', function(){
+  reload();
+  if (document.typeset) document.typeset();         // the formulas (the report server loads MathJax for the box)
+});
+document.onnotesaved(reload);
+</script></body></html>

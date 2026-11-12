@@ -59,7 +59,7 @@ def main():
             s = sd.BY_KEY[it["src"]]
             lo, hi = parse_re(it["Re"])
             listed = ""
-            if it["src"] == "Kida02" and it["RG"] is not None:
+            if it["src"] in ("Kida02", "Jimenez93") and it["RG"] is not None:      # the circulation the paper lists (Kida: Gamma/nu; Jimenez: Re_gamma)
                 listed = "%.1f" % it["RG"]
             w.writerow([i, it["src"], html.unescape(s["short"]), GROUP[it["src"]], s["tubes"], s["method"],
                         "" if lo is None else "%g" % lo, "" if hi is None else "%g" % hi,
