@@ -44,3 +44,17 @@ Sections 1, 2, 10, 11 and the references were written (analysis/build_intro_sect
 1 literature, 2 theory, 3-8 derivation, 9 data, 10 fits tried, 11 selected model). The numbers asked for as sections 8 and 9 are 10 and 11 because of the two new sections.
 Points to check: the table of section 1 and its figure; the theory section (its statements about Townsend, Tennekes, Lundgren, Robinson and Saffman, Neu were written from the
 Moffatt et al. (1994) reference list, not from the papers; Richardson 1922 and Kolmogorov 1941 from memory); the reasons of the corrections in A0c.
+
+## Found while making the recording book (2026-11-12, read from the pdf pages, not from the text layer)
+
+These change numbers or statements of the page. They are NOT applied to the page yet.
+
+1. Tanahashi et al. (2001): the paper does give Re_lambda. Fig. 1(b) shows it for Re_omega,0 = 500 (the case of Fig. 7) at about 80 for t = 70-130 (read by eye, +-8), and the text says "the highest Re_lambda is about 100 for the case of Re_omega,0 = 900". The page assumes Re_lambda = 200 (sourcedata Tanahashi01, note 'the paper gives no Re_lambda'). The row should move to about 80, and the note be rewritten.
+2. Das et al. (2006): the paper pairs the grids with the Reynolds numbers in order: 128x129x128 for Re_tau = 100 and 192x193x160 for Re_tau = 180 (the run of Fig. 7: its bands end at y+ = 180). The 192x193x160 grid has the same spacings as Tanahashi et al. (2004) at Re_tau = 180 (dx+ 11.8, dz+ 7.1). The earlier explanation 'the Das grid is coarsest (dx+ 17.7) so its tubes are larger' was wrong.
+3. Tanahashi et al. (2004) Table 1: Re_tau = 180 -> 192x193x160, 400 -> 256x385x192, 800 -> 512x769x384 (an earlier list had the last two shifted by one).
+4. Pirozzoli (2012) Fig. 2: the caption says test case D (triangle in Table 1), the plotted symbols are open circles (case E in Table 1). The line is Tanahashi, Miyauchi and Ikeda (2008) at Re_lambda = 97, isotropic turbulence, not the channel paper. Table 1's row is k_max*eta.
+5. Das et al. (2006): the swirl of Fig. 7(b) is in units of u'_rms (the text: Gamma* = Gamma/(u'_rms eta); Fig. 8 normalised with u'_rms): the open item 'normalisation of the Das swirl' is settled.
+6. Tanahashi et al. (2004): the eduction uses eta and u_K 'calculated from the mean energy dissipation rate at y+ where the eddy exists' (its Fig. 3 gives eps+(y+): about 0.015 at y+ = 145, so eta+ about 2.9). Grid in eta at y+ = 145: dx/eta 3.4, dz/eta 2.3 at Re_tau = 800.
+7. Sources whose page cut-outs the program could not find (caption not in the text layer): Jimenez et al. (1993) Table 3, Da Silva et al. (2011) Table 1, Kida et al. (2002) Tables 1 and 2, Sassa and Makita (2005) Table 1. Their tabs say so in red.
+
+The report server was changed in mumix/tools for the book (rs3microDB, edit box type note, doc block typeset/opentab/notes) and snap now answers by bytes (60 KB of 64 KB) instead of 300 elements; see LIT/record/README.md.

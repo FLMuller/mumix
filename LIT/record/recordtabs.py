@@ -40,7 +40,11 @@ def generic_tab(book, src):
     tab.p("<b>%s</b>. Tube set: <b>%s tubes</b>. Method: %s." % (plain(src["cite"]).replace("&eacute;", "é"), src["tubes"], src.get("method", "")))
     tab.p("Where in the paper: %s" % plain(src["where"]))
     tab.p("What was measured, and how the tubes were picked: %s" % plain(src["selection"]))
-    tab.p("<i>The page of the paper and a screenshot of the table or figure are still to be added to this tab (the text layer of the pdf was used so far).</i>")
+    import srctabs
+    if tab.id in srctabs.SPECS:
+        tab.p("<i>The pages of the paper with these numbers are cut out of the pdf in step 5 below.</i>")
+    else:
+        tab.p("<i>No page of the paper is shown in this tab.</i> " + tab.guess("the numbers of this source were read from the text layer of the pdf, not from its page image", "no table or figure of this paper could be cut out by program (the caption is not in the text layer, or the numbers are in the running text); treat the numbers as unchecked against the page"))
     tab.h("2. The numbers as we typed them from the paper")
     head = ["quantity", r"\(Re_\lambda\)", r"\(\nu\) (paper's units)", r"\(\varepsilon\) (paper's units)", "entries of the paper", "value used", "role", "note"]
     rows = []
