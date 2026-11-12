@@ -20,7 +20,7 @@ RS.selftest = function(){
     await bar();
     check('code shows lines', await until(function(){ return qa('.clines .ln').length > 0; }));
     check('methods listed', await until(function(){ return qa('.mtab tbody tr').length > 0; }));
-    var rows = qa('.mtab tbody tr'), lastLine = rows.length ? +rows[rows.length - 1].querySelector('.ln').textContent : 1;
+    var rows = qa('.mtab tbody tr'), lastLine = rows.length ? +rows[rows.length - 1].querySelector('.lno').textContent : 1;
     RS.emit('linenoClicked', {lineno: lastLine + 1});
     check('methods marks a method', await until(function(){ return q('.mtab tr.cur'); }));
     RS.emit('selectfunk', {lineno: lastLine});

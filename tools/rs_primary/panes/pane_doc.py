@@ -26,7 +26,8 @@ Signals
     emits     searchcount {index, total}   the count of the marks, for the status bar
 IN and OUT below are these names.
 
-VERSION  M2 m02.v03 (2026-11-06): the box's size and place are the layout's: a page's rule on html, body or :root keeps only type, colour, background and padding (a margin becomes padding); bare outer <div>s are unwrapped.
+VERSION  M2 m02.v04 (2026-11-06): the large surfaces of a page have the tools' background: a background on anything but a mark (a small tag (not a table cell), a mark class or data-mark, a b-ROLE row, a state or stripe, a pseudo-element) is taken out of the css and the inline styles at load, and the box takes none (so v03's background is no more). A layout is measured by pane_doc.js (fit), not marked.
+         M2 m02.v03 (2026-11-06): the box's size and place are the layout's: a page's rule on html, body or :root keeps only type, colour, background and padding (a margin becomes padding); bare outer <div>s are unwrapped.
          M2 m02.v02 (2026-11-06): a layout of blocks that a page's html holds (<div class="rslayout">, made by rs3pages.unfold) is not the doc's own: its text is not searched, its tables get no star, aDOM does not look into it.
          M2 m02.v01 (2026-11-04): every table of the box that has a header row and no sort of its own gets the star and the hamburger (RS.table).
          M2 m01.v02 (2026-11-04): prepare() gives the parts and the problems of a doc's data (the server uses it to serve a report that breaks the rules as its own page).
@@ -55,17 +56,74 @@ JAVASCRIPT_URL = re.compile(r'''\b(?:href|src|action|formaction|xlink:href)\s*=\
 TOP_SELECTOR = re.compile(r'(?:html|body|:root)(?![\w-])\s*', re.I)
 OWN_BODY = re.compile(r'body(?![\w-])\s*', re.I)
 # what a rule on the box (html, body, :root) may say: the layout gives the box its size and place, so a page's css can only
-# dress it (type, colour, background, padding); everything else it writes there is dropped, and a margin becomes padding
-BOX_KEEP = {'color', 'background', 'font', 'line-height', 'letter-spacing', 'word-spacing', 'white-space', 'tab-size',
+# dress it (type, colour, padding); everything else it writes there is dropped, and a margin becomes padding. Not a background:
+# the large surfaces of a page (the box, a panel, a code area) all have the tools' own, so every page looks the same (see MARKS)
+BOX_KEEP = {'color', 'font', 'line-height', 'letter-spacing', 'word-spacing', 'white-space', 'tab-size',
             'cursor', 'accent-color', 'caret-color', 'color-scheme', 'direction', 'quotes', 'hyphens', 'word-break',
             'overflow-wrap', 'padding'}
-BOX_PREFIXES = ('font-', 'text-', 'background-', 'padding-')
+BOX_PREFIXES = ('font-', 'text-', 'padding-')
 MARGIN_AS_PADDING = {'margin': 'padding', 'margin-top': 'padding-top', 'margin-right': 'padding-right',
                      'margin-bottom': 'padding-bottom', 'margin-left': 'padding-left'}
+# The look of the tools: a large surface (the box, a panel, a code area) has the background of the page frame (--paper) and a page
+# cannot change it. A small, well-defined part may be coloured: an element of these tags, a class that names a mark, a data-mark
+# attribute, a role row of the code (b-ROLE), or a state (:hover, or a stripe: :nth-child). A table cell or row is not a mark by itself. A rule or an inline style that sets a background on
+# anything else has the background taken out, in the css and in the html, when the page is loaded.
+MARK_TAGS = {'a', 'b', 'button', 'caption', 'code', 'em', 'i', 'img', 'input', 'kbd', 'label', 'li', 'mark', 'option', 'samp',
+             'select', 'small', 'span', 'strong', 'sub', 'summary', 'sup', 'svg', 'textarea', 'th', 'thead'}
+MARK_CLASSES = {'mark', 'cm', 'dochit', 'cur', 'sel', 'hit', 'pick', 'flash', 'btab', 'ttab', 'mk-item', 'bad', 'slow', 'on',
+                'alt', 'note', 'dot', 'tag', 'badge', 'chip', 'key', 'cursor', 'green', 'red', 'amber', 'hl'}
+COMPOUND = re.compile(r'([^\s>+~]+)\s*$')
+START_TAG = re.compile(r'<([a-zA-Z][\w-]*)((?:\s+[^<>]*?)?)\s*(/?)>')
+STYLE_ATTR = re.compile(r'''\sstyle\s*=\s*(?:"([^"]*)"|'([^']*)')''', re.I)
+CLASS_ATTR = re.compile(r'''\sclass\s*=\s*(?:"([^"]*)"|'([^']*)')''', re.I)
+STATE = re.compile(r':(?:hover|focus|active|checked|disabled|selected|target|nth-child|nth-of-type|first-child|last-child)(?![\w-])')
 DIV_TAG = re.compile(r'<(/?)div(?=[\s>/])[^>]*>', re.I)
 # the names the box passes to a script, in order (pane_doc.js calls the script with the first five and the timers)
 PARAMETERS = ('aDOM, document, window, location, localStorage, setTimeout, clearTimeout, setInterval, clearInterval, '
               'self, top, parent, frames, globalThis, fetch, XMLHttpRequest, WebSocket, Reflect, Proxy')
+
+
+def is_mark(tag, classes, marked=False):
+    """True when an element of this tag with these classes is a small, well-defined part that may have a background of its own."""
+    return (tag in MARK_TAGS or marked or any(name in MARK_CLASSES or name.startswith('b-') or name.startswith('mk-item')
+                                              for name in classes))
+
+
+def surface(selector):
+    """True when the selector, by its last compound (the part that names the element), is a large surface: not a mark. A
+    compound is `tag.class.class[attr]:state`; one tag or class or attribute or state of a mark is enough."""
+    found = COMPOUND.search(selector.strip())
+    if not found:
+        return True
+    compound = found.group(1)
+    if STATE.search(selector) or '[data-mark' in compound or '::' in compound:      # a state or a stripe anywhere in it, a mark, a pseudo-element (a scroll bar)
+        return False
+    tag = re.match(r'[a-zA-Z][\w-]*', compound)
+    classes = re.findall(r'\.([\w-]+)', compound)
+    return not is_mark(tag.group(0).lower() if tag else '', classes)
+
+
+def without_background(body):
+    """The rule body without its background declarations (background, background-color, -image ...)."""
+    kept = [f'{name}:{value}' for name, value in declarations(body) if name != 'background' and not name.startswith('background-')]
+    return ';'.join(kept)
+
+
+def plain_markup(markup):
+    """The markup with the background taken out of the inline style of every element that is not a mark: a surface of a page
+    is the tools' own whatever its html says."""
+    def one(found):
+        tag, attrs = found.group(1).lower(), found.group(2)
+        style = STYLE_ATTR.search(attrs)
+        if not style or 'background' not in style.group(0).lower():
+            return found.group(0)
+        classes = ' '.join(x for x in CLASS_ATTR.search(attrs).groups() if x).split() if CLASS_ATTR.search(attrs) else []
+        if is_mark(tag, classes, 'data-mark' in attrs):
+            return found.group(0)
+        text = without_background(style.group(1) if style.group(1) is not None else style.group(2))
+        attrs = attrs[:style.start()] + (f' style="{text}"' if text else '') + attrs[style.end():]
+        return f'<{found.group(1)}{attrs}{found.group(3)}>'
+    return START_TAG.sub(one, markup)
 
 
 def file_text(path):
@@ -190,8 +248,11 @@ def scoped(css, scope):
                 if dressing:
                     out.append(scope + '{' + dressing + '}')
                 parts = [part for part in parts if part not in box]
-            if parts:
-                out.append(','.join(scope_selector(part, scope) for part in parts) + '{' + body + '}')
+            plain = without_background(body) if re.search(r'(^|[;{\s])background', body) else body
+            flat = [part for part in parts if surface(part)] if plain != body else []
+            for group, text in ((flat, plain), ([part for part in parts if part not in flat], body)):
+                if group:
+                    out.append(','.join(scope_selector(part, scope) for part in group) + '{' + text + '}')
         i = end
     return '\n'.join(out)
 
@@ -227,7 +288,7 @@ def prepare(*data):
     body = BODY.search(markup)
     if body:                                              # a whole page: the inside of its body
         markup = body.group(1)
-    markup = unwrap(markup)
+    markup = plain_markup(unwrap(markup))
     if JAVASCRIPT_URL.search(markup):
         return js, css, markup, [], ['a javascript: link or source is not allowed']
     markup, handlers = take_handlers(markup)

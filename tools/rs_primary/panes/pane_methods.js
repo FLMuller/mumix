@@ -56,7 +56,7 @@ RS.pane('methods', function(ctx){
       tr.title = m.kind + ', ' + m.size + ' lines, used ' + m.calls + ' times' + (m.why ? '\n' + m.why.join('\n') : '');
       st = cell(tr, 'st ' + word, '', m.pie ? m.score : -1);
       st.innerHTML = (m.pie ? pie(m.pie, m.dot) : '') + '<span class="w">' + word + '</span>';
-      cell(tr, 'ln', m.line, m.line);
+      cell(tr, 'lno', m.line, m.line);
       cell(tr, 'nm ' + (m.colour || '') + ' ' + m.kind, m.name);
       cell(tr, 'ow', m.owner);
       cell(tr, 'df', m.text);

@@ -7,9 +7,9 @@
 .mtab{border-collapse:collapse;min-width:100%;font-size:12px}
 .mtab th{background:#d35400;color:#fff;padding:2px 2px 2px 6px;text-align:left;font-size:11px;font-weight:normal;white-space:nowrap;position:sticky;top:0;z-index:3}
 .mtab th.st{min-width:46px}
-.mtab td{padding:1px 6px;border-bottom:1px solid #eedcd0;white-space:nowrap;cursor:pointer;user-select:none}      /* only a name can be selected as text */
+.mtab td{padding:1px 6px;vertical-align:middle;border-bottom:1px solid #eedcd0;white-space:nowrap;cursor:pointer;user-select:none}      /* only a name can be selected as text */
 .mtab td.nm{user-select:text}
-.mtab td.ln{color:#999;font-size:11px;text-align:right}
+.mtab td.lno{color:#999;font-size:11px;text-align:center}           /* the numbers of a column are centred in it */
 .mtab td.df{color:#6b3a00;max-width:48ch;overflow:hidden;text-overflow:ellipsis}
 .mtab td.ow{color:#8a6a4a}
 .mtab td.nm.class{font-weight:bold}

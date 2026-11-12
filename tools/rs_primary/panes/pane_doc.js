@@ -68,24 +68,40 @@ RS.pane('doc', function(ctx){
     if (own(t) && t.tHead && t.tHead.rows.length && t.tBodies.length && !t.querySelector('.sortbtn')) RS.table.make(t);
   });
 
-  // ---- the layouts of blocks that the html holds (div.rslayout, made by the server) fill what the box has left ----
-  // The box is a flex column at least as high as its cell. The elements between the box and a layout are marked, by what
-  // they are, so that the layout takes the height the html leaves it and nothing changes shape: a plain block becomes a
-  // flex column (rsfill), a flex box keeps its direction (rsflex), a table part gets a height (rstable); a grid or an inline
-  // element is left alone, and the layout then keeps its least height.
-  var TABLE_TAGS = {TABLE: 1, THEAD: 1, TBODY: 1, TFOOT: 1, TR: 1, TD: 1, TH: 1};
-  Array.prototype.forEach.call(box.querySelectorAll('.rslayout'), function(place){
-    for (var el = place.parentNode; el && el !== box; el = el.parentNode){
-      var shown = window.getComputedStyle(el).display;           // none: a part of the html that is not shown yet, a block
-      if (TABLE_TAGS[el.tagName]){
-        el.classList.add('rstable');
-        if (el === place.parentNode && (el.tagName === 'TD' || el.tagName === 'TH')) el.classList.add('rscell');
-      }
-      else if (shown === 'flex' || shown === 'inline-flex') el.classList.add('rsflex');
-      else if (shown === 'block' || shown === 'none') el.classList.add('rsfill');
-      else console.warn('rs3: a layout in a ' + shown + ' element keeps its least height');
+  // ---- the layouts of blocks that the html holds (div.rslayout, made by the server) take the height the window has left ----
+  // One measure for every case: a layout is as high as the space from its top to the bottom of the element the box scrolls in,
+  // at least 200 px (the css), less what follows it in the box (a margin, another element); the box's own bottom padding is given up while a layout is shown. The panes inside it then scroll by themselves,
+  // and the box scrolls only when what comes before a layout is taller than the window. It is made when the box is set up, when the scrolling element changes size, and when
+  // something inside the box is shown or hidden (a tab, a panel); a layout that is not displayed is left until it is. No part of
+  // the html is marked, so a table, a grid or a panel that starts hidden need no case of their own.
+  function scroller(){
+    for (var el = box.parentNode; el && el !== document.body; el = el.parentNode){
+      var overflow = window.getComputedStyle(el).overflowY;
+      if (overflow === 'auto' || overflow === 'scroll') return el;
     }
-  });
+    return document.documentElement;
+  }
+  var LEAST = 200, fitting = false;
+  function fit(){
+    fitting = false;
+    var holder = scroller(), room = holder.clientHeight, seen = holder.getBoundingClientRect().top;
+    var shown = Array.prototype.filter.call(box.querySelectorAll('.rslayout'), function(place){
+      return place.offsetParent;                                          // not displayed: the next show makes it
+    });
+    box.style.paddingBottom = shown.length ? '0px' : '';                // a page that ends in a layout has no empty strip under it; one that shows none keeps its own
+    shown.forEach(function(place){
+      var top = place.getBoundingClientRect().top - seen + (holder === document.documentElement ? 0 : holder.scrollTop);
+      place.style.height = Math.max(LEAST, Math.floor(room - top)) + 'px';
+    });
+    var last = shown[shown.length - 1], over = last ? holder.scrollHeight - holder.clientHeight : 0;
+    if (over > 0) last.style.height = Math.max(LEAST, last.offsetHeight - over) + 'px';     // what follows the layout (the box's padding, a margin) is left room
+  }
+  function refit(){ if (!fitting){ fitting = true; window.requestAnimationFrame(fit); } }
+  if (box.querySelector('.rslayout')){
+    fit();
+    new ResizeObserver(refit).observe(scroller());
+    new MutationObserver(refit).observe(box, {attributes: true, attributeFilter: ['hidden', 'class'], subtree: true});
+  }
 
   // ---- the search of the text of the box ----
   function clear(){

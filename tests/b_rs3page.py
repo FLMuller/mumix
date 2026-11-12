@@ -132,7 +132,7 @@ def pieces():
 
 class b_rs3page(bench):
     BenchName = 'rs3page'
-    BenchVersion = 'M1.0.5'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.12'          # runbench adds 1 to the last number on every run
     BenchHeader = 'the code of the rs3 pages (routing, the filter language, the pie), run in the js test manager through trigger and snap'
     sources = SOURCES
 

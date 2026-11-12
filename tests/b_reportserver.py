@@ -122,7 +122,7 @@ class FakePage:
 
 class b_rs3(bench):
     BenchName = 'reportserver'
-    BenchVersion = 'M1.0.18'          # runbench adds 1 to the last number on every run
+    BenchVersion = 'M1.0.24'          # runbench adds 1 to the last number on every run
     BenchHeader = 'the third report server: pages of blocks, through contactRS, HTTP and a page'
     sources = SOURCES
 
@@ -244,6 +244,31 @@ class b_rs3(bench):
             self.assertIn(why, text, script)
             self.assertNotIn('(RS.docs = RS.docs', text, script)          # nothing of it runs
 
+    def test_T6d_a_large_surface_keeps_the_tools_background_and_a_mark_may_have_its_own(self):
+        css = ('.code{background:#fff;color:red}.ln{background:#fff}.ln.sel{background:#eee}div.ln.b-docstring{background:#cde}'
+               '.grid td{background:#fff}.grid tr:nth-child(even) td{background:#fdecec}.btab{background:#f00}.panel,.btab.on{background:#0f0}'
+               '.scroll::-webkit-scrollbar-track{background:#fdebd0}p:hover{background:#ddd}')
+        html = ('<style>' + css + '</style><div class="code" style="background:red;color:blue">a</div>'
+                '<span style="background:red">b</span><div class="cm" style="background:#aaa">c</div>'
+                '<div data-mark style="background:#abc">d</div><section style="background-color:red;margin:0">e</section>')
+        got = reportserver.contactRS('load', '[doc]', {'doc': ['doc', '', '', html]}, 'surfaces', False)
+        self.assertTrue(got['ok'], got)
+        text = web('GET', got['path'])[2]
+        css_out = re.search(r'<style>.*?</style>', text, re.S).group(0) if '<style>' in text else text
+        self.assertIn('[data-doc="doc"] .code{color:red}', text)                       # a surface: the background is gone, the rest stays
+        self.assertIn('[data-doc="doc"] .ln{}', text)
+        self.assertIn('[data-doc="doc"] .grid td{}', text)                            # a table cell is a surface too: the stripes are marks
+        for kept in ('.ln.sel{background:#eee}', 'div.ln.b-docstring{background:#cde}', '.grid tr:nth-child(even) td{background:#fdecec}',
+                     '.btab{background:#f00}', '.btab.on{background:#0f0}', '::-webkit-scrollbar-track{background:#fdebd0}',
+                     'p:hover{background:#ddd}'):
+            self.assertIn(kept, text)                                                  # a mark, a state, a scroll bar: its own
+        self.assertIn('[data-doc="doc"] .panel{}', text)                               # the other selector of that rule lost it
+        self.assertIn('<div class="code" style="color:blue">', text)                   # inline: a surface loses it ...
+        self.assertIn('<span style="background:red">', text)                           # ... a mark keeps it
+        self.assertIn('<div class="cm" style="background:#aaa">', text)
+        self.assertIn('<div data-mark style="background:#abc">', text)
+        self.assertIn('<section style="margin:0">', text)                              # background-color goes too
+
     def test_T6c_a_rule_on_the_box_can_only_dress_it_and_a_bare_outer_div_is_taken_off(self):
         hostile = 'body{position:fixed;width:99999px;margin:-500px;all:unset;display:none;transform:scale(9);color:#222}'
         dressed = 'body{margin:20px 20px 40px;background:#fffaf5}'
@@ -252,7 +277,7 @@ class b_rs3(bench):
         self.assertTrue(got['ok'], got)
         text = web('GET', got['path'])[2]
         rules = re.findall(r'\[data-doc="doc"\]\{([^}]*)\}', text)
-        self.assertEqual(rules, ['color:#222', 'padding:20px 20px 40px;background:#fffaf5'])    # no size, place, display, transform, all; margin as padding
+        self.assertEqual(rules, ['color:#222', 'padding:20px 20px 40px'])                        # no size, place, display, transform, all, background; margin as padding
         self.assertIn('[data-doc="doc"] h1{margin:0}', text)                                    # a rule below the box is the page's own
         box = re.search(r'<div class="doc" data-doc="doc">(.*?)</div></div>', text, re.S).group(1)
         self.assertTrue(box.startswith('<div class="keep">'), box)                              # the bare wrappers are off, the one with a class stays
@@ -646,6 +671,19 @@ class b_rs3(bench):
         self.assertFalse(panes['cd.c1']['hosted'])                    # a tab strip does not make a container's code pane its place
         self.assertEqual(panes['cd.c1']['at'][:-2], panes['eb.c1']['at'][:-2])      # one container: the same path down to its own group
         self.assertNotEqual(panes['cd.c1']['at'][:-2], panes['cd.c2']['at'][:-2])   # two containers: not the same
+
+    def test_T5k_a_layout_container_has_no_size_of_its_own_the_doc_measures_it(self):
+        html = '<p>x</p>{{layout=[mt,[cd;eb]],./mumix/tools/use.py}}'
+        got = reportserver.contactRS('load', '[doc]', {'doc': ['doc', '', '', html]}, 'fit', False)
+        self.assertTrue(got['ok'], got)
+        text = web('GET', got['path'])[2]
+        self.assertIn('<div class="rslayout" data-n="1">', text)                  # no inline size: the css gives the least, the doc the rest
+        self.assertIn('.rslayout{display:flex;flex-direction:column;min-height:200px}', text)
+        self.assertIn('function fit()', text)                                     # the one measure (pane_doc.js) ...
+        self.assertIn('new ResizeObserver(refit)', text)                          # ... made again when the window changes ...
+        self.assertIn("attributeFilter: ['hidden', 'class']", text)               # ... and when something is shown or hidden
+        for gone in ('rsfill', 'rsflex', 'rstable', 'rscell'):
+            self.assertNotIn(gone, text)                                          # the marks of the old fit are no more
 
     def test_T13a_a_markdown_file_is_shown_as_md2htm_formats_it_headings_and_tables(self):
         rel = './mumix/tools/rs_primary/SIGNALS.md'

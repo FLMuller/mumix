@@ -50,6 +50,7 @@ VERSION  M4 m04.v03 (2026-10-31): -test and -bench (tests=False, benches=False):
 import ast
 import base64
 import collections
+import html
 import json
 import os
 import re
@@ -724,7 +725,7 @@ def can_bench(suite):
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(PRIMARY, 'html', 'runbench.html')
 CSS = os.path.join(PRIMARY, 'html', 'runbench.css')
-JS = os.path.join(PRIMARY, 'html', 'runbench.js')
+BENCH = os.path.join(PRIMARY, 'html', 'bench.html')
 LETTERS = [chr(97 + i) for i in range(26)] + [a + b for a in map(chr, range(97, 123))
                                               for b in map(chr, range(97, 123))]
 
@@ -884,76 +885,85 @@ def open_server(by):
     return (done.stdout.strip().splitlines() or ['report server: no answer'])[-1]
 
 
-def serve_layout(rows, stamp, wall, machine, report):
-    """The run as one page of the report server (contactRS 'load'): a toptabs with a Summary tab and one tab for each suite,
-    red where it failed. A tab is the html of that unit (bench.unithtm) with the run's css, written to a file in a folder
-    beside the report (one message to the server is at most 64 KB, so the page is given by the paths of the files); the
-    server makes the panes of its source tabs (the {{layout=...}} containers) itself. Returns one line saying what happened."""
-    from bench import server_path
-    from reportserver import ReportServerError, contactRS
-    folder = os.path.splitext(report)[0]
-    os.makedirs(folder, exist_ok=True)
+def report_pages(rows, stamp, wall, machine):
+    """[(title, html, bad)]: the Summary, then one page for each suite (bench.unithtm, with the machine filled in). A page
+    that failed is bad, which makes its tab red."""
     suites = [s for s, total, notes in rows]
     broken = [s['name'] for s in suites if isbroken(s)]
-    with open(CSS, encoding='utf-8') as f:
-        style = '<style>' + chr(10) + f.read() + codelex.css() + chr(10) + '</style>' + chr(10)
-    pages = [('Summary', style + bytes(md2htm(summary_md(rows, stamp, wall, machine, broken))).decode('utf-8'), bool(broken))]
+    pages = [('Summary', bytes(md2htm(summary_md(rows, stamp, wall, machine, broken))).decode('utf-8'), bool(broken))]
     for suite in suites:
         unit = suite['htm']
         if unit is None:                                    # the spoke left none
             page = bytes(md2htm(fallback_md(suite))).split(b'-->' + bytes([10]), 1)[1].decode('utf-8')
         else:
             page = unit.replace('{{machine}}', machine_htm((suite['bench'] or {}).get('machine')).decode('utf-8'))
-        pages.append((suite['name'], style + page, isbroken(suite)))
-    sections = []
-    for title, page, bad in pages:
-        name = os.path.join(folder, title + '.html')
-        with open(name, 'w', encoding='utf-8') as f:
-            f.write(page)
-        sections.append([title, server_path(name), bad])
+        pages.append((suite['name'], page, isbroken(suite)))
+    return pages
+
+
+def serve_report(report):
+    """The report shown by the report server: its file is loaded as a doc by its ./ path (contactRS 'load'), so only a path
+    goes in the message and the server reads the page itself over http, whatever its size. Where the server expands the
+    layout containers of the sources, the panes are live; the same file, opened by itself, shows the static sources.
+    Returns one line saying what happened."""
+    from bench import server_path
+    from reportserver import ReportServerError, contactRS
+    named = server_path(report)
+    if named is None:
+        return 'report server: the report is not under the folder the server reads, so it is not shown'
     try:
-        got = contactRS('load', '[tt]', {'tt': ['toptabs'] + sections}, f'runbench {stamp}', True)
+        got = contactRS('load', '[doc]', {'doc': ['doc', named]}, os.path.basename(report), True)
     except ReportServerError as error:
         return f'report server: the run was not shown ({error})'
     return 'report server: ' + got['url']
 
 
-def write_report(rows, results, stem, stamp, wall, machine, server):
-    """The page of the run, written to a new file in results. Returns its path."""
-    suites = [s for s, total, notes in rows]
-    broken = [s['name'] for s in suites if isbroken(s)]
-    htm = md2htm(summary_md(rows, stamp, wall, machine, broken))
-    for suite in suites:
-        unit = suite['htm']
-        if unit is None:                                    # the spoke left none
-            page = bytes(md2htm(fallback_md(suite))).split(b'-->\n', 1)[1]
-        else:
-            page = unit.encode('utf-8').replace(
-                b'{{machine}}', machine_htm((suite['bench'] or {}).get('machine')))
-        name = suite['name'].replace('&', '&amp;').replace('"', '&quot;')
-        htmwriteln(htm, f'<div class="mk mk-tab{" bad" if isbroken(suite) else ""}" '
-                        f'data-name="{name}">')
-        htmappend(htm, page)
-        htmwriteln(htm, '</div>')
-    bat, port = (bat_path() if server else ''), 0       # the page names the bat; it is given no port to talk to
+def parts_of_bench():
+    """(css, js): the style and the script of bench.html, which every suite page of a report shares. The pages are made
+    from that template, each with its own copy; a report has them once."""
+    with open(BENCH, encoding='utf-8') as f:
+        text = f.read()
+    return (chr(10).join(re.findall(r'<style>(.*?)</style>', text, re.S)),
+            chr(10).join(re.findall(r'<script>(.*?)</script>', text, re.S)))
+
+
+def write_report(rows, results, stem, stamp, wall, machine):
+    """The page of the run, written to a new file in results. Returns its path. The file is one doc and needs nothing
+    beside it: an outer tab bar (Summary, then a tab for each suite, red where it failed), the page of each as a panel,
+    the sources inside the suite pages, and one small script that shows a panel at a time. The suite pages are
+    stripped of their own style and script, which the page has once. Nothing here talks to the report server: when the
+    file is opened through it, the server makes the live panes (see bench.source_panel)."""
+    pages = report_pages(rows, stamp, wall, machine)
+    own_parts = re.compile(r'<style>.*?</style>|<script>.*?</script>', re.S)
+    buttons, chunks = [], []
+    for number, (title, page, bad) in enumerate(pages):
+        buttons.append(f'<button class="btab{" on" if number == 0 else ""}{" bad" if bad else ""}" '
+                       f'data-go="run{number}" data-name="{html.escape(title, quote=True)}">{html.escape(title)}</button>')
+        page = own_parts.sub('', page)
+        for other, (title2, p2, b2) in enumerate(pages):             # the Summary's links to the other tabs
+            page = page.replace(f'href="#tab_{title2}"', f'href="#" data-go="run{other}"')
+        hidden = '' if number == 0 else ' hidden'
+        chunks.append(f'<div class="bpanel" data-group="run" id="run{number}"{hidden}>' + chr(10) + page + chr(10) + '</div>' + chr(10))
+    benchcss, benchjs = parts_of_bench()
+    with open(TEMPLATE, encoding='utf-8') as f:
+        template = f.read()
+    with open(CSS, encoding='utf-8') as f:
+        css = f.read()
+    # plain replacement, not htmtemplate: the pages hold <!--SECTION ...--> marks of their own, which htmtemplate would take
+    # for the places of this one
+    fills = {'{{TITLE}}': f'runbench {stamp}', '{{css}}': css, '{{rolecss}}': codelex.css(), '{{benchcss}}': benchcss,
+             '{{TABBAR}}': ''.join(buttons), '{{benchjs}}': benchjs, '{{_' + chr(92) + 'main/_}}': ''.join(chunks)}
+    page = re.sub('|'.join(re.escape(key) for key in fills), lambda found: fills[found.group(0)], template)
     now = time.time()
     local = time.localtime(now)
     base = f'{stem}_{time.strftime("%Y.%m.%d_%H;%M", local)}'
     names = [base, base + time.strftime('.%S', local)]
     names += [names[1] + letters for letters in LETTERS]
     for name in names:
-        filename = name + '.html'
-        mine = re.compile(re.escape(stem) + r'_(\d{4}\.\d\d\.\d\d_\d\d;\d\d[\d.]*[a-z]{0,2})\.html$')
-        earlier = [{'file': f, 'when': m.group(1)} for f in os.listdir(results)
-                   for m in [mine.match(f)] if m and f != filename]
-        earlier.sort(key=lambda x: x['when'], reverse=True)
-        token = base64.urlsafe_b64encode(f'{filename}|{int(now)}'.encode()).decode().rstrip('=')
-        page = htmtemplate(TEMPLATE, htm, TITLE=f'runbench {stamp}', STEM=literal(stem),
-                           RUNS=literal(earlier), NAME=literal(filename), TOKEN=literal(token),
-                           PORT=port, BAT=literal(bat), css=CSS, js=JS,
-                           rolecss=codelex.css())
         try:
-            return htmsave(page, os.path.join(results, filename))
+            with open(os.path.join(results, name + '.html'), 'x', encoding='utf-8') as f:
+                f.write(page)
+            return f.name
         except FileExistsError:
             continue
     raise FileExistsError(f'runbench: no free name for {stem}')
@@ -1003,11 +1013,11 @@ def finish_run(suites, results, stem, budget, wall, server):
         line['when'] = stamp
         with open(os.path.join(results, suite['name'] + '.jsonl'), 'a', encoding='utf-8') as f:
             f.write(json.dumps(line) + '\n')
-    path = write_report(rows, results, stem, stamp, wall, machine, server)
+    path = write_report(rows, results, stem, stamp, wall, machine)
     if server:
         try:
             print(open_server('runbench'))
-            print(serve_layout(rows, stamp, wall, machine, path))
+            print(serve_report(path))
         except Exception as error:                  # the server is a convenience: never fail
             print(f'report server: could not show the run ({error!r})')
     with open(os.path.join(results, 'last_run.json'), 'w', encoding='utf-8') as f:

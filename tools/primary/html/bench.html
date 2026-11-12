@@ -12,6 +12,16 @@
 .btab.bad{background:#f4c7c0;border-color:#c0392b;color:#8e2a20}
 .btab.bad.on{background:#c0392b;color:#fff}
 .note{padding:8px 12px}
+.rstoken{display:none}
+.rstoken:has(.rslayout){display:block}
+.rstoken:has(.rslayout)~.rsstatic{display:none}
+/* the static source, opened on its own, scrolls with the report server's bars: a 1 mm orange bar in a 3 mm track of the footer's colour */
+.rsstatic ::-webkit-scrollbar,.rsstatic::-webkit-scrollbar{width:3mm;height:3mm}
+.rsstatic ::-webkit-scrollbar-track{background:#fdebd0}
+.rsstatic ::-webkit-scrollbar-thumb{background:#e67e22;background-clip:padding-box;border:1mm solid transparent;border-radius:2mm}
+.rsstatic ::-webkit-scrollbar-thumb:hover{background:#c25400;background-clip:padding-box}
+.rsstatic ::-webkit-scrollbar-button{display:none}
+.rsstatic ::-webkit-scrollbar-corner{background:#fdebd0}
 </style>
 <script>
 // a click on a tab shows its panel and hides the others of its unit; one listener, so the page may make the html later

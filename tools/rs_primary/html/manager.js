@@ -30,7 +30,7 @@
 //                              status {...} / log {rows|reset}  what the server says (pulse, once a second)
 //   it listens to              closemaintab           (a button): closing, then the window closes
 //                              mngshowfile            ftv: who gets the file
-// Server commands to the page (snap, trigger) are answered here.
+// Server commands to the page (snap: the geometry of what a selector matches; trigger: a click) are answered here.
 var RS = (function(){
   var panes = {}, inst = [], queue = [], draining = false, tabs = {}, started = false, shownAt = {};    // shownAt[path]: {loc: true}
   var link = {ws: null, up: false, waiting: [], hello: false, row: 0, bye: '', pulsing: false, ever: false};
@@ -229,6 +229,15 @@ var RS = (function(){
     if (m.do === 'trigger'){
       var el = m.sel ? document.querySelector(m.sel) : null;
       if (el){ el.click(); reply = {re: m.id, ok: true}; } else reply.error = 'no element ' + m.sel;
+    } else if (m.do === 'snap'){          // the geometry of what matches sel (the page when none): where things are, and how much each holds, and its background
+      var found = Array.prototype.slice.call(document.querySelectorAll(m.sel || 'body'), 0, 300).map(function(el){
+        var r = el.getBoundingClientRect();
+        return {tag: el.tagName.toLowerCase(), id: el.id || '', cls: String(el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className || ''),
+                x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height),
+                client: [el.clientWidth, el.clientHeight], scroll: [el.scrollWidth, el.scrollHeight], top: Math.round(el.scrollTop),
+                shown: !!el.offsetParent || el === document.body, bg: window.getComputedStyle(el).backgroundColor};
+      });
+      reply = {re: m.id, ok: true, window: [window.innerWidth, window.innerHeight], found: found};
     } else reply.error = m.do + ' is not built into rs3 pages yet';
     send(reply);
   }

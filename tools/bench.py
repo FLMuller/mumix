@@ -125,6 +125,7 @@ import unittest
 PRIMARY = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'primary')   # the page files
 from use import load, locate, use
 use('primary')
+from codemark import codemark
 from htmlwriter import htmappend, htmtemplate, htmwriteln
 load('marked', 'mdwriter')            # md2htm, mdwriteln: built by use into primary/pyxfiles
 from cumulette import Channel, ChannelError, Torn
@@ -1063,14 +1064,33 @@ def server_path(path):
     return None if rel.startswith('..') else './' + rel.replace(os.sep, '/')
 
 
-def source_panel(path):
-    """The html of a source tab: a layout container, {{layout=[mt,[cd;eb]],PATH}}, that the report server makes the methods,
-    code and comment panes of that file in (rs3pages.unfold). The file the server cannot name gets a note instead."""
+def static_source(path, tests):
+    """The html of a source as the file keeps it: the function list and the coloured lines (codemark), read-only. A brace
+    pair, `javascript:` and `on...=` are written with an entity, so the page shows the same text and nothing in a source is
+    taken for a token, a place to fill, a layout container, a link or an inline handler (the doc box refuses a page that has one)."""
+    functions, code = codemark(path, tests)
+    panel = bytearray()
+    htmwriteln(panel, '<div class="codepane"><div class="funcs">')
+    htmappend(panel, functions)
+    htmwriteln(panel, '</div><div class="code">')
+    htmappend(panel, code)
+    htmwriteln(panel, '</div></div>')
+    text = bytes(panel).decode('utf-8').replace('{{', '&#123;&#123;')
+    text = re.sub(r'(?i)javascript:', lambda found: found.group(0)[:-1] + '&#58;', text)
+    return re.sub(r'(?i)(\s)(on[a-z]+)(\s*)=', lambda found: ''.join(found.groups()) + '&#61;', text)
+
+
+def source_panel(path, tests=None):
+    """(html, bad) of a source tab. The file has the source in it (static_source), so a report is read on its own, sent or
+    zipped. Beside it, a layout container, {{layout=[mt,[cd;eb]],PATH}}, that the report server makes the methods, code and
+    comment panes of that file in (rs3pages.unfold) when the page is opened through it; the page's css then hides the
+    static copy. A file the server cannot name has the static copy only. `tests`: the suites that test the file (None for a
+    suite)."""
     named = server_path(path)
+    static = '<div class="rsstatic">' + static_source(path, tests) + '</div>'
     if named is None:
-        return ('<div class="note"><p>' + html.escape(str(path)) + ' is not under the folder the report server reads '
-                'from, so it has no code tab.</p></div>'), True
-    return '{{layout=[mt,[cd;eb]],' + named + '}}', False
+        return static, False
+    return '<span class="rstoken">{{layout=[mt,[cd;eb]],' + named + '}}</span>' + static, False
 
 
 def note_panel(text):
@@ -1100,7 +1120,7 @@ def sourcetabs(suite, names=()):
     if not names:
         out.append(('No sources',) + note_panel(NOTE_SOURCES.format(name=html.escape(name))))
     for path in found.values():
-        out.append((label(os.path.basename(path)),) + source_panel(path))
+        out.append((label(os.path.basename(path)),) + source_panel(path, [suite]))
     if lost:
         out.append(('Missing sources',) + note_panel(NOTE_MISSING.format(
             names=html.escape(', '.join(lost)), name=html.escape(name), here=html.escape(here))))

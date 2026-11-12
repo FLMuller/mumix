@@ -193,7 +193,7 @@ def unfold(S, page, here, markup, count):
                           'to': next((c['to'] for c in cells(tree) if c['loc'] == loc), [])})
         body = rs3layout.render(tree, {loc: got['html'] for loc, got in got_of.items()}, defaults=sizes)
         out.append(markup[from_at:start])
-        out.append(f'<div class="rslayout" data-n="{count[0]}" style="display:flex;flex-direction:column;min-height:200px">{body}</div>')
+        out.append(f'<div class="rslayout" data-n="{count[0]}">{body}</div>')
         from_at = end
     out.append(markup[from_at:])
     return ''.join(out), extra

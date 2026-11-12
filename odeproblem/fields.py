@@ -25,7 +25,7 @@ Versions
 """
 
 __all__ = ['Fields']
-
+from types import SimpleNamespace
 
 class Fields(dict):
     """dict with attribute access; plain dicts stored in it become Fields (recursively)."""
