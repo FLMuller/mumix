@@ -12,6 +12,7 @@ import math
 import os
 import re
 import sys
+from html.parser import HTMLParser
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ANALYSIS = os.path.join(os.path.dirname(HERE), "analysis")
@@ -148,9 +149,72 @@ def summary_tab(book):
     tab.h("The recording book")
     tab.p("One tab for each paper, from the paper to the numbers of the table below. Click a line to comment on it: the box at the bottom takes your comment and saves it "
           "(tabs/NAME.notes, beside the file of each tab). Our guesses are in <span class=\"guess\">red</span>; this tab ends with a list of all of them.")
+    tab.p("The tab <b>The paper</b> is the paper itself (vortex-energy-balance.html), line by line, so that it takes comments in the same way; the tabs after it are the evidence for its numbers.")
     tab.h("The table of the tube data used by the model (the data table of the page)")
     tab.p(r"Each row is one source at one \(Re_\lambda\). 'a' to 'e' on a reference are the page's footnotes (corrections and augmentations). Every row is made again, step by step, in the tab of its source.")
     tab.add("t", "<div class=\"tablebox\">" + plain(bds.model_input_table()) + "</div>")
+    return tab
+
+
+class Blocks(HTMLParser):
+    """The top-level pieces of an html fragment, in order: each element that is a direct child (with all its markup) and each run of text between them."""
+
+    def __init__(me, text):
+        super().__init__(convert_charrefs=False)
+        me.text, me.depth, me.start, me.out, me.tag = text, 0, None, [], ""
+        me.lines = [0]
+        for row in text.split("\n"):
+            me.lines.append(me.lines[-1] + len(row) + 1)
+        me.last = 0
+        me.feed(text)
+        me.flush(len(text))
+
+    def at(me):
+        row, col = me.getpos()
+        return me.lines[row - 1] + col
+
+    def flush(me, upto):
+        piece = me.text[me.last:upto]
+        if piece.strip():
+            me.out.append(("text", piece.strip()))
+        me.last = upto
+
+    def handle_starttag(me, tag, attrs):
+        if tag in ("br", "img", "hr", "meta", "link", "input"):
+            return
+        if me.depth == 0:
+            me.flush(me.at())
+            me.start, me.tag = me.at(), tag
+        me.depth += 1
+
+    def handle_endtag(me, tag):
+        if tag in ("br", "img", "hr", "meta", "link", "input") or me.depth == 0:
+            return
+        me.depth -= 1
+        if me.depth == 0:
+            end = me.text.index(">", me.at()) + 1
+            me.out.append((me.tag, me.text[me.start:end]))
+            me.last = end
+
+
+def paper_tab(book):
+    """The paper (../vortex-energy-balance.html) as a tab of the book: every heading, paragraph, formula, figure, table and list is one numbered line that takes comments.
+    The line numbers follow the paper as it is when the book is built: a comment keeps its text if the paper changes, but may then sit on another line."""
+    tab = book.tab("paper", "The paper")
+    with open(os.path.join(os.path.dirname(HERE), "vortex-energy-balance.html"), encoding="utf-8") as f:
+        page = f.read()
+    main = page[page.index("<main>") + 6:page.index("</main>")]
+    for tag, markup in Blocks(main).out:
+        if tag == "text":
+            for piece in re.split(r"(\$\$.*?\$\$)", markup, flags=re.S):          # display formulas stand alone between the elements
+                if piece.strip():
+                    tab.add("eq" if piece.startswith("$$") else "p", piece.strip())
+        elif tag in ("h1", "h2", "h3"):
+            tab.add("h" if tag != "h3" else "h3", re.sub(r"^<h\d[^>]*>|</h\d>$", "", markup))
+        elif tag == "script":
+            continue
+        else:
+            tab.add("p", markup)
     return tab
 
 
@@ -165,6 +229,7 @@ def guess_index(book, tab):
 
 def fill(book):
     summary = summary_tab(book)
+    paper_tab(book)
     evidence.corrections_tab(book)
     for src in sd.SOURCES:
         generic_tab(book, src)

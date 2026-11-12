@@ -165,12 +165,15 @@ MATHJAX = ("<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], disp
 
 CSS = """
 .rpanel{padding:6px 10px 40px 10px;font:13px Verdana,Arial,sans-serif;max-width:1100px}
-.ln{display:flex;gap:8px;padding:3px 4px;cursor:pointer;border-radius:3px}
+.ln{display:flex;gap:8px;padding:3px 4px;cursor:pointer;border-radius:3px;white-space:normal}      /* the code view of the server has a rule .ln{white-space:pre}: a line of the book wraps */
 .ln:hover{background:#fdeedd}
 .ln.sel{outline:2px solid #e8650f}
 .ln .no{flex:0 0 34px;text-align:right;color:#999;font-size:10px;padding-top:3px;user-select:none}
-.ln .body{flex:1;min-width:0}
+.ln .body{flex:1;min-width:0;white-space:normal;overflow-wrap:break-word}
 .k-h .body{font-weight:bold;font-size:15px;margin-top:10px;border-bottom:1px solid #ddd}
+.k-h3 .body{font-weight:bold;font-size:13px;margin-top:6px}
+.body .note,.body .src,.body .lede{font-size:12px;color:#555}
+.body p{margin:0}
 .k-w .body{font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
 .k-eq .body{text-align:center;padding:4px 0;overflow-x:auto}
 .k-p .body{line-height:1.45}
