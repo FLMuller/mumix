@@ -234,8 +234,7 @@ def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     made = build()
     index = "<!doctype html><html><head><meta charset=\"utf-8\"><title>Recording book</title></head><body><h3>The recording book</h3><p>The book is one html file for each tab, in the folder tabs/, shown as the sections of a toptabs page by the report server. Run <code>python recordbook.py</code> (in this folder) to make the files and open the page. The comments of each tab are in tabs/NAME.notes.</p><ul>%s</ul></body></html>" % "".join("<li>%s: %s</li>" % (m[0], m[1]) for m in made)
-    with open(PAGE, "w", encoding="utf-8", newline="
-") as f:
+    with open(PAGE, "w", encoding="utf-8", newline=chr(10)) as f:
         f.write(index)
     print("wrote %d tab files in %s (%.2f MB in all; the largest %.2f MB)" % (len(made), TABS_DIR, sum(m[2] for m in made) / 1e6, max(m[2] for m in made) / 1e6))
     if "--no-open" not in argv:
