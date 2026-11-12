@@ -106,7 +106,7 @@ def summary_tab(book):
     tab = book.tab("summary", "Summary")
     tab.h("The recording book")
     tab.p("One tab for each paper, from the paper to the numbers of the table below. Click a line to comment on it: the box at the bottom takes your comment and saves it "
-          "(comments.notes, beside this page). Our guesses are in <span class=\"guess\">red</span>; this tab ends with a list of all of them.")
+          "(tabs/NAME.notes, beside the file of each tab). Our guesses are in <span class=\"guess\">red</span>; this tab ends with a list of all of them.")
     tab.h("The table of the tube data used by the model (the data table of the page)")
     tab.p(r"Each row is one source at one \(Re_\lambda\). 'a' to 'e' on a reference are the page's footnotes (corrections and augmentations). Every row is made again, step by step, in the tab of its source.")
     tab.add("t", "<div class=\"tablebox\">" + plain(bds.model_input_table()) + "</div>")

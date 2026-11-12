@@ -4,7 +4,7 @@ r"""recordbook.py  The recording book: the way from each paper to the data of th
 
 What it makes. comments.html is one page for the report server (layout [doc;editbox]): a tab for the summary (the table of all the tube
 data that the model uses) and a tab for each paper. A tab is a list of numbered lines (a heading, a paragraph, a figure, a table is one line each).
-Click a line: the edit box at the bottom takes your comment for that line and saves it to comments.notes (the report server's rs3microDB:
+Click a line: the edit box at the bottom takes your comment for that line and saves it to tabs/NAME.notes beside the tab's file (the report server's rs3microDB:
 one json line {code, file, line, text, who, ts} per comment, `file` the tab, `line` the number you clicked). Your notes show under their lines
 (click a note to change it, empty it to remove it). A guess of ours is written in RED, with what was guessed and why; every tab lists
 its guesses at the top and the summary tab lists them all.
@@ -13,7 +13,7 @@ For the author of a tab (recordtabs.py)
     tab = Book.tab(id, title)                 a new tab; id is its short name (the `file` of its comments)
     tab.h(text)                               a step heading
     tab.p(html)                               a paragraph (html: &lt; for <, entities, <b>, <i>, <sub>, <sup>)
-    tab.math(latex)                           a display formula, LaTeX (texhtml.py shows it with sub/superscripts, Greek, stacked fractions, square roots)
+    tab.math(latex)                           a display formula, LaTeX (set by MathJax: sub/superscripts, Greek, stacked fractions, square roots)
     tab.eq(text)                              a line of working in plain monospace text
     tab.table(head, rows, caption=None)       head: list of text, rows: lists of html text
     tab.img(image, caption)                   image: a PIL image, or a path of an image file; embedded as jpeg (shrunk to 1300 px wide; shown at half the width of the page, a click opens it full size in a tab)
@@ -36,7 +36,6 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import texhtml   # noqa: E402
 LIT = os.path.dirname(HERE)
 ANALYSIS = os.path.join(LIT, "analysis")
 PAGE = os.path.join(HERE, "comments.html")      # (the book is now one file for each tab, in tabs/)
@@ -119,7 +118,7 @@ class Tab:
         return me.add("w", html.escape(text))
 
     def math(me, latex):
-        """A display formula (LaTeX, converted by texhtml): its own line, centred."""
+        """A display formula (LaTeX, set by MathJax): its own line, centred."""
         return me.add("eq", "$$%s$$" % latex)
 
     def table(me, head, rows, caption=None):

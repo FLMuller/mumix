@@ -19,10 +19,9 @@ Click a blue note under a line to change it; empty it and save to remove it.
 | `recordtabs.py` | the summary tab (the data table), the generic tab of every source (its rows, the conversion chain, a worked example), the list of all guesses |
 | `pdftabs.py` | the four pdf sources (Tanahashi 2001 and 2004, Das 2006, Pirozzoli 2012): the figure, the digitising, the fits (made again at every build: `summary_pdfs.main`), grid and detection |
 | `srctabs.py` | the page cut-outs (table or figure) of the other sources, found by their captions in the pdfs of `LIT/` |
-| `texhtml.py` | a LaTeX-to-html converter written first and not used: the doc block now sets the formulas with MathJax (`document.typeset()`) |
 | `tabs/NAME.html` | one tab (made by `recordbook.py`) |
 | `tabs/NAME.notes` | the comments of that tab: jsonl, one record `{code, file, line, text, who, ts}` a line, appended by the report server (`rs3microDB`) |
-| `comments.html`, `comments.notes` | the index of the tabs; the notes file is a test note of the build and can be deleted |
+| `comments.html` | the index of the tabs (written by `recordbook.py`) |
 
 ## Rules of the book
 
