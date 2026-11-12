@@ -50,6 +50,7 @@ RS.pane('editbox', function(ctx){
   function sendnote(mine, empty){           // the notes of a page: a record appended to its .notes file; the code names the comment from the first save on
     if (!empty && !mine.code && !text.value.trim()) return;
     var f = {file: mine.file, line: mine.line, text: empty ? '' : text.value, who: mine.tag};
+    if (mine.source) f.source = mine.source;
     if (mine.code) f.code = mine.code;
     flying = true; say('saving...');
     ctx.verb('note_add', f).then(function(r){
@@ -75,8 +76,8 @@ RS.pane('editbox', function(ctx){
   return {
     onCommentline: function(d){ begin({mode: 'insert', path: d.path, base: d.base, line: d.line}, '', ''); },
     onCommentselect: function(d){ begin({mode: 'update', path: d.path, base: d.base, first: d.first, last: d.last}, d.text, d.tag); },
-    onNoteline: function(d){ begin({mode: 'note', file: d.file, line: d.line, code: null}, '', ''); },        // a line of a page was clicked: a new note
-    onNoteselect: function(d){ begin({mode: 'note', file: d.file, line: d.line, code: d.code}, d.text, d.who || ''); },   // a note was clicked: change it
+    onNoteline: function(d){ begin({mode: 'note', file: d.file, line: d.line, source: d.source || '', code: null}, '', ''); },        // a line of a page was clicked: a new note
+    onNoteselect: function(d){ begin({mode: 'note', file: d.file, line: d.line, source: d.source || '', code: d.code}, d.text, d.who || ''); },   // a note was clicked: change it
     onWithconfig: function(){ if (job && job.own) job.tag = initials(); shown(); },      // the user id was changed in the menu
     onShowcode: function(d){
       if (!d.on && job && job.path === d.path){ flush(); idle(); target.textContent = 'no comment selected'; text.value = ''; }

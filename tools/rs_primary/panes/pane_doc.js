@@ -28,10 +28,11 @@ RS.pane('doc', function(ctx){
   // the notes of a page that is an html file (rs3microDB): a page asks for its notes, says which line or note the user clicked (the editbox of the page
   // takes it), and hears when a note was written
   var saved = [];
-  aDOM.noteline = function(file, line){ ctx.emit('noteline', {file: String(file), line: +line}); };
-  aDOM.noteselect = function(note){ ctx.emit('noteselect', {file: String(note.file), line: +note.line, code: String(note.code), text: String(note.text), who: String(note.who || '')}); };
+  var source = box.getAttribute('data-source') || '';                  // the ./ path of the html file this box shows (a file page), else ''
+  aDOM.noteline = function(file, line){ ctx.emit('noteline', {file: String(file), line: +line, source: source}); };
+  aDOM.noteselect = function(note){ ctx.emit('noteselect', {file: String(note.file), line: +note.line, code: String(note.code), text: String(note.text), who: String(note.who || ''), source: source}); };
   aDOM.notes = function(file, fn){
-    ctx.verb('note_list', file === undefined ? {} : {file: String(file)}).then(function(r){ fn(r.ok ? r.notes : [], r.ok ? '' : (r.error || 'refused')); })
+    ctx.verb('note_list', file === undefined ? {source: source} : {file: String(file), source: source}).then(function(r){ fn(r.ok ? r.notes : [], r.ok ? '' : (r.error || 'refused')); })
        .catch(function(e){ fn([], e.message); });
   };
   aDOM.onnotesaved = function(fn){ saved.push(fn); };
@@ -39,6 +40,7 @@ RS.pane('doc', function(ctx){
   // page's own) the first time, and sets the formulas of this box. A page that never calls it loads nothing.
   var MATHJAX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js';
   function typeset(){
+    if (!box.offsetParent){ window.setTimeout(typeset, 400); return; }        // a box that is not shown (a tab behind) is set when it is: MathJax measures the text it sets in
     if (window.MathJax && window.MathJax.typesetPromise){ window.MathJax.typesetPromise([box]).catch(function(e){ console.error('rs3 doc: mathjax:', e); }); return; }
     if (!window.MathJax) window.MathJax = {tex: {inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']]}, svg: {fontCache: 'global'}, startup: {typeset: false}};
     if (document.getElementById('rs3mathjax')) { window.setTimeout(typeset, 300); return; }         // loading: try again
@@ -47,6 +49,14 @@ RS.pane('doc', function(ctx){
     document.head.appendChild(s);
   }
   aDOM.typeset = typeset;
+  // a picture of the page (a data: image) in a browser tab of its own at full size: a data: address cannot be opened as a page, so it is made a blob first
+  aDOM.opentab = function(src){
+    var s = String(src), m = /^data:([^;,]+);base64,(.*)$/.exec(s);
+    if (!m) return;
+    var bin = window.atob(m[2]), bytes = new Uint8Array(bin.length), k;
+    for (k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+    window.open(window.URL.createObjectURL(new Blob([bytes], {type: m[1]})), '_blank');
+  };
   aDOM.on = function(types, list){       // the inline handlers: one listener of the box for each kind, finding the element
     types.forEach(function(type){
       var attr = 'data-aon-' + type;

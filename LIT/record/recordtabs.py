@@ -105,9 +105,9 @@ def guess_index(book, tab):
     tab.h("All the guesses of the book")
     rows = []
     for t in book.tabs:
-        for gid, what, why in t.guesses:
-            rows.append(["<a class=\"glink\" onclick=\"jumptab('%s', '%s')\">%s</a>" % (t.id, gid, t.title), "<span class=\"guess\">%s</span>" % what, why])
-    tab.table(["tab", "what we guessed", "why"], rows, "%d guesses. Click the tab name to go to it." % len(rows))
+        for k, (gid, what, why) in enumerate(t.guesses, 1):
+            rows.append(["<b>%s</b>, guess %d" % (t.title, k), "<span class=\"guess\">%s</span>" % what, why])
+    tab.table(["where", "what we guessed", "why"], rows, "%d guesses. Each is in red in the tab named, and the tab lists its own at the top." % len(rows))
 
 
 def fill(book):
@@ -115,5 +115,7 @@ def fill(book):
     for src in sd.SOURCES:
         generic_tab(book, src)
     import pdftabs
+    import srctabs
     pdftabs.fill(book)
+    srctabs.fill(book)
     guess_index(book, summary)

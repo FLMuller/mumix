@@ -32,9 +32,12 @@ Notes of a page that is an html file (rs3microDB, the .notes file beside it) are
     aDOM.noteline(file, line), aDOM.noteselect(note), aDOM.onnotesaved(fn)
 Maths: document.typeset() (aDOM.typeset) sets the formulas of the box, written \( ... \) or $$ ... $$, with MathJax (the main page's own script from cdnjs, loaded the first time).
 A page that does not call it loads nothing.
+Pictures: document.opentab(src) opens a data: image (base64) at full size in a browser tab of its own.
 IN and OUT below are these names.
 
-VERSION  M2 m02.v06 (2026-11-12): aDOM.typeset: MathJax on request.
+VERSION  M2 m02.v08 (2026-11-12): the box of a doc that is a file carries data-source (the ./ path): the notes of a page with several files (toptabs sections) go to the file's own .notes.
+         M2 m02.v07 (2026-11-12): aDOM.opentab(src): a data: picture in a tab of its own.
+         M2 m02.v06 (2026-11-12): aDOM.typeset: MathJax on request.
          M2 m02.v05 (2026-11-12): aDOM.notes, aDOM.noteline, aDOM.noteselect, aDOM.onnotesaved: a page's script talks to the page's editbox and to its .notes file (rs3microDB). Nothing else changed.
          M2 m02.v04 (2026-11-06): the large surfaces of a page have the tools' background: a background on anything but a mark (a small tag (not a table cell), a mark class or data-mark, a b-ROLE row, a state or stripe, a pseudo-element) is taken out of the css and the inline styles at load, and the box takes none (so v03's background is no more). A layout is measured by pane_doc.js (fit), not marked.
          M2 m02.v03 (2026-11-06): the box's size and place are the layout's: a page's rule on html, body or :root keeps only type, colour, background and padding (a margin becomes padding); bare outer <div>s are unwrapped.
@@ -312,6 +315,7 @@ def write(*data, S=None, page=None, loc=None):
     if problems:
         return refused(label, loc, problems)
     scope = f'[data-doc="{loc}"]'
+    source = f' data-source="{htmllib.escape(data[0])}"' if len(data) == 1 and data[0].startswith('./') else ''      # the ./ path of the html file, for the notes (rs3microDB)
     wrapped = ''
     if js.strip() or handlers:
         kinds = json.dumps(sorted({kind for kind, _ in handlers}))
@@ -319,6 +323,6 @@ def write(*data, S=None, page=None, loc=None):
         wrapped = (f'(RS.docs = RS.docs || {{}})[{loc!r}] = function({PARAMETERS}){{\n\'use strict\';\n{js}\n'
                    f'aDOM.on({kinds}, [{table}]);\n}};')
     got = done(label, scoped(css, scope), wrapped,
-               f'<div class="doc" data-doc="{htmllib.escape(loc)}">{markup}</div>', search='text')
+               f'<div class="doc" data-doc="{htmllib.escape(loc)}"{source}>{markup}</div>', search='text')
     got['also'] = [('doc', asset(__file__, 'css'), asset(__file__, 'js'))]
     return got

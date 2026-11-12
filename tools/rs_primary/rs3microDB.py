@@ -9,9 +9,8 @@ Verbs (websocket; each takes the page's hash, as every verb of rs3)
     note_list  {do: 'note_list', hash, file?}  -> {ok, notes: [{code, file, line, text, who, ts}]}
                the comments now standing, oldest first; only those of `file` when it is given.
 
-Where it is written. A comment goes to ONE file, found from the page and never from the message: the page's doc file
-(`&doc=./mumix/x/comments.html`) with its extension changed to `.notes`, in the same folder (comments.html ->
-comments.notes). The server makes the file when the first comment is written. A page that is not an html file has no
+Where it is written. A comment goes to ONE file: an html file the page was made from (its doc, or a section of its toptabs; the message names it as `source`, and the server
+checks it against the page's own specification), with its extension changed to `.notes`, in the same folder (comments.html -> comments.notes). The server makes the file when the first comment is written. A page that is not an html file has no
 notes file: both verbs refuse it. Nothing else on disk is read or written.
 
 The file is jsonl, one record a line: {"code", "file", "line", "text", "who", "ts"}.
@@ -23,13 +22,16 @@ A record of a code with an empty text is a removal.
 Limits: a text of at most 30000 characters, a file name of at most 200, a line number of at most 10 million, a notes
 file of at most 8 MB (writing refuses after that).
 
-VERSION  M1 m01.v01 (2026-11-12): first version.
+VERSION  M1 m01.v02 (2026-11-12): `source`: a page of several html files (toptabs sections) has a notes file for each, checked against the page's specification.
+         M1 m01.v01 (2026-11-12): first version.
 """
 import hashlib
 import json
 import os
+import re
 import time
 
+import rs3pages
 from rs3util import address, pathof
 
 __all__ = ['VERBS']
@@ -44,25 +46,55 @@ def refuse(why):
     return {'ok': False, 'error': why}
 
 
+def norm(path):
+    """The ./ spelling of a path from the root, or None for anything that is not a short html path."""
+    if not isinstance(path, str) or not path.endswith('.html') or path.startswith('/') or ':' in path:
+        return None
+    return path if path.startswith('./') else './' + path
+
+
+def page_files(S, page):
+    """The html files a page was made from, as ./ paths: the doc of a page of one file, the files of the sections of a toptabs block. Read from the page's own address, or from the specification
+    the server kept (rs3pages) for a page that load made; nothing the message says counts."""
+    source = page.get('path') or ''
+    specs = None
+    try:
+        if source.startswith('/?'):
+            specs = address(source)[1]
+        else:
+            found = re.fullmatch(r'/page/([0-9a-f]{12})\.html', source)
+            if found:
+                with open(os.path.join(rs3pages.PAGES, found.group(1) + '.json'), encoding='utf-8') as f:
+                    specs = json.load(f)['blocks']
+    except (ValueError, TypeError, KeyError, OSError):
+        return set()
+    files = set()
+    for spec in (specs or {}).values():
+        for item in (spec[1:] if isinstance(spec, list) else []):
+            one = norm(item[1] if isinstance(item, list) and len(item) > 1 else item)
+            if one:
+                files.add(one)
+    return files
+
+
 def notes_file(S, msg):
-    """(path of the notes file, None) of the page of msg's hash, or (None, {ok: false, error}) when the page has none:
-    the page must have been made from one doc file, an .html inside the root of the page."""
+    """(path of the notes file, None) for the html file `source` of the message, or (None, {ok: false, error}). The file must be one the page was made from (page_files),
+    an .html inside the root; the notes file is the same name with .notes. Without `source` a page of one html file (a doc) is meant."""
     page, why = S['pages'].known(msg.get('hash'))
     if page is None:
         return None, refuse(why)
-    source = page.get('path') or ''
-    if not source.startswith('/?'):
-        return None, refuse('this page is not an html file: it has no notes file')
-    try:
-        specs = address(source)[1]
-        doc = specs.get('doc', [])[1:]
-    except (ValueError, TypeError, KeyError):
-        return None, refuse('this page is not an html file: it has no notes file')
-    if len(doc) != 1 or not isinstance(doc[0], str) or doc[0].startswith('/') or not doc[0].endswith('.html'):
-        return None, refuse('this page is not an html file: it has no notes file')
-    real = pathof(doc[0] if doc[0].startswith('./') else './' + doc[0], kinds=('html',))
+    files = page_files(S, page)
+    wanted = msg.get('source') or None
+    if wanted is None:
+        if len(files) != 1:
+            return None, refuse('this page is not one html file: the message must say which (source)')
+        wanted = next(iter(files))
+    wanted = norm(wanted)
+    if wanted is None or wanted not in files:
+        return None, refuse('that is not an html file of this page: it has no notes file')
+    real = pathof(wanted, kinds=('html',))
     if real is None:
-        return None, refuse('the html file of this page is not readable')
+        return None, refuse('the html file is not readable')
     return os.path.splitext(real)[0] + '.notes', None
 
 

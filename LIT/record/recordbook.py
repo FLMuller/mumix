@@ -16,7 +16,7 @@ For the author of a tab (recordtabs.py)
     tab.math(latex)                           a display formula, LaTeX (texhtml.py shows it with sub/superscripts, Greek, stacked fractions, square roots)
     tab.eq(text)                              a line of working in plain monospace text
     tab.table(head, rows, caption=None)       head: list of text, rows: lists of html text
-    tab.img(image, caption)                   image: a PIL image, or a path of an image file; embedded as jpeg (shrunk to 1000 px wide)
+    tab.img(image, caption)                   image: a PIL image, or a path of an image file; embedded as jpeg (shrunk to 1300 px wide; shown at half the width of the page, a click opens it full size in a tab)
     tab.guess(what, why)                      returns the html of a red guess, to be put into a paragraph; registers it in the tab's list
     pdfcrop(pdf, page, box)                   a PIL image of the part of a page of a pdf of LIT/: box = (x0, y0, x1, y1) as fractions of the page, 0 at top left
 Line numbers follow the order the lines are added, from 1: do not insert lines in the middle of a tab that has comments (add at the end,
@@ -39,7 +39,7 @@ sys.path.insert(0, HERE)
 import texhtml   # noqa: E402
 LIT = os.path.dirname(HERE)
 ANALYSIS = os.path.join(LIT, "analysis")
-PAGE = os.path.join(HERE, "comments.html")
+PAGE = os.path.join(HERE, "comments.html")      # (the book is now one file for each tab, in tabs/)
 MAX_PAGE_BYTES = 7_500_000                      # the doc block takes at most 8 MB
 
 __all__ = ["Book", "pdfcrop", "plain", "build", "main"]
@@ -59,7 +59,7 @@ def pdfcrop(pdf, page, box=(0, 0, 1, 1), scale=3.0):
     return image.crop((int(box[0] * w), int(box[1] * h), int(box[2] * w), int(box[3] * h)))
 
 
-def data_uri(image, width=1000, quality=72):
+def data_uri(image, width=1300, quality=70):
     """A jpeg data URI of the image (a PIL image or a file), shrunk to `width` pixels when wider."""
     from PIL import Image
     if isinstance(image, str):
@@ -112,12 +112,12 @@ class Tab:
         return "<span class=\"guess\" id=\"%s\">[GUESS: %s &mdash; because %s]</span>" % (gid, what, why)
 
     def html(me, with_summary=False, all_tabs=None):
-        out = ["<div class=\"rpanel\" id=\"p-%s\" hidden>" % me.id]
+        out = ["<div class=\"rpanel\" id=\"p-%s\">" % me.id]
         if me.guesses:
             out.append("<div class=\"gindex\"><b>Guesses in this tab (%d)</b>: %s</div>" % (len(me.guesses), " ".join(
                 "<a class=\"glink\" onclick=\"jump('%s')\">%d</a>" % (gid, k) for k, (gid, what, why) in enumerate(me.guesses, 1))))
         for number, (kind, markup) in enumerate(me.lines, 1):
-            out.append("<div class=\"ln k-%s\" id=\"L-%s-%d\" data-file=\"%s\" data-line=\"%d\" onclick=\"pick(this)\"><span class=\"no\">%d</span><div class=\"body\">%s</div></div>"
+            out.append("<div class=\"ln k-%s\" id=\"L-%s-%d\" data-file=\"%s\" data-line=\"%d\" onclick=\"pick(this, event)\"><span class=\"no\">%d</span><div class=\"body\">%s</div></div>"
                        "<div class=\"nt\" id=\"nt-%s-%d\"></div>" % (kind, me.id, number, me.id, number, number, markup, me.id, number))
         out.append("</div>")
         return "\n".join(out)
@@ -141,10 +141,6 @@ MATHJAX = ("<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], disp
            "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js\"></script>")      # the main page's way
 
 CSS = """
-.rbar{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;border-bottom:1px solid #ccc}
-.rtab{border:1px solid #bbb;border-radius:4px;padding:2px 9px;cursor:pointer;font:12px Verdana,Arial,sans-serif;background:#f4f1ec}
-.rtab.on{background:#e8650f;color:#fff;border-color:#c25400}
-.rtab.hasnotes{border-color:#06c;border-width:2px}
 .rpanel{padding:6px 10px 40px 10px;font:13px Verdana,Arial,sans-serif;max-width:1100px}
 .ln{display:flex;gap:8px;padding:3px 4px;cursor:pointer;border-radius:3px}
 .ln:hover{background:#fdeedd}
@@ -155,7 +151,7 @@ CSS = """
 .k-w .body{font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
 .k-eq .body{text-align:center;padding:4px 0;overflow-x:auto}
 .k-p .body{line-height:1.45}
-.pic{max-width:100%;border:1px solid #ccc}
+.pic{max-width:50%;border:1px solid #ccc;cursor:zoom-in}
 .cap{font-size:11px;color:#555;padding:2px 0}
 .guess{color:#c00;font-weight:bold}
 .gindex{padding:4px 6px;margin-bottom:6px;color:#c00;font-size:12px}
@@ -170,17 +166,8 @@ table.dt th{background:#eee}
 """
 
 SCRIPT = """
-var GRAB = '';
-function showTab(id){
-  var buttons = document.querySelectorAll('.rtab'), panels = document.querySelectorAll('.rpanel'), i;
-  for (i = 0; i < buttons.length; i++){
-    if (buttons[i].getAttribute('data-go') === id) buttons[i].classList.add('on'); else buttons[i].classList.remove('on');
-  }
-  for (i = 0; i < panels.length; i++) panels[i].hidden = panels[i].id !== 'p-' + id;
-  try { localStorage.setItem('tab', id); } catch (e) {}
-  reload();
-}
-function pick(el){
+function pick(el, e){
+  if (e && e.target && e.target.tagName === 'IMG' && document.opentab){ document.opentab(e.target.getAttribute('src')); }      // a click on a picture: it opens at full size in a tab of its own
   var old = document.querySelectorAll('.ln.sel'), i;
   for (i = 0; i < old.length; i++) old[i].classList.remove('sel');
   el.classList.add('sel');
@@ -190,7 +177,6 @@ function jump(id){
   var el = document.getElementById(id);
   if (el) el.scrollIntoView({block: 'center'});
 }
-function jumptab(tab, id){ showTab(tab); jump(id); }
 function addNote(box, n){
   var div = document.createElement('div'), who = document.createElement('span'), text = document.createElement('span');
   div.className = 'note'; who.className = 'who';
@@ -201,65 +187,62 @@ function addNote(box, n){
   box.appendChild(div);
 }
 function showNotes(list){
-  var boxes = document.querySelectorAll('.nt'), buttons = document.querySelectorAll('.rtab'), i, k, box, count = {};
+  var boxes = document.querySelectorAll('.nt'), i, k, box;
   for (i = 0; i < boxes.length; i++) boxes[i].textContent = '';
   for (k = 0; k < list.length; k++){
     box = document.getElementById('nt-' + list[k].file + '-' + list[k].line);
     if (box) addNote(box, list[k]);
-    var f = list[k].file;
-    count[f] = (count[f] || 0) + 1;
-  }
-  for (i = 0; i < buttons.length; i++){
-    var key = buttons[i].getAttribute('data-go');
-    if (count[key]) buttons[i].classList.add('hasnotes'); else buttons[i].classList.remove('hasnotes');
   }
 }
-function reload(){ document.notes(undefined, function(list, err){ if (!err) showNotes(list); }); }
+function reload(){ document.notes(TAB, function(list, err){ if (!err) showNotes(list); }); }
 document.addEventListener('DOMContentLoaded', function(){
-  var first = 'summary', saved = null;
-  try { saved = localStorage.getItem('tab'); } catch (e) {}
-  if (saved && document.getElementById('p-' + saved)) first = saved;
-  showTab(first);
   reload();
   if (document.typeset) document.typeset();         // the formulas (the report server loads MathJax for the box)
 });
 document.onnotesaved(reload);
 """
 
+TABS_DIR = os.path.join(HERE, "tabs")
 
-def summary_table():
-    """The table of all the tube data of the model (the 'data' table of the page), as plain text headers."""
-    sys.path.insert(0, ANALYSIS)
-    import build_data_sections as bds
-    table = bds.model_input_table()
-    return plain(table)
+
+def tab_file(tab):
+    """The html of one tab as a file of its own (a section of the page's toptabs): its css, the lines, its script."""
+    return ("<!doctype html><html><head><meta charset=\"utf-8\"><title>%s</title>%s<style>%s</style></head><body>\n%s\n<script>var TAB = '%s';\n%s</script></body></html>" % (
+        tab.title, MATHJAX, CSS, tab.html(), tab.id, SCRIPT))
 
 
 def build(book=None):
-    """The html of the book (a string)."""
+    """Make every tab's file in tabs/ and return [(title, ./ path)] in the order of the tabs."""
     book = book or Book
     import recordtabs
     recordtabs.fill(book)
-    buttons = "".join("<span class=\"rtab\" data-go=\"%s\" onclick=\"showTab('%s')\">%s</span>" % (t.id, t.id, t.title) for t in book.tabs)
-    panels = "\n".join(t.html() for t in book.tabs)
-    page = ("<!doctype html><html><head><meta charset=\"utf-8\"><title>Recording book: from paper to data</title>%s<style>%s</style></head><body>"
-            "<div class=\"rbar\">%s</div>\n%s\n<script>%s</script></body></html>" % (MATHJAX, CSS, buttons, panels, SCRIPT))
-    size = len(page.encode("utf-8"))
-    if size > MAX_PAGE_BYTES:
-        raise ValueError("the book is %d bytes: the doc block takes at most 8 MB" % size)
-    return page
+    os.makedirs(TABS_DIR, exist_ok=True)
+    out = []
+    for tab in book.tabs:
+        text = tab_file(tab)
+        size = len(text.encode("utf-8"))
+        if size > MAX_PAGE_BYTES:
+            raise ValueError("the tab %s is %d bytes: the doc block takes at most 8 MB" % (tab.id, size))
+        path = os.path.join(TABS_DIR, tab.id + ".html")
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        out.append((tab.title, "./mumix/LIT/record/tabs/%s.html" % tab.id, size))
+    return out
 
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    text = build()
-    with open(PAGE, "w", encoding="utf-8", newline="\n") as f:
-        f.write(text)
-    print("wrote %s (%.2f MB, %d tabs)" % (PAGE, len(text.encode("utf-8")) / 1e6, len(Book.tabs)))
+    made = build()
+    index = "<!doctype html><html><head><meta charset=\"utf-8\"><title>Recording book</title></head><body><h3>The recording book</h3><p>The book is one html file for each tab, in the folder tabs/, shown as the sections of a toptabs page by the report server. Run <code>python recordbook.py</code> (in this folder) to make the files and open the page. The comments of each tab are in tabs/NAME.notes.</p><ul>%s</ul></body></html>" % "".join("<li>%s: %s</li>" % (m[0], m[1]) for m in made)
+    with open(PAGE, "w", encoding="utf-8", newline="
+") as f:
+        f.write(index)
+    print("wrote %d tab files in %s (%.2f MB in all; the largest %.2f MB)" % (len(made), TABS_DIR, sum(m[2] for m in made) / 1e6, max(m[2] for m in made) / 1e6))
     if "--no-open" not in argv:
         sys.path.insert(0, os.path.join(os.path.dirname(LIT), "tools"))
         import reportserver
-        reply = reportserver.contactRS("load", "[doc;editbox]", {"doc": ["doc", "./mumix/LIT/record/comments.html"]}, "Recording book")
+        items = ["toptabs"] + [[title, path] for title, path, size in made]
+        reply = reportserver.contactRS("load", "[toptabs;editbox]", {"toptabs": items}, "Recording book", timeout=30.0)
         print("shown:", reply.get("url"))
     return 0
 
