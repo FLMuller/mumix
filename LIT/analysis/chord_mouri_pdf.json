@@ -1,0 +1,30 @@
+[
+ {
+  "Re_lambda": 719,
+  "population": "model tubes of the page (r_max 5 eta, U_max = 0.769 Re^(1/3) U_eta)",
+  "k01_model": 7.129501511156636,
+  "k01_printed": 6.69,
+  "k1_printed": 3.66
+ },
+ {
+  "Re_lambda": 719,
+  "population": "tubes found from Belin (r_max 7.3 eta, U_max 2.6 x the page law)",
+  "k01_model": 9.0,
+  "k01_printed": 6.69,
+  "k1_printed": 3.66
+ },
+ {
+  "Re_lambda": 1934,
+  "population": "model tubes of the page (r_max 5 eta, U_max = 0.769 Re^(1/3) U_eta)",
+  "k01_model": 6.201152400449173,
+  "k01_printed": 6.01,
+  "k1_printed": 3.52
+ },
+ {
+  "Re_lambda": 1934,
+  "population": "tubes found from Belin (r_max 7.3 eta, U_max 2.6 x the page law)",
+  "k01_model": 8.953933838184147,
+  "k01_printed": 6.01,
+  "k1_printed": 3.52
+ }
+]

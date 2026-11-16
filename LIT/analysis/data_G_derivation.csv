@@ -1,0 +1,74 @@
+id,src,re_lo,re_hi,r_raw,u_raw,G_from_r_u,gamma_listed,route
+1,Sassa05,19.0,19.0,,2.8,,,no G: U only
+2,Jimenez93,35.8,35.8,4.7264,3.041,126.2,126.2,8.784 r U (both values)
+3,Ghira25,54.0,54.0,4.9534,4.208,183.1,,8.784 r U (both values)
+4,Ghira25,54.0,54.0,4.8841,4.2838,183.8,,8.784 r U (both values)
+5,Jimenez93,62.8,62.8,4.6592,3.2919,134.7,134.7,8.784 r U (both values)
+6,Tanahashi01,80.0,80.0,4.5,,,,no G: r only
+7,Kida02,83.0,83.0,5.2,3.6425,166.4,110.0,8.784 r U (both values)
+8,Ghira22,90.0,90.0,4.9933,6.1151,268.2,,8.784 r U (both values)
+9,Jimenez93,94.5,94.5,4.6592,4.2994,176.0,176.0,8.784 r U (both values)
+10,DaSilva11,111.0,111.0,5.204,3.6816,168.3,,8.784 r U (both values)
+11,Wang07,115.0,115.0,4.0,1.6,56.2,,8.784 r U (both values)
+12,DaSilva11,120.0,120.0,5.3113,4.295,200.4,,8.784 r U (both values)
+13,Ghira22,148.0,148.0,4.8343,7.2039,305.9,,8.784 r U (both values)
+14,Jimenez93,168.1,168.1,4.312,5.6483,213.9,213.9,8.784 r U (both values)
+15,Kida02,170.0,170.0,5.4,3.8775,183.9,123.0,8.784 r U (both values)
+16,Aligolzadeh23,179.0,179.0,6.0126,,,,no G: r only
+17,Sassa05,190.0,190.0,,4.0,,,no G: U only
+18,Ghira22,191.0,191.0,4.734,7.9495,330.6,,8.784 r U (both values)
+19,Ghira22,242.0,242.0,4.64,8.4197,343.2,,8.784 r U (both values)
+20,Pirozzoli09,250.0,250.0,5.12,,,,no G: r only
+21,Ghira22,292.0,292.0,4.5486,9.4937,379.3,,8.784 r U (both values)
+22,Mouri04,295.0,295.0,6.08,5.23,279.3,,8.784 r U (both values)
+23,Sassa05,300.0,300.0,,4.2,,,no G: U only
+24,Ghira22,314.0,314.0,4.5486,9.4532,377.7,,8.784 r U (both values)
+25,Mouri09,332.0,332.0,8.45,2.43,180.4,,8.784 r U (both values)
+26,Mouri07,332.0,332.0,5.18,7.6,345.8,,8.784 r U (both values)
+27,Mouri07,332.0,332.0,6.53,5.61,321.8,,8.784 r U (both values)
+28,Ghira22,399.0,399.0,4.5031,10.3861,410.8,,8.784 r U (both values)
+29,Mouri04,430.0,430.0,6.04,5.55,294.4,,8.784 r U (both values)
+30,Mouri09,488.0,488.0,8.47,2.39,177.8,,8.784 r U (both values)
+31,Mouri07,488.0,488.0,5.24,8.37,385.2,,8.784 r U (both values)
+32,Mouri07,488.0,488.0,6.44,5.98,338.3,,8.784 r U (both values)
+33,Sassa05,586.0,586.0,,3.6,,,no G: U only
+34,Mouri04,655.0,655.0,6.28,6.31,348.1,,8.784 r U (both values)
+35,Mouri09,716.0,716.0,8.59,2.47,186.4,,8.784 r U (both values)
+36,Mouri07,716.0,716.0,5.56,9.53,465.4,,8.784 r U (both values)
+37,Mouri07,716.0,716.0,6.92,6.65,404.2,,8.784 r U (both values)
+38,Mouri09,719.0,719.0,8.56,2.43,182.7,,8.784 r U (both values)
+39,Mouri07,719.0,719.0,5.21,8.67,396.8,,8.784 r U (both values)
+40,Mouri07,719.0,719.0,6.5,6.11,348.8,,8.784 r U (both values)
+41,Sassa05,820.0,820.0,,2.1,,,no G: U only
+42,Mouri04,861.0,861.0,7.14,7.1,445.3,,8.784 r U (both values)
+43,Mouri09,945.0,945.0,9.21,2.73,220.8,,8.784 r U (both values)
+44,Mouri07,945.0,945.0,5.97,10.6,555.8,,8.784 r U (both values)
+45,Mouri07,945.0,945.0,7.38,7.28,471.9,,8.784 r U (both values)
+46,Mouri04,1054.0,1054.0,6.98,7.73,473.9,,8.784 r U (both values)
+47,Mouri09,1080.0,1080.0,8.93,2.83,222.0,,8.784 r U (both values)
+48,Mouri07,1080.0,1080.0,5.66,11.7,581.7,,8.784 r U (both values)
+49,Mouri07,1080.0,1080.0,7.14,7.83,491.1,,8.784 r U (both values)
+50,Mouri09,1098.0,1098.0,8.91,2.56,200.4,,8.784 r U (both values)
+51,Mouri07,1098.0,1098.0,5.64,10.0,495.4,,8.784 r U (both values)
+52,Mouri07,1098.0,1098.0,6.61,6.83,396.5,,8.784 r U (both values)
+53,Ishihara13,1131.0,1131.0,5.0,,,,no G: r only
+54,Mouri04,1258.0,1258.0,7.37,8.37,541.8,,8.784 r U (both values)
+55,Mouri09,1304.0,1304.0,8.28,2.88,209.5,,8.784 r U (both values)
+56,Mouri07,1304.0,1304.0,6.15,12.8,691.4,,8.784 r U (both values)
+57,Mouri07,1304.0,1304.0,7.19,8.53,538.7,,8.784 r U (both values)
+58,Mouri09,1416.0,1416.0,9.12,2.79,223.5,,8.784 r U (both values)
+59,Mouri07,1416.0,1416.0,5.47,11.3,542.9,,8.784 r U (both values)
+60,Mouri07,1416.0,1416.0,6.92,7.53,457.7,,8.784 r U (both values)
+61,Mouri09,1693.0,1693.0,8.72,2.91,222.9,,8.784 r U (both values)
+62,Mouri07,1693.0,1693.0,5.87,12.8,660.0,,8.784 r U (both values)
+63,Mouri07,1693.0,1693.0,6.76,8.41,499.4,,8.784 r U (both values)
+64,Mouri09,1934.0,1934.0,8.81,3.18,246.1,,8.784 r U (both values)
+65,Mouri07,1934.0,1934.0,6.2,14.0,762.4,,8.784 r U (both values)
+66,Mouri07,1934.0,1934.0,7.03,9.17,566.2,,8.784 r U (both values)
+67,Sassa05,2391.0,2391.0,,6.5,,,no G: U only
+68,Mouri03,105.0,329.0,6.5,,,,no G: r only
+69,Belin96,151.0,718.0,7.608,,,,"r from the table row, U derived from Fig. 6 (not in the csv): G = 8.784 r U"
+70,Sassa05,19.0,2391.0,5.0,,,,no G: r only
+71,Pirozzoli09,,,6.0,2.0,105.4,,8.784 r U (both values)
+72,Das06,,,5.5,,,,no G: r only
+73,Miyauchi06,,,4.6,1.85,74.7,,8.784 r U (both values)

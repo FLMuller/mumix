@@ -1,0 +1,20 @@
+def corrected_fig_section():
+    """The new figure of the radius, the swirl and the circulation against Re_lambda (data as read, and as corrected by the models of the probes) with the trends fitted to its dots; the text is written from data_corrected_fits.json."""
+    with open(os.path.join(HERE, "data_corrected_fits.json"), encoding="utf-8") as f:
+        fits = json.load(f)
+    fr, fu = fits["r"], fits["U"]
+    cr, pr = fr["models"]["constant"], fr["models"]["power"]
+    p1, p3 = fu["models"]["power"], fu["models"]["power, exponent 1/3"]
+    off = lambda d, s: math.exp(d["by_source"][s]["mean_ln"])
+    odd = [s for s, v in fu["by_source"].items() if abs(math.exp(v["mean_ln"]) - 1) > 0.3 or v["sd_ln"] > 0.3]
+    odd_text = ", ".join("%s (%s)" % (s.replace("Sassa05", "Sassa and Makita").replace("Wang07", "Wang et al."), ("%d points, %.0f%% above and below the trend within the source" % (fu["by_source"][s]["n"], 100 * fu["by_source"][s]["sd_ln"])) if fu["by_source"][s]["sd_ln"] > 0.3 else "%d point, %.2f of the trend" % (fu["by_source"][s]["n"], off(fu, s))) for s in odd)
+    others = [off(fu, s) for s in fu["by_source"] if s not in odd]
+    ghira = [off(fr, s) for s in ("Ghira22", "Ghira25")]
+    text = r"""<h3>The data as read and as corrected by the models of the probes</h3>
+<p>Fig. 1b shows every row of the data against \(Re_\lambda\) on linear axes: above as read from the papers, below with the corrections that follow from the models: Ghira et al. (radius &times; 1.25, swirl &times; 0.67, section 9a) and the observed rows (Belin et al., Mouri et al. 2004, 2007, Mouri and Hori 2009, Sassa and Makita) with the multipliers of the wire-and-tube model and its one-dimensional extension (below; the multipliers are interpolated in \(\ln Re_\lambda\) from the table of each paper in the recording book), the other simulations as read. Rows with a range of \(Re_\lambda\) (the curves of Belin et al., the range of Mouri et al. 2003) are drawn as lines and are not used in the trends.</p>
+""" + png_html("data_corrected_plot.png", r"Fig. 1b. \(r_{\max}/\eta\), \(U_{\max}/U_\eta\) and \(G=\Gamma/\nu=8.784\,r_{\max}U_{\max}\) against \(Re_\lambda\), linear axes. Top: every row as read. Bottom: Ghira et al. and the observed rows corrected, the other simulations as read (open symbols: observed, no multiplier yet). Red: the trends fitted to the dots of the bottom row.") + r"""
+<p>The trends were fitted to the dots of the bottom row (""" + "%d points of %d sources for the radius, %d of %d for the swirl" % (fr["n"], fr["n_sources"], fu["n"], fu["n_sources"]) + r"""), by least squares of the logarithm, every source with the same weight in each quantity. <em>Radius:</em> a constant, \(r_{\max}/\eta=""" + "%.2f" % cr["a"] + r"""\) (rms %.0f%%), is chosen by AICc over a power law, \(""" % cr["rms_log_pct"] + "%.2f" % pr["a"] + r"""\,Re_\lambda^{""" + "%.3f" % pr["b"] + r"""}\) (rms %.0f%%): the radius has no trend with the Reynolds number. The corrected radius of Ghira et al. lies %.0f%% to %.0f%% above the constant, the largest offset of the sources (their factor 1.25 brings the 1%%-volume tubes above, not onto, the narrow family; section 9a). <em>Swirl:</em> \(U_{\max}/U_\eta=""" % (pr["rms_log_pct"], 100 * (min(ghira) - 1), 100 * (max(ghira) - 1)) + "%.3f" % p1["a"] + r"""\,Re_\lambda^{""" + "%.2f" % p1["b"] + r"""}\) (rms %.0f%%), and with the exponent 1/3 of model I \(""" % p1["rms_log_pct"] + "%.3f" % p3["a"] + r"""\,Re_\lambda^{1/3}\) (rms %.0f%%), within 2%% of the coefficient of the selected law (section 11, @C6@); the circulation of the red line of the third panel is \(8.784\,r_{\max}U_{\max}\) of the two fits. The rms of the swirl is larger than that of the selected law (@RMS6@%%) because of two sources: """ % p3["rms_log_pct"] + odd_text + r"""; the other sources lie within %.2f to %.2f of the trend. The corrections of the figure are those computed from the models; the corrections adopted for the fits (section 9) are fewer and simpler, and the two are kept apart: this subsection does not change the selection of section 10.</p>
+""" % (min(others), max(others))
+    return text
+
+

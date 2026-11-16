@@ -1,0 +1,81 @@
+marker,Re_f_over_sqrt_Re_lambda,p
++,-0.255,0.01010
++,-0.255,0.00851
++,0.215,0.00851
++,0.686,0.01076
++,1.430,0.02370
++,2.174,0.03888
+filled circle,2.194,0.05498
+x,2.644,0.06436
++,2.958,0.05314
+filled circle,3.056,0.08185
+hollow (merged),3.495,0.06086
++,3.702,0.06475
+hollow (merged),3.976,0.05776
+hollow (merged),3.988,0.05934
+filled circle,4.035,0.07782
+filled circle,4.466,0.07353
+x,5.269,0.07703
+filled circle,6.033,0.06607
+filled circle,6.680,0.05644
+hollow (merged),7.514,0.05675
+hollow (merged),7.731,0.05409
+filled circle,8.012,0.05842
+hollow (merged),8.184,0.05513
+filled (merged),8.891,0.05041
+filled (merged),8.981,0.04852
++,9.618,0.04059
++,10.362,0.03875
+hollow,10.715,0.04152
+filled circle,11.126,0.03564
+down triangle,12.027,0.03168
+filled circle,13.359,0.03010
++,14.084,0.02779
++,14.789,0.02990
+filled circle,15.024,0.02251
+down triangle,15.593,0.02977
+filled circle,16.043,0.02231
+hollow,16.043,0.02475
++,17.023,0.02422
+filled (merged),17.770,0.01813
+hollow (merged),17.846,0.02205
+hollow (merged),17.926,0.02047
+filled (merged),17.985,0.01658
++,19.256,0.01947
++,20.000,0.02198
+down triangle,20.020,0.01373
+filled circle,20.078,0.01696
++,20.744,0.01868
+up triangle,21.058,0.01188
+hollow (merged),21.353,0.01434
+hollow (merged),21.527,0.01579
+filled circle,22.311,0.01261
++,22.938,0.01525
+filled (merged),24.061,0.01056
+filled (merged),24.072,0.00852
+filled (merged),24.571,0.01197
+hollow,25.269,0.01149
++,25.916,0.00997
+filled (merged),26.649,0.00678
++,26.660,0.01116
+filled (merged),27.081,0.00594
++,27.405,0.01129
+down triangle,28.110,0.00772
+filled circle,28.972,0.00733
+filled circle,30.108,0.00482
++,30.382,0.00772
+filled (merged),31.213,0.00619
+filled (merged),32.000,0.00531
+hollow,32.223,0.00752
+filled (merged),33.136,0.00334
+filled (merged),33.465,0.00533
+x,34.182,0.00389
++,34.770,0.00469
+filled (merged),35.662,0.00268
+filled (merged),36.117,0.00387
+x,36.846,0.00376
++,37.042,0.00403
+filled circle,37.884,0.00290
++,38.492,0.00495
+filled circle,39.119,0.00211
++,39.236,0.00548

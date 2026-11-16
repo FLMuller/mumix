@@ -170,12 +170,15 @@ CSS = """
 .ln.sel{outline:2px solid #e8650f}
 .ln .no{flex:0 0 34px;text-align:right;color:#999;font-size:10px;padding-top:3px;user-select:none}
 .ln .body{flex:1;min-width:0;white-space:normal;overflow-wrap:break-word}
+.body table{display:block;max-width:100%;overflow-x:auto}
+.body mjx-container[display=true]{overflow-x:auto;overflow-y:hidden;max-width:100%}
+.body svg,.body img{max-width:100%;height:auto}
 .k-h .body{font-weight:bold;font-size:15px;margin-top:10px;border-bottom:1px solid #ddd}
 .k-h3 .body{font-weight:bold;font-size:13px;margin-top:6px}
 .body .note,.body .src,.body .lede{font-size:12px;color:#555}
 .body p{margin:0}
 .k-w .body{font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap}
-.k-eq .body{text-align:center;padding:4px 0;overflow-x:auto}
+.k-eq .body{text-align:center;padding:4px 0}
 .k-p .body{line-height:1.45}
 .pic{max-width:50%;border:1px solid #ccc;cursor:zoom-in}
 .cap{font-size:11px;color:#555;padding:2px 0}

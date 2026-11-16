@@ -1,0 +1,12 @@
+Re_lambda 332 k=0.25: R0 8.86 (paper 8.45)  V0/uK 2.09 (paper 2.43) | true r 5.46 U 6.3 | radius factor 1.62 swirl factor 3.00
+Re_lambda 332 k=0.5: R0 8.09 (paper 8.45)  V0/uK 2.67 (paper 2.43) | true r 5.44 U 6.4 | radius factor 1.49 swirl factor 2.38
+Re_lambda 332 k=1: R0 7.18 (paper 8.45)  V0/uK 3.53 (paper 2.43) | true r 5.36 U 6.5 | radius factor 1.34 swirl factor 1.86
+Re_lambda 719 k=0.25: R0 9.37 (paper 8.56)  V0/uK 2.46 (paper 2.43) | true r 5.46 U 8.1 | radius factor 1.71 swirl factor 3.29
+Re_lambda 719 k=0.5: R0 8.46 (paper 8.56)  V0/uK 3.14 (paper 2.43) | true r 5.45 U 8.2 | radius factor 1.55 swirl factor 2.60
+Re_lambda 719 k=1: R0 7.67 (paper 8.56)  V0/uK 4.09 (paper 2.43) | true r 5.41 U 8.4 | radius factor 1.42 swirl factor 2.04
+Re_lambda 1098 k=0.25: R0 9.92 (paper 8.91)  V0/uK 2.67 (paper 2.56) | true r 5.47 U 9.3 | radius factor 1.81 swirl factor 3.49
+Re_lambda 1098 k=0.5: R0 9.00 (paper 8.91)  V0/uK 3.41 (paper 2.56) | true r 5.45 U 9.4 | radius factor 1.65 swirl factor 2.75
+Re_lambda 1098 k=1: R0 8.20 (paper 8.91)  V0/uK 4.44 (paper 2.56) | true r 5.45 U 9.6 | radius factor 1.50 swirl factor 2.16
+Re_lambda 1934 k=0.25: R0 11.51 (paper 8.81)  V0/uK 2.95 (paper 3.18) | true r 5.48 U 11.3 | radius factor 2.10 swirl factor 3.82
+Re_lambda 1934 k=0.5: R0 10.52 (paper 8.81)  V0/uK 3.80 (paper 3.18) | true r 5.48 U 11.4 | radius factor 1.92 swirl factor 3.00
+Re_lambda 1934 k=1: R0 9.66 (paper 8.81)  V0/uK 5.02 (paper 3.18) | true r 5.52 U 11.7 | radius factor 1.75 swirl factor 2.33

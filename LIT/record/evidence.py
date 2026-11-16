@@ -131,9 +131,13 @@ EVIDENCE = {
     "das2006": [
         ("Das (2006).pdf", 1, (0.05, 0.10, 0.97, 0.55), 0, "Das et al. (2006): the abstract.",
          r"'diameter ... about \(10\eta\)&ndash;\(12\eta\) and average maximum azimuthal velocity is about 0.5&ndash;0.6 \(u'_{rms}\)'. No \(Re_\lambda\): shown, not fitted.", OK),
+    ],
+    "wang2007": [
         ("Wang (2007).pdf", 1, (0.05, 0.10, 0.97, 0.60), 0, "Wang, Tanahashi and Miyauchi (2007): the abstract.",
          r"'The most expected value of maximum azimuthal velocity of the eddy is 2.0 times Kolmogorov velocity, and decreases to \(1.2u_k\), which is an asymptotic value in the fully-developed state'; diameter 8 times \(\eta\).",
          G("swirl 1.6 for this row", "the mean of the two values of the abstract; the fully developed value is 1.2")),
+    ],
+    "miyauchi2006": [
         (None, 0, None, 0, "", r"Miyauchi et al. (2006): there is no pdf of this paper in the folder.",
          G("D = 10 and 8.5 eta, swirl 2.0 and 1.7 u_K", "taken from the abstract online in an earlier session; not checked on a page")),
     ],
@@ -167,13 +171,15 @@ def corrections_tab(book):
         data = json.load(f)
     c = data["corrections"]
     tab.h("1. What is changed between the papers and the model, in one table")
-    tab.p("Every number of the model starts as a number printed in a paper (the tabs of the papers). Four kinds of change are made before the fits. The first is a conversion of definition and is exact; the other three are judgements, and each is listed here with its rationale and with what the review of 2026-11-12 found.")
+    tab.p("Every number of the model starts as a number printed in a paper (the tabs of the papers). Several kinds of change are made before the fits. The first two are conversions of definition and are exact; the others are judgements, and each is listed here with its rationale and with what the reviews of 2026-11-12 and 2026-11-15 found.")
     tab.table(["change", "applies to", "value", "kind"],
               [[r"definition of the radius: the radius of maximum swirl of a Burgers vortex, \(r_{\max}=1.1209\,R_B\), from the 1/e radius of the vorticity; \(r_{\max}=1.585\,R\) from a Gaussian standard deviation; \(r_{\max}=D/2\) from a diameter between the velocity maxima", "all sources", "exact for a Burgers vortex", "conversion"],
                [r"swirl at \(R_{ivs}\) to the peak swirl", "Ghira et al. (2022, 2025)", "factor 1.01&ndash;1.02", "conversion"],
                ["radius divided", "Mouri and Hori (2009)", "&divide; %.2f" % c["Mouri09"]["r_divisor"], "<span class=\"guess\">judgement</span>"],
                ["swirl multiplied", "Mouri and Hori (2009)", "&times; %.1f" % c["Mouri09"]["u_factor"], "<span class=\"guess\">judgement</span>"],
-               ["swirl multiplied", "Ghira et al. (2022, 2025)", "&times; %.1f" % c["Ghira22"]["u_factor"], "<span class=\"guess\">judgement</span>"],
+               ["swirl multiplied", "Ghira et al. (2022, 2025)", "&times; %.2f" % c["Ghira22"]["u_factor"], "<span class=\"guess\">judgement</span> (0.6 until 2026-11-15; derived in section 9a of the paper)"],
+               ["radius multiplied", "Ghira et al. (2022, 2025)", "&times; %.2f" % (1.0 / c["Ghira22"]["r_divisor"]), "<span class=\"guess\">judgement</span> (new 2026-11-15; derived in section 9a of the paper)"],
+               ["radius divided", "Belin et al. (1996)", "&divide; %.2f" % c["Belin96"]["r_divisor"], "<span class=\"guess\">judgement</span> (provisional)"],
                ["left out of the fits", "Mouri et al. (2004, 2007): threshold averages", "all rows", "<span class=\"guess\">judgement</span>"],
                ["left out of the fits", "Da Silva et al. (2011): swirl; Sassa and Makita (2005): swirl", "swirl only", "review 2026-11-12"],
                ["Reynolds number corrected", "Tanahashi et al. (2001)", r"\(Re_\lambda\) 200 &rarr; 80", "review 2026-11-12"]],
@@ -199,7 +205,8 @@ def corrections_tab(book):
     tab.img("fit_threshold.png", "fit_threshold.py: the threshold pairs of Mouri et al. (2007) against the chord model.")
     tab.p(r"<b>Review.</b> (i) fit_threshold.py itself found that the chord model explains the radius of the all-tube average but not its swirl: the swirl needs a factor 4.5&ndash;5.9 that grows with \(Re_\lambda\), outside the range of the model; fit_smoothing.py added the length of the wire to close the gap. (ii) Mouri and Hori state in their abstract that the swirl of all tubes scales with \(u_K\) 'in contrast to the case of intense vortex tubes alone where the circulation velocity scales with the rms velocity fluctuation'. (iii) Fitting the all-tube sources alone (Kida et al. and Mouri and Hori with a free factor; modelselect.py) gives a factor <b>1.84</b> and \(U_{\max}/U_\eta=2.0\,Re_\lambda^{0.13}\) with an rms of 1.3%; a factor 3 gives 3.9% and an exponent 0.33 that neither source shows on its own (0.15 within Mouri and Hori, 0.09 within Kida et al.). " +
           tab.guess("swirl &times; 3", "it rests on joining the all-tube and the intense-tube data into one law; on the all-tube data alone the factor is 1.8&ndash;2.0, the low end of the chord model"))
-    tab.h("6. The swirl of Ghira et al.: &times; 0.6, and what the review finds")
+    tab.h("6. Ghira et al.: swirl &times; 0.67 and radius &times; 1.25 (the swirl &times; 0.6 until 2026-11-15), and what the review finds")
+    tab.p(r"<b>The factors in use (2026-11-15).</b> The criterion of Ghira et al. keeps the strongest 1% of the volume by vorticity: a subset of the tubes, smaller and faster than the whole population. The factors are worked out from the all-tube population of Pirozzoli (2012), whose pdfs of the radius and of the maximum velocity are linked by his most frequent circulation \(\Gamma/\nu=80\), with the cut applied with the tubes filling 35% of the flow: radius over the kept tubes 1.22&ndash;1.28 (the narrow family of the radius pdf over the mean radius of the kept tubes), swirl 0.66&ndash;0.68; used 1.25 and 0.67. The steps and the table are in section 9a of the paper and in the tabs of Ghira et al. and of Pirozzoli. The earlier argument below (0.58&ndash;0.60 from the curve of the other sources) gave the swirl factor before this derivation and agrees with it to 10%. The radius factor is new: it brings the radius of Ghira et al. to 5.6&ndash;6.2 \(\eta\), above the narrow family (4.55) and 16&ndash;21% above the constant radius fitted to all the dots (5.06).")
     tab.p(r"Rationale as decided: the listed swirl (6&ndash;10 \(U_\eta\), 1.0&ndash;1.25 \(u'\)) lies above Da Silva et al. (3.7&ndash;4.3) and Kida et al. (3.6&ndash;3.9) at the same \(Re_\lambda\); a constant 0.58 puts it on their curve.")
     tab.p(r"<b>Review.</b> (i) The Da Silva values 3.7 and 4.3 are not safe: the same table prints 9.0 and 7.15 (tab Da Silva), which is <i>above</i> Ghira. (ii) Kida et al. measure all low-pressure vortices, Ghira et al. the 1% most intense: they need not have the same swirl. (iii) Without any factor, the intense-tube data agree with each other: Ghira et al. (DNS, \(Re_\lambda\) 54&ndash;399) and the 0.1% threshold averages of Mouri et al. (2007, hot wire, 332&ndash;1934) follow one law, \(U_{\max}/U_\eta=1.29\,Re_\lambda^{0.32}\), with an rms of 12% (modelselect.py). " +
           tab.guess("swirl &times; 0.6 for Ghira et al.", "it is needed only if intense tubes and all tubes are one population; the two other intense-tube sources (Mouri et al. 2007; Da Silva et al. as printed) support the listed values"))

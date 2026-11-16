@@ -136,13 +136,15 @@ def load(changes=None, excluded=None, quantities=None):
 
 
 SCENARIOS = [
-    ("as used: Mouri-Hori r/1.75, U x 3; Ghira U x 0.6", {}),
+    ("as used: Mouri-Hori r/1.75, U x 3; Ghira r x 1.25, U x 0.67", {}),
     ("Mouri-Hori U x 2.5", {"Mouri09": {"u_factor": 2.5}}),
     ("Mouri-Hori U x 2", {"Mouri09": {"u_factor": 2.0}}),
-    ("Ghira as listed (x 1), Mouri-Hori U x 3", {"Ghira22": {"u_factor": 1.0}, "Ghira25": {"u_factor": 1.0}}),
-    ("Ghira as listed (x 1), Mouri-Hori U x 5", {"Ghira22": {"u_factor": 1.0}, "Ghira25": {"u_factor": 1.0}, "Mouri09": {"u_factor": 5.0}}),
+    ("Ghira swirl as listed (x 1), Mouri-Hori U x 3", {"Ghira22": {"u_factor": 1.0}, "Ghira25": {"u_factor": 1.0}}),
+    ("Ghira swirl as listed (x 1), Mouri-Hori U x 5", {"Ghira22": {"u_factor": 1.0}, "Ghira25": {"u_factor": 1.0}, "Mouri09": {"u_factor": 5.0}}),
     ("Mouri-Hori r/1.6", {"Mouri09": {"r_divisor": 1.6}}),
     ("Mouri-Hori r/1.9", {"Mouri09": {"r_divisor": 1.9}}),
+    ("Ghira radius as listed (x 1), swirl x 0.67", {"Ghira22": {"r_divisor": 1.0}, "Ghira25": {"r_divisor": 1.0}}),
+    ("Ghira radius x 1.85, swirl x 0.6 (the whole-pdf mean as the target)", {"Ghira22": {"r_divisor": 1 / 1.85, "u_factor": 0.6}, "Ghira25": {"r_divisor": 1 / 1.85, "u_factor": 0.6}}),
 ]
 MAIN = ("D1", "D2", "D3", "D4", "D6", "D8", "L1", "L2", "L3", "C1", "K5")
 

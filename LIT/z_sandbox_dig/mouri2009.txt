@@ -1,0 +1,668 @@
+=== p1 ===
+arXiv:0801.2276v1 [physics.flu-dyn] 15 Jan 2008
+Vortex Tubes in Turbulence Velocity Fields at
+High Reynolds Numbers
+Hideaki Mouri ∗ and Akihiro Hori ∗∗
+Meteorological Research Institute, Nagamine, Tsukuba 305-0052, Japan
+Abstract
+The elementary structures of turbulence, i.e., vortex tubes, are studied using velocity
+data obtained in laboratory experiments for boundary layers and duct flows at
+microscale Reynolds numbers Reλ = 332–1934. While past experimental studies
+focused on intense vortex tubes, the present study focuses on all vortex tubes with
+various intensities. We obtain the mean velocity profile. The radius scales with the
+Kolmogorov length. The circulation velocity scales with the Kolmogorov velocity,
+in contrast to the case of intense vortex tubes alone where the circulation velocity
+scales with the rms velocity fluctuation. Since these scaling laws are independent
+of the configuration for turbulence production, they appear to be universal at high
+Reynolds numbers.
+1 Introduction
+Turbulence contains vortex tubes as the elementary structures (Frisch, 1995;
+Sreenivasan and Antonia, 1997; Makihara et al., 2002). Regions of significant
+vorticity tend to be organized into tubes. They occupy a small fraction of the
+volume and are embedded in the background fluctuation. Their existence was
+established at microscale Reynolds numbers Reλ . 2000, by seeding a turbu￾lent liquid with gas bubbles and thereby visualizing regions of low pressure
+that are associated with vorticity (Douady et al., 1991; La Porta et al., 2000).
+At low Reynolds numbers, Reλ . 200, direct numerical simulations derived
+basic parameters of vortex tubes. The radii are of the order of the Kolmogorov
+length η. The total lengths are of the order of the correlation length L. The
+∗ Corresponding author. E-mail address: hmouri@mri-jma.go.jp
+∗∗Affiliated with Meteorological and Environmental Sensing Technology, Inc., Nan￾peidai, Ami 300-0312, Japan
+Preprint submitted to Fluid Dynamics Research 26 August 2021
+=== p2 ===
+circulation velocities are of the order of the Kolmogorov velocity uK or the
+rms velocity fluctuation hu
+2
+i
+1/2
+. Here h·i denotes an average. The lifetimes
+are of the order of the turnover time for energy-containing eddies L/hu
+2
+i
+1/2
+(Vincent and Meneguzzi, 1991, 1994; Jim´enez et al., 1993; Jim´enez and Wray,
+1998; Makihara et al., 2002; Tanahashi et al., 2004).
+However, for most of the tube parameters, universality has not been estab￾lished because the behavior has not been known at high Reynolds numbers.
+At Reλ & 200, a direct numerical simulation is not easy for now. The bubble
+visualization does not have a high enough spatial resolution (La Porta et al.,
+2000), except for the study of the tube length and lifetime.
+The more promising approach is velocimetry in laboratory experiments. A
+probe suspended in the flow is used to obtain a one-dimensional cut of the
+velocity field. The small-scale velocity variation is enhanced at the positions of
+vortex tubes. 1
+In particular, the velocity component v that is perpendicular
+to the one-dimensional cut is suited to detecting circulation flows associated
+with vortex tubes (Mouri et al., 1999).
+Based on this approach, there were already several studies (Belin et al., 1996;
+Noullez et al., 1997; Camussi and Guj, 1999). Recently, using boundary layers
+at Reλ = 332–1304 and duct flows at Reλ = 719–1934, we studied the mean
+radius R0 and circulation velocity V0 of vortex tubes and obtained the scalings
+R0 ∝ η and V0 ∝ hv
+2
+i
+1/2
+(Mouri et al., 2007). However, this and other past
+studies focused on intense vortex tubes that are easily captured by imposing
+a threshold on the velocity variation. For all vortex tubes with various inten￾sities, the tube parameters have not been known. Now we try to study vortex
+tubes as a whole.
+2 Experimental Data
+The present study is based on data of our past experiments described in
+Mouri et al. (2007). Since wide ranges of the Reynolds number Reλ were ob￾tained in two configurations for turbulence production, i.e., boundary layer
+and duct flow, we are able to study dependence of tube parameters on the
+Reynolds number and on the large-scale flow. Since the data were long, (1–
+4) × 108 points, their statistics are expected to be significant. Table 1 lists
+turbulence parameters that are to be used here.
+1 Other vortical structures, i.e., vortex sheets, are not important at least statisti￾cally. This is already known for the case of intense velocity variation (Noullez et al.,
+1997; Mouri et al., 2007) and is to be demonstrated here for the case of velocity
+variation with arbitrary intensity (§4).
+2
+=== p3 ===
+Table 1
+Turbulence parameters in boundary layers (B1–B6) and duct flows (D1–D5): sam￾pling interval δxs, Kolmogorov length η = (ν
+3/hεi)
+1/4 where ν is the kinematic
+viscosity and hεi = 15νh(∂xv)
+2
+i/2 is the mean energy dissipation rate, Taylor mi￾croscale λ = [2hv
+2
+i/h(∂xv)
+2
+i]
+1/2
+, Kolmogorov velocity uK = (νhεi)
+1/4
+, rms velocity
+fluctuations hu
+2
+i
+1/2 and hv
+2
+i
+1/2
+, and microscale Reynolds number Reλ = λhv
+2
+i
+1/2/ν.
+The parameter values are from Mouri et al. (2007).
+Data δxs
+[cm]
+η
+[cm]
+λ
+[cm]
+uK
+[m/s]
+hu
+2
+i
+1/2
+[m/s]
+hv
+2
+i
+1/2
+[m/s] Reλ
+B1 0.0378 0.0539 1.93 0.0262 0.283 0.242 332
+B2 0.0312 0.0335 1.46 0.0423 0.582 0.475 488
+B3 0.0265 0.0198 1.04 0.0716 1.18 0.973 716
+B4 0.0230 0.0152 0.919 0.0934 1.80 1.46 945
+B5 0.0180 0.0120 0.776 0.118 2.46 1.98 1080
+B6 0.0184 0.0104 0.742 0.137 3.14 2.51 1304
+D1 0.0355 0.0288 1.52 0.0489 0.694 0.666 719
+D2 0.0255 0.0177 1.15 0.0798 1.38 1.34 1098
+D3 0.0217 0.0133 0.986 0.107 2.11 2.04 1416
+D4 0.0216 0.0111 0.895 0.128 2.84 2.69 1693
+D5 0.0212 0.00955 0.826 0.149 3.46 3.32 1934
+The experiments were done in a wind tunnel of the Meteorological Research
+Institute. We use coordinates x, y, and z in the streamwise, spanwise, and
+floor-normal directions. The origin x = y = z = 0 m is on the tunnel floor
+at the entrance to the test section. Its size was δx = 18 m, δy = 3 m, and
+δz = 2 m. We simultaneously measured the velocity fluctuations u and v in
+the streamwise and spanwise directions, by using a hot-wire anemometer with
+a crossed-wire probe. The wires were 5 µm in diameter, 1.25 mm in sensing
+length, 1.4 mm in separation, and oriented at ±45◦
+to the streamwise direction.
+Taylor’s frozen-flow hypothesis was used to convert temporal variations into
+spatial variations. The sampling interval δxs was set to be as small as possible,
+on the condition that high-wave-number noise was not significant in the power
+spectrum.
+2.1 Boundary Layers (Data B1–B6)
+Over the entire floor of the tunnel test section, we placed blocks as roughness
+elements. Their size was δx = 0.06 m, δy = 0.21 m, and δz = 0.11 m. Their
+3
+=== p4 ===
+spacing was δx = δy = 0.5 m. The measurement position was at x = 12.5 m,
+where the boundary layer had been well developed, and z = 0.25–0.35 m in
+the log-law sublayer. 2 We obtained the data B1–B6 at Reλ = 332–1304 by
+changing the incoming-flow velocity from 2 to 20 m s−1
+.
+2.2 Duct Flows (Data D1–D5)
+At x = −2 m, we placed a rectangular duct with width δy = 1.3 m and
+δz = 1.4 m. The duct center was on the tunnel axis. The measurement position
+was at x = 15.5 m and z = 0.6 m, where the flow had become turbulent. We
+obtained the data D1–D5 at Reλ = 719–1934 by changing the duct-exit flow
+velocity from 11 to 55 m s−1
+.
+3 Model for Vortex Tubes
+Using the Burgers vortex, an idealized model for vortex tubes, we discuss what
+information is available from a one-dimensional cut of the velocity field (for
+a similar discussion based on a direct numerical simulation, see Mouri et al.
+(1999)). The Burgers vortex is an axisymmetric steady circulation in a strain
+field. In cylindrical coordinates, the circulation uΘ and strain field (uR, uZ)
+are
+uΘ ∝
+ν
+a0R
+"
+1 − exp 
+−
+a0R2
+4ν
+!# and (uR, uZ) = 
+−
+a0R
+2
+, a0Z
+
+. (1)
+Here ν is the kinematic viscosity and a0 (> 0) is a constant. The circulation
+is maximal at R = R0 = 2.24(ν/a0)
+1/2
+. Thus, R0 is regarded as the tube
+radius. We do not use other models for vortex tubes, e.g., spirals of Lundgren
+(1982), because detailed information about individual vortex tubes is anyway
+not available from one-dimensional velocity data.
+Suppose that velocity data are obtained on a one-dimensional cut of a flow
+field that consists of vortex tubes and the background random fluctuation, as
+illustrated in Fig. 1a. The one-dimensional cut is along the x axis, the tube
+2 The measurement position might appear to have been too close to the floor
+of the tunnel, but this is not serious at all. First, this is not in contradiction to
+our purpose, which is to find features of vortex tubes that are independent of the
+large-scale flow. Second, not invalid is the basic assumption of our study that the
+spatial distribution of vortex tubes was similar among experiments (§3). Since the
+measured ratio hu
+2
+i/hv
+2
+i is not far from unity (Table 1), the tube distribution at
+the measurement position should have been almost isotropic in all the experiments.
+4
+=== p5 ===
+position is (x0, y0), and the tube inclination is (θ0, ϕ0). The circulation flows
+uΘ of the vortex tubes induce small-scale variations in the v signal.
+If we consider intense velocity variations above a high threshold (Mouri et al.,
+2007), their scale and amplitude correspond to the radius and circulation
+velocity of intense vortex tubes with |y0| . R0 and θ0 ≃ 0. To demonstrate
+this, mean profiles along the cut x are obtained for the circulation flows uΘ of
+the Burgers vortices with random positions (x0, y0) and inclinations (θ0, ϕ0).
+Their radii R0 and maximum circulation velocities V0 = uΘ(R0) are set to be
+the same. We consider the Burgers vortices with |∂xv| at x = 0 being above a
+threshold, |∂xv|/3 for x0 = y0 = θ0 = 0 at x = 0. When ∂xv is negative, the
+sign of the v signal is inverted before the averaging. The result is shown in
+Fig. 1b. Around the peaks, the mean v profile is similar to that of the Burgers
+vortex for x0 = y0 = θ0 = 0 (dotted line).
+If we consider all velocity variations that are more significant than the back￾ground fluctuation, which roughly correspond to velocity variations above a
+low threshold, vortex tubes with |y0| ≫ R0 or θ0 ≫ 0 significantly contribute
+to the mean v profile. Its scale is large while its amplitude is small as compared
+with the mean radius and circulation velocity of all vortex tubes. Nevertheless,
+the scale and amplitude of the mean v profile are proportional to the mean
+radius and circulation velocity of all vortex tubes, among flow fields where
+the distribution of vortex tubes is similar. This is likely in our experiments.
+Since the measured ratio hu
+2
+i/hv
+2
+i is not far from unity (Table 1), the tube
+θ
+ϕ
+x
+y
+z vortex tube
+u
+mean stream
+Θ
+y
+x
+0
+0
+v
+0
+0
+(a)
+-0.5
+0.0
+0.5
+-20 -10 0 10 20
+x/R0
+u+
+u￾v
+(b) u/V0 v/V0
+Fig. 1. (a) Sketch of a vortex tube penetrating the (x, y) plane at a point (x0, y0).
+The inclination is (θ0, ϕ0). The circulation velocity is uΘ. We consider the spanwise
+velocity v along the x axis in the mean stream direction. (b) Mean profiles for the
+Burgers vortices with random positions and inclinations. The streamwise velocity
+u is separately shown for ∂xu > 0 (u
++) and ∂xu ≤ 0 (u
+−) at x = 0. The position
+and velocities are normalized by the radius R0 and maximum circulation velocity
+V0 of the Burgers vortices. The dotted line is the v profile of the Burgers vortex for
+x0 = y0 = θ0 = 0, the peak value of which is scaled to that of the mean v profile.
+5
+=== p6 ===
+inclination (θ0, ϕ0) should have been random in all the experiments. Then,
+we are able to study dependence of those tube parameters on the Reynolds
+number Reλ and on the configuration for turbulence production.
+4 Mean Velocity Profile
+The spanwise-velocity increment v(x+δx0/2)−v(x−δx0/2) over a small scale
+δx0 varies at the position x = x0 of a vortex tube, regardless of its intensity.
+We try to use all of such variations and study vortex tubes as a whole. The
+increment is smoothed with the Gaussian window function exp(−x
+2/2δx2
+0
+). We
+determine the tube positions x0 as local maxima and minima of the smoothed
+increment and then analyze the unsmoothed velocity data. The smoothing
+is to make sure that each of the local maxima and minima corresponds to
+each vortex tube. Also, the smoothing reduces the background fluctuation.
+We set δx0 to be a multiple of the sampling interval δxs that is close to
+the mean radius 6η estimated for intense vortex tubes in Mouri et al. (2007).
+This estimate is consistent with those in Jim´enez et al. (1993), Belin et al.
+(1996), Jim´enez and Wray (1998), and Tanahashi et al. (2004), if we consider
+10-4
+10-2
+100
+(a)
+probability density
+1%
+intense tubes
+0.1%
+10-4
+10-2
+100
+0 2 4 6 8 10
+probability density
+(b)
+all
+tubes
+Gauss
+δv /〈 δv 〉 s
+2
+s
+1/2
+Fig. 2. Probability density of |δvs| = |v(x + δxs) − v(x)|. (a) Reλ = 719 (D1). (b)
+Reλ = 1934 (D5). We normalize |δvs| by hδv2
+s
+i
+1/2 = h[v(x + δxs) − v(x)]2
+i
+1/2
+. The
+dotted line denotes the Gaussian distribution. The arrows indicate the ranges for
+intense vortex tubes studied by Mouri et al. (2007), which share 0.1 and 1% of the
+total. We also show the probability density for all vortex tubes.
+6
+=== p7 ===
+the difference in the definition of tube radius.
+Fig. 2 compares the probability density of the absolute velocity increment
+|v(x+δxs)−v(x)| over the sampling interval δxs for the entire data with that
+for the subdata from x = x0−δx0 to x0+δx0−δxs around all tube positions x0.
+The latter distribution accounts for the tail of the former distribution where
+vortex tubes should be dominant (Mouri et al., 2007), and does not account for
+the center of the former distribution where the background fluctuation should
+be dominant. It is thereby expected that we have surely captured vortex tubes.
+Fig. 3 shows the mean velocity profiles obtained by averaging signals centered
+at individual tube positions x0. The v profile is similar to that in Fig. 1b.
+Hence, the contribution from vortex tubes is surely dominant. The contribu￾tion from vortex sheets is not dominant. If it were dominant, the v profile
+in Fig. 3 should exhibit some kind of step (Noullez et al., 1997; Mouri et al.,
+2007). Exceptionally, to the extended tails of the v profile, the contribution
+from vortex sheets might be dominant.
+By fitting the v profile in Fig. 3 around its peaks by the v profile of the
+Burgers vortex for x0 = y0 = θ0 = 0 (dotted line), we estimate the radius R0
+-1.0
+0.0
+1.0
+(a)
+v
+u￾u+
+u/V0 v/V0
+-200 -100 0 100 200
+-1.0
+0.0
+1.0
+x/η
+(b)
+v
+u+
+u￾u/V0 v/V0
+Fig. 3. Mean profiles of all vortex tubes in the streamwise (u) and spanwise (v)
+velocities. (a) Reλ = 719 (D1). (b) Reλ = 1098 (D2). The u profile is separately
+shown for ∂xu > 0 (u
++) and ∂xu ≤ 0 (u
+−) at x = 0. The dotted line is the v profile
+fitted by the Burgers vortex for x0 = y0 = θ0 = 0. Its V0 value is used to normalize
+the velocities. The position x is normalized by the Kolmogorov length η. For the
+corresponding figure for intense vortex tubes alone, see Fig. 4 of Mouri et al. (2007).
+7
+=== p8 ===
+Table 2
+Parameters of vortex tubes in boundary layers (B1–B6) and duct flows (D1–D5):
+identification scale δx0, radius R0, maximum circulation velocity V0, and Reynolds
+number Re0 = R0V0/ν. For parameters of intense vortex tubes alone, see Table 2
+of Mouri et al. (2007).
+Data δx0/η R0/η V0/uK V0/hv
+2
+i
+1/2 Re0 Re0/Re1/2
+λ
+B1 6.30 8.45 2.43 0.263 20.5 1.13
+B2 5.59 8.47 2.39 0.213 20.2 0.914
+B3 5.36 8.59 2.47 0.182 21.2 0.792
+B4 6.06 9.21 2.73 0.175 25.1 0.817
+B5 6.00 8.93 2.83 0.169 25.3 0.770
+B6 5.30 8.28 2.88 0.157 23.8 0.659
+D1 6.16 8.56 2.43 0.179 20.8 0.776
+D2 5.76 8.91 2.56 0.152 22.8 0.688
+D3 6.52 9.12 2.79 0.146 25.4 0.675
+D4 5.84 8.72 2.91 0.138 25.4 0.617
+D5 6.66 8.81 3.18 0.143 28.0 0.637
+and maximum circulation velocity V0. The measured velocity is considered to
+have been smoothed over the probe size in the streamwise direction, 1 mm.
+Table 2 lists the R0 and V0 values. While the R0 value is greater than the
+true mean radius, the V0 value is less than the true mean circulation velocity,
+because of the contribution from vortex tubes with |y0| ≫ R0 or θ0 ≫ 0. The
+R0 and V0 values are still proportional to the true mean values (§3).
+The u profile in Fig. 3 is separated for ∂xu > 0 (u
++) and ∂xu ≤ 0 (u
+−)
+at x = 0. 3 These u
+± profiles have larger amplitudes than the u
+± profiles
+in Fig. 1b. This is a signature of vortex tubes with |y0| ≫ R0 or θ0 ≫ 0,
+especially of tubes passing the probe with some incidence angles relative to
+3 We have decomposed the u
+± profiles into symmetric and antisymmetric com￾ponents and show only the antisymmetric components (Mouri et al., 2007). This
+is because, although the u
+± profiles for vortex tubes should be antisymmetric, a
+symmetric positive excursion is induced by the contamination with the w velocity
+that is perpendicular to the u and v velocities (Sassa and Makita, 2005). The two
+wires of the hot-wire anemometer individually respond to all the u, v, and w ve￾locities. Since the measured u velocity corresponds to the sum of the responses of
+the two wires, it is contaminated with the w velocity. Since the measured v velocity
+corresponds to the difference of the responses, it is free from the w velocity.
+8
+=== p9 ===
+the mean flow direction, tan−1
+[v/(U+u)] (Belin et al., 1996). The radial inflow
+uR of the strain field is not discernible, except that the u
+− profile has a larger
+amplitude than the u
++ profile. Unlike the Burgers vortex, a real vortex tube is
+not always oriented to the stretching direction (Vincent and Meneguzzi, 1991,
+1994; Jim´enez et al., 1993; Jim´enez and Wray, 1998; Tanahashi et al., 2004).
+5 Scaling Laws of Tube Parameters
+The dependence of tube parameters on the microscale Reynolds number Reλ
+and on the configuration for turbulence production, i.e., boundary layer or
+duct flow, is studied in Fig. 4. Each quantity was normalized by its value in
+the duct flow at Reλ = 1934 (D5). That is, we avoid the prefactors that are
+not equal to the true values (§4). We instead focus on scaling laws.
+500 1000 1500 2000
+(a) R0/η
+(b) V0/uK
+(d) Re0
+(c) V0
+(e) Re0/Reλ
+1/2
+tube parameter
+Reλ
+/〈 v 〉 2 1/2
+Fig. 4. Dependence of parameters of all vortex tubes on Reλ. (a) R0/η. (b) V0/uK.
+(c) V0/hv
+2
+i
+1/2
+. (d) Re0. (e) Re0/Re1/2
+λ
+. The open circles denote the boundary layers
+(B1–B6). The filled circles denote the duct flows (D1–D5). Each quantity is normal￾ized by its value in the duct flow at Reλ = 1934 (D5). For the corresponding figure
+for intense vortex tubes alone, see Fig. 7 of Mouri et al. (2007).
+9
+=== p10 ===
+The radius R0 scales with the Kolmogorov length η as R0 ∝ η (Fig. 4a). This
+is partly because vortex tubes were identified on a scale δx0 ≃ 6η (§4), but
+the scatter of R0/η is less than the scatter of δx0/η as in Table 2.
+The maximum circulation velocity V0 scales with the Kolmogorov velocity uK
+as V0 ∝ uK (Fig. 4b) rather than with the rms velocity fluctuation hv
+2
+i
+1/2
+as V0 ∝ hv
+2
+i
+1/2
+(Fig. 4c), if we consider the entire Reλ range. This result is
+reasonable because uK is a characteristic of small-scale motions. At Reλ &
+1000, the scaling V0 ∝ hv
+2
+i
+1/2
+is also significant. Since V0 ∝ hv
+2
+i
+1/2
+is observed
+for intense vortex tubes (§6), V0 ∝ hv
+2
+i
+1/2
+is also observed for all vortex tubes
+if the mean v profile is biased toward intense vortex tubes. This is more likely
+at higher Reλ because Reλ ∝ hv
+2
+i/u2
+K. However, since intense vortex tubes
+are rare (§6), V0 ∝ hv
+2
+i
+1/2 does not represent vortex tubes as a whole. We do
+not consider the scaling V0 ∝ hv
+2
+i
+1/2
+.
+Direct numerical simulations of homogeneous isotropic turbulence and turbu￾lent channel flows at Reλ . 200 derived the scalings R0 ∝ η and V0 ∝ uK
+for all vortex tubes (Makihara et al., 2002; Tanahashi et al., 2004). We have
+found that, regardless of the configuration for turbulence production, those
+scalings extend at least up to Reλ ≃ 2000.
+The scalings of the radius R0 and circulation velocity V0 lead to a scaling
+of the Reynolds number Re0 = R0V0/ν that characterizes stability of vortex
+tubes (Jim´enez et al., 1993; Jim´enez and Wray, 1998):
+Re0 = constant if R0 ∝ η and V0 ∝ uK, (2a)
+Re0 ∝ Re1/2
+λ
+if R0 ∝ η and V0 ∝ hv
+2
+i
+1/2
+(2b)
+If we consider the entire Reλ range, our result favors the former scaling (Fig.
+4d) rather than the latter (Fig. 4e). This is in accordance with the observed
+scalings of R0 and V0 (Figs. 4a and 4b). The constancy of Re0 implies that
+vortex tubes as a whole are stable against an increase of the Reynolds number
+Reλ. At Reλ & 1000, the scaling Re0 ∝ Re1/2
+λ
+is also significant. This scaling
+is not important to us because it is related with V0 ∝ hv
+2
+i
+1/2 discussed before
+(Fig. 4c).
+6 Comparison with Intense Vortex Tubes
+The present result for all vortex tubes with various intensities is compared with
+a past result for intense vortex tubes alone. We use the result of Mouri et al.
+(2007), which was based on the same experimental data. For a similar exper￾imental result for intense vortex tubes, see Belin et al. (1996).
+10
+=== p11 ===
+To identify intense vortex tubes, Mouri et al. (2007) imposed a threshold on
+the absolute velocity increment |v(x+δxs)−v(x)|. The threshold was such that
+0.1% or 1% of the increments were used for the identification. These increments
+are included in the increments used for all vortex tubes as shown in Fig. 2.
+Thus, intense vortex tubes studied by Mouri et al. (2007) are included in all
+vortex tubes studied here.
+Mouri et al. (2007) estimated the radius R0 and maximum circulation velocity
+V0 from mean velocity profiles. They were obtained by averaging signals cen￾tered at individual positions where |v(x+δxs)−v(x)| was above the threshold.
+Since the mean velocity profiles were dominated by vortex tubes with |y0| . R0
+and θ0 ≃ 0, the R0 and V0 values are close to the true mean radius and true
+mean circulation velocity (§3). The dependence of R0 and V0 on the threshold
+was discussed in Mouri et al. (2007).
+The radius for intense vortex tubes, R0/η ≃ 5–7 (Mouri et al., 2007), is less
+than that for all vortex tubes, R0/η ≃ 8–9 (Table 2). While the former is close
+to the true mean radius, the latter is greater than the true mean radius (§4).
+The true mean radius appears not to be significantly different between intense
+and all vortex tubes. Both of them obey the scaling R0 ∝ η. The circulation
+flows of vortex tubes are always of smallest scales of turbulence.
+The circulation velocity for intense vortex tubes, V0/hv
+2
+i
+1/2 ≃ 0.4–0.8 (Mouri et al.,
+2007), is greater than that for all vortex tubes, V0/hv
+2
+i
+1/2 ≃ 0.1–0.3 (Table 2).
+This is mainly due to the difference in the true mean circulation velocity. In
+addition, the V0 value for all vortex tubes is less than the true mean circulation
+velocity (§4). While all vortex tubes obey the scaling V0 ∝ uK, intense vortex
+tubes obey the scaling V0 ∝ hv
+2
+i
+1/2
+in the same Reλ range.
+The Reynolds number for intense vortex tubes scales as Re0 ∝ Re1/2
+λ
+, which
+is explained through equation (2b) by the scalings R0 ∝ η and V0 ∝ hv
+2
+i
+1/2
+.
+With an increase of Reλ, intense vortex tubes progressively have higher Re0
+and are more unstable. The situation is different in the case of all vortex tubes,
+for which Re0 is constant.
+Direct numerical simulations at Reλ . 200 derived R0 ∝ η, V0 ∝ hv
+2
+i
+1/2
+, and
+hence Re0 ∝ Re1/2
+λ
+for intense vortex tubes (Jim´enez et al., 1993; Jim´enez and Wray,
+1998) while R0 ∝ η, V0 ∝ uK, and hence Re0 = constant for all vortex tubes
+(Makihara et al., 2002; Tanahashi et al., 2004). This difference in the scalings
+of V0 and Re0 is the same as that obtained here up to Reλ ≃ 2000.
+The difference in the scalings of V0 and Re0 between intense and all vor￾tex tubes implies that their roles are different. Since V0 ∝ hv
+2
+i
+1/2
+, intense
+vortex tubes are responsible for small-scale intermittency. This is especially
+the case at high Reλ because Reλ ∝ hv
+2
+i/u2
+K. In fact, at high Reλ, small￾11
+=== p12 ===
+scale intermittency is significant. However, since Re0 ∝ Re1/2
+λ
+, intense vortex
+tubes have short lifetimes and thus rare at high Reλ (Jim´enez et al., 1993;
+Jim´enez and Wray, 1998; Mouri et al., 2007). On the other hand, vortex tubes
+as a whole obey the scalings V0 ∝ uK and Re0 = constant. They are always
+ubiquitous and responsible for an important fraction of energy at smallest
+scales.
+7 Conclusion
+Using velocity data obtained in boundary layers at Reλ = 332–1304 and duct
+flows at Reλ = 719–1934 (Mouri et al., 2007), we have studied vortex tubes,
+i.e., the elementary structures of turbulence. While past experimental studies
+focused on intense vortex tubes, the present study focuses on all vortex tubes
+with various intensities. We have obtained the mean velocity profile, estimated
+the radius R0 and maximum circulation velocity V0, and then obtained the
+scalings R0 ∝ η, V0 ∝ uK, and Re0 = R0V0/ν = constant. They are in contrast
+to the scalings for intense vortex tubes alone, i.e., R0 ∝ η, V0 ∝ hv
+2
+i
+1/2
+, and
+Re0 ∝ Re1/2
+λ
+. Since those scalings for all vortex tubes are independent of the
+configuration for turbulence production, they appear to be universal at high
+Reynolds numbers Reλ. The implication of the scalings is that vortex tubes
+as a whole are always ubiquitous and responsible for an important fraction of
+energy at smallest scales.
+The present study has some ambiguities because only one-dimensional data of
+the velocity field are available. To proceed further, two- or three-dimensional
+velocity data are necessary but are not available for now. The advent of array
+of hot-wire probes (Sassa and Makita, 2005) or particle image velocimeter
+(Tanahashi et al., 2002) that is applicable to vortex tubes at high Reynolds
+numbers is desirable. Such a technique would enlarge our knowledge of vortex
+tubes. For example, the study of the probability density distributions of the
+tube radius and maximum circulation velocity is of interest.
+References
+Belin, F., Maurer, J., Tabeling, P. and Willaime, H. 1996. Observation of
+intense filaments in fully developed turbulence. J. Phys. (Paris) II 6, 573–
+584.
+Camussi, R. and Guj, G. 1999. Experimental analysis of intermittent coherent
+structures in the near field of a high Re turbulent jet flow. Phys. Fluids 11,
+423–431.
+Douady, S., Couder, Y. and Brachet, M.E. 1991. Direct observation of the
+12
+=== p13 ===
+intermittency of intense vorticity filaments in turbulence. Phys. Rev. Lett.
+67, 983–986.
+Frisch, U. 1995. Turbulence, the Legacy of A.N. Kolmogorov. Cambridge Univ.
+Press, Cambridge.
+Jim´enez, J. and Wray, A.A. 1998. On the characteristics of vortex filaments
+in isotropic turbulence. J. Fluid Mech. 373, 255–285.
+Jim´enez, J., Wray, A.A., Saffman, P.G. and Rogallo, R.S. 1993. The structure
+of intense vorticity in isotropic turbulence. J. Fluid Mech. 255, 65–90.
+La Porta, A., Voth, G.A., Moisy, F. and Bodenschatz, E. 2000. Using cavita￾tion to measure statistics of low-pressure events in large-Reynolds-number
+turbulence. Phys. Fluids 12, 1485–1496.
+Lundgren, T.S. 1982. Strained spiral vortex model for turbulent fine structure.
+Phys. Fluids 25, 2193–2203.
+Makihara, T., Kida, S. and Miura, H. 2002. Automatic tracking of low-pressure
+vortex. J. Phys. Soc. Jpn. 71, 1622–1625.
+Mouri, H., Hori, A. and Kawashima, Y. 2007. Laboratory experiments for
+intense vortical structures in turbulence velocity fields. Phys. Fluids 19,
+055101.
+Mouri, H., Takaoka, M. and Kubotani, H. 1999. Wavelet identification of vor￾tex tubes in a turbulence velocity field. Phys. Lett. A 261, 82–88.
+Noullez, A., Wallace, G., Lempert, W., Miles, R.B. and Frisch, U. 1997. Trans￾verse velocity increments in turbulent flow using the RELIEF technique. J.
+Fluid Mech. 339, 287–307.
+Sassa, K. and Makita, H. 2005. Reynolds number dependence of elementary
+vortices in turbulence. In: Rodi, W. and Mulas, M. (Ed.), Engineering Tur￾bulence Modelling and Experiments 6. Elsevier, Oxford, pp. 431–440.
+Sreenivasan, K.R. and Antonia, R.A. 1997. The phenomenology of small-scale
+turbulence. Annu. Rev. Fluid Mech. 29, 435–472.
+Tanahashi, M., Kang, S.-J., Miyamoto, T., Shiokawa, S. and Miyauchi, T.
+2004. Scaling law of fine scale eddies in turbulent channel flows up to Reτ =
+800. Int. J. Heat Fluid Flow 25, 331–340.
+Tanahashi, M., Ootsu, M., Fukushima, M. and Miyauchi, T. 2002. Measure￾ment of coherent fine scale eddies in turbulent mixing layer by DPIV. In:
+Rodi, W. and Fueyo, N. (Ed.), Engineering Turbulence Modelling and Ex￾periments 5. Elsevier, Oxford, pp. 525–534.
+Vincent, A. and Meneguzzi, M. 1991. The spatial structure and statistical
+properties of homogeneous turbulence. J. Fluid Mech. 225, 1–20.
+Vincent, A. and Meneguzzi, M. 1994. The dynamics of vorticity tubes in ho￾mogeneous turbulence. J. Fluid Mech. 258, 245–254.
+13

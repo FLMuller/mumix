@@ -28,14 +28,14 @@ __all__ = ["fill"]
 
 TAB_ID = {"Ghira22": "ghira2022", "Ghira25": "ghira2025", "Jimenez93": "jimenez1993", "Tanahashi01": "tanahashi2001", "Aligolzadeh23": "aligolzadeh2023",
           "DaSilva11": "dasilva2011", "Mouri09": "mouri2009", "Mouri07": "mouri2007", "Mouri04": "mouri2004", "Mouri03": "mouri2003", "Belin96": "belin1996",
-          "Kida02": "kida2002", "Pirozzoli09": "pirozzoli", "Ishihara13": "ishihara", "Sassa05": "sassa2005", "Wall": "das2006"}
+          "Kida02": "kida2002", "Pirozzoli09": "pirozzoli", "Ishihara13": "ishihara", "Sassa05": "sassa2005", "Das06": "das2006", "Miyauchi06": "miyauchi2006", "Wang07": "wang2007"}
 
 
-TAB_PDFS = {"ghira2022": ["Ghira (2022).pdf"], "ghira2025": ["Ghira (2025).pdf", "Ghira (2024).pdf"], "jimenez1993": ["Jimenez (1993).pdf"], "tanahashi2001": ["Tanahashi (2001).pdf"],
+TAB_PDFS = {"ghira2022": ["Ghira (2022).pdf"], "ghira2025": ["Ghira (2025).pdf", "Ghira (2024).pdf"], "jimenez1993": ["Jimenez (1993).pdf", "Jimenez (1998).pdf"], "tanahashi2001": ["Tanahashi (2001).pdf"],
             "tanahashi2004": ["Tanahashi (2004).pdf"], "aligolzadeh2023": ["Aligolzadeh (2023).pdf"], "dasilva2011": ["Da Silva (2011).pdf"], "mouri2009": ["Mouri (2009).pdf"],
             "mouri2007": ["Mouri (2007).pdf"], "mouri2004": ["Mouri (2004).pdf"], "mouri2003": ["Mouri (2003).pdf"], "belin1996": ["Belin (1996).pdf"], "kida2002": ["Kida (2002).pdf"],
             "pirozzoli": ["Pirozzoli (2012).pdf", "Pirozzoli (2009).pdf"], "ishihara": ["Ishihara (2011).pdf", "Ishihara (2013).pdf"], "sassa2005": ["Sassa (2005).pdf"],
-            "das2006": ["Das (2006).pdf", "Wang (2007).pdf"]}
+            "das2006": ["Das (2006).pdf"], "miyauchi2006": [], "wang2007": ["Wang (2007).pdf"]}
 
 
 def number(v, fmt="%.4g"):
@@ -88,7 +88,10 @@ def generic_tab(book, src):
     """The tab of a source made from sourcedata.py alone: the places in the paper, how its numbers were taken, and the chain of conversions to the table row."""
     tab = book.tab(TAB_ID[src["key"]], src["short"].replace("&eacute;", "é"))
     tab.h("1. The paper and where the numbers are")
-    paper_line(tab, TAB_PDFS[tab.id], [plain(src["cite"]).replace("&eacute;", "é")] if len(TAB_PDFS[tab.id]) == 1 else None)      # one pdf: the reference as the page cites it; several: the file names
+    if TAB_PDFS[tab.id]:
+        paper_line(tab, TAB_PDFS[tab.id], [plain(src["cite"]).replace("&eacute;", "é")] if len(TAB_PDFS[tab.id]) == 1 else None)      # one pdf: the reference as the page cites it; several: the file names
+    else:
+        tab.p("The paper: %s. There is no pdf of it in the folder." % plain(src["cite"]).replace("&eacute;", "é"))
     tab.p("<b>%s</b>. Tube set: <b>%s tubes</b>. Method: %s." % (plain(src["cite"]).replace("&eacute;", "é"), src["tubes"], src.get("method", "")))
     tab.p("Where in the paper: %s" % plain(src["where"]))
     tab.p("What was measured, and how the tubes were picked: %s" % plain(src["selection"]))
@@ -141,6 +144,12 @@ def generic_tab(book, src):
     else:
         tab.p("This row has no η, so no physical units: " + tab.guess("the row is shown without η, u_η, r_max, U_max, γ and Γ in SI units",
               r"the paper gives no single \(Re_\lambda\) or no \(\nu\) and \(\varepsilon\), so the page cannot place it on the \(Re_\lambda\) axis"))
+    if src["key"] == "Belin96":
+        import belintab                                                           # the wire-and-tube model, the fit and the corrections: sections 7 onwards, added at the end of the tab
+        belintab.extra(tab)
+    import mourisassa                                                             # the methods of Mouri et al. and Sassa and Makita on the model tubes
+    if src["key"] in mourisassa.KEYS:
+        mourisassa.extra(tab, src["key"])
     return tab
 
 
@@ -235,5 +244,7 @@ def fill(book):
         generic_tab(book, src)
     import pdftabs
     pdftabs.fill(book)
+    import correctiontabs
+    correctiontabs.fill(book)
     evidence.model_tab(book)
     guess_index(book, summary)

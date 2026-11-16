@@ -3,7 +3,8 @@ r"""pdftabs.py  The tabs of the four papers whose pdfs we digitised: Tanahashi e
 fill(book) adds to the generic tabs of tanahashi2001, das2006 and pirozzoli the steps of the figure (the page, the digitising, the fits, the statistics, the grid and the detection),
 and makes the tab tanahashi2004. The numbers of the fits are made again when the book is built (summary_pdfs.main), from the digitised csv files of the analysis folder.
 
-VERSION  M1 m01.v01 (2026-11-12): first version.
+VERSION  M1 m01.v02 (2026-11-15): dnspdfs: for the eight DNS/PIV papers the overlay of the digitised curve on the figure and the one/two lognormal fits (the integration of all DNS pdfs).
+         M1 m01.v01 (2026-11-12): first version.
 """
 import contextlib
 import io
@@ -214,7 +215,7 @@ def das2006(book, f):
     fit_block(tab, r, "radius r_max/η (r = D*/2)", "η")
     s = f[("das", "swirl")]
     fit_block(tab, s, "swirl u/u_rms", "u_rms")
-    tab.p("Page rows: the summary table has 'Das, Miyauchi, Wang (2006, 2007)' with radius 10&ndash;12η (the text's diameter range, giving 5.5 as the radius). The digitised open-symbol radius pdf has mode %.2f, median %.2f, mean %.2f." % (r["mode"], r["median"], r["mean"]))
+    tab.p("Page rows: the summary table has 'Das et al. (2006)' with radius 10&ndash;12η (the text's diameter range, giving 5.5 as the radius). The digitised open-symbol radius pdf has mode %.2f, median %.2f, mean %.2f." % (r["mode"], r["median"], r["mean"]))
 
 
 def pirozzoli(book, f):
@@ -230,7 +231,7 @@ def pirozzoli(book, f):
               "Typed from the image above. The row k_max η is labelled in the paper (the text extraction had lost the label).")
     tab.p(r"The box is \((2\pi)^3\), periodic, forced isotropic turbulence at \(k\le k_F=3\) (the DNS of P. Orlandi, J. Fluid Mech. 623). With dealiasing \(k_{\max}=N/3\) the spacing is \(\Delta/\eta=2\pi/(3\,k_{\max}\eta)\): case D 0.47, E 1.6. " +
           tab.guess("k_max = N/3 for the dealiasing", "the paper does not say how k_max is defined; with k_max = N/2 the spacings are 1.5 times larger"))
-    tab.img(pdfcrop("Pirozzoli (2012).pdf", 2, (0.52, 0.58, 0.95, 0.97)), "The eduction algorithm: the planes are scanned, candidate centres are pressure minima, the velocity pattern around them must be a vortex, and the core is averaged in the azimuth; r0 is the radius of the maximum velocity.")
+    tab.img(pdfcrop("Pirozzoli (2012).pdf", 2, (0.52, 0.58, 0.95, 0.97)), "The eduction algorithm: the planes are scanned, candidate centres are local maxima of the vorticity modulus with the vorticity within 20 degrees of the plane normal, the velocity pattern around them must be a vortex (no lower threshold on the vorticity), and the core is averaged in the azimuth; r0 is the radius of the maximum velocity.")
     tab.p(r"<b>A discrepancy.</b> The caption of Fig. 2 says the symbols are test case D (\(Re_\lambda=98.6\), △ in Table 1), but the plotted symbols are open <b>circles</b>, which Table 1 assigns to case E (\(Re_\lambda=251.4\)). " +
           tab.guess("Fig. 2 shows case D", "the caption says so, and the Tanahashi line it is compared with is at Re_λ = 97, close to D's 98.6; but the circle symbols are those of case E") + " If it were E, the pdf would belong to a larger Re_λ and the agreement with the Re_λ = 97 line would be less natural.")
     tab.h("9. Digitising")
@@ -248,6 +249,71 @@ def pirozzoli(book, f):
     tab.p("Page rows: 'Pirozzoli (2009, 2012)': radius 6 (the text), swirl 2 (the text), and one value %s from the 2009 paper at Re_λ = 250. " % "5.12" + tab.guess("the table uses the text's 'expected values' 6 and 2", "the text calls them the expected values; the digitised pdf gives a peak at %.1f, a median %.1f and a mean %.1f for the radius" % (r["mode"], r["median"], r["mean"])))
 
 
+SOURCE_PREFIX = {"tanahashi2001": "Tanahashi 2001", "tanahashi2004": "Tanahashi 2004", "das2006": "Das 2006", "pirozzoli": "Pirozzoli 2012", "wang2007": "Wang 2007", "ghira2022": "Ghira 2022",
+                 "jimenez1993": "Jimenez and Wray 1998", "aligolzadeh2023": "Aligolzadeh 2023"}
+OVERLAY = {"tanahashi2001": "dns_overlay_tanahashi2001.png", "tanahashi2004": "dns_overlay_tanahashi2004.png", "das2006": "dns_overlay_das2006.png", "pirozzoli": "dns_overlay_pirozzoli2012.png",
+           "wang2007": "dns_overlay_wang2007.png", "ghira2022": "dns_overlay_ghira2022.png", "jimenez1993": "dns_overlay_jimenez1998.png", "aligolzadeh2023": "dns_overlay_aligolzadeh2023.png"}
+# the figures as they are in the paper: (pdf, page, box) per tab for the papers whose tab did not have them yet; what was read and how
+NEW_FIGURES = {
+    "wang2007": ("Wang (2007).pdf", 7, (0.05, 0.05, 0.97, 0.96), "Figs. 6 and 7 of Wang et al. (2007): the pdfs of the diameter D/&eta; (6) and of the maximum azimuthal velocity in u_K (7), ten bins of x/&Lambda;.",
+                 r"Raster images of the pdf page (white on black), the ten curves lie on each other: the central curve (median of the ink pixels of each column, in log p) with the 25 and 75 % curves is taken (digitise_wang2007.py). The diameter is halved to the radius."),
+    "ghira2022": ("Ghira (2022).pdf", 10, (0.08, 0.08, 0.95, 0.38), "Fig. 5 of Ghira et al. (2022): the pdfs of the local radius R_ivs of the intense vorticity structures over R_ivs/&eta; (a) and R_ivs/R_B (b), seven simulations.",
+                  r"The figure is vector graphics: the seven curves are read from the path points of the pdf page (digitise_ghira2022.py), so there is no reading error from the picture. The axes come from the frame paths (x 0 to 14, p 1e-4 to 1; panel b 0 to 4, 1e-4 to 10). Each curve integrates to 1.000 and its mean is the R_ivs of Table III of the paper."),
+    "jimenez1993": ("Jimenez (1998).pdf", 8, (0.12, 0.12, 0.88, 0.50), "Fig. 3(a) of Jim&eacute;nez and Wray (1998): the pdf of the radius R/&eta; of the vortex filaments (and, on the next page, 3(d), u0/u' of the maximum azimuthal velocity).",
+                    r"The pdf of the paper (the 1998 paper, in the folder as Jimenez (1998).pdf) is raster: five line styles for the Re_lambda 36-170 and a marker series lie on each other (the paper says the collapse is excellent), so the central curve of the bundle is taken (median of the ink pixels of each column, in log p; running median over 15 columns; digitise_jimenez1998.py). The swirl is in units of u', as the paper prints it."),
+    "aligolzadeh2023": ("Aligolzadeh (2023).pdf", 9, (0.10, 0.04, 0.90, 0.28), "Fig. 4 of Aligolzadeh et al. (2023): the histograms of the normalised radius R/&eta; of the structures, (a) scanning-PIV experiment, (b) DNS sets.",
+                        r"Vector graphics: each histogram is one outline of rectangles, read from the path points (digitise_aligolzadeh2023.py); the bar height is p.d.f.(R*), the bin width 0.306 (the bars are drawn with a small gap), and the sum of height times width is 0.995 and 0.973."),
+}
+
+
+def next_number(tab):
+    """The number after the last numbered heading of a tab."""
+    n = 0
+    for kind, markup in tab.lines:
+        found = re.match(r"^(\d+)\.", markup) if kind == "h" else None
+        if found:
+            n = max(n, int(found.group(1)))
+    return n + 1
+
+
+def dnspdfs(book):
+    """For each of the eight tabs: the digitised curve drawn over the figure and the lognormal fits of the integration of all DNS pdfs (dns_pdfs_collate.py, dns_pdfs_fit.py, dns_pdfs_params.csv)."""
+    import csv
+    params = list(csv.DictReader(open(os.path.join(ANALYSIS, "dns_pdfs_params.csv"), encoding="utf-8")))
+    fitsrows = list(csv.DictReader(open(os.path.join(ANALYSIS, "dns_pdfs_fits.csv"), encoding="utf-8")))
+    for tab in book.tabs:
+        if tab.id not in SOURCE_PREFIX:
+            continue
+        pre = SOURCE_PREFIX[tab.id]
+        rows = [(a, b) for a, b in zip(params, fitsrows) if a["source"].startswith(pre)]
+        if not rows:
+            continue
+        n = next_number(tab)
+        if tab.id in NEW_FIGURES:
+            pdf, page, box, caption, how = NEW_FIGURES[tab.id]
+            tab.h("%d. The figure we digitised" % n)
+            tab.img(pdfcrop(pdf, page, box), caption)
+            tab.p(how)
+            n += 1
+        tab.h("%d. The digitised curve on the figure" % n)
+        tab.img(OVERLAY[tab.id], "The curves used (green) drawn over the figure of the paper; blue and red are the top and bottom bounds or the 25 and 75 % curves of the pixels.")
+        n += 1
+        tab.h("%d. One lognormal or two" % n)
+        tab.p(r"Every digitised pdf of the DNS and PIV papers is fitted with one lognormal first and with two (the function of the page, fit_tanahashi_lognormal.fit_mixture, linear domain, curve scaled to area 1); two are kept only where the rms misfit "
+              r"(divided by the peak) falls below 0.7 times that of one: " + tab.guess("the 0.7 threshold", "our choice, not a tested significance level; it decides the entries between 0.65 and 0.8") + " The same fits for all papers are in section 9a of the paper (Tables D1, D2).")
+        body = []
+        for a, b in rows:
+            body.append([a["source"].replace("Jimenez", "Jim&eacute;nez"), a["quantity"], a["area"], a["mode"], a["mean"], b["1 LN median"], b["1 LN s"], b["1 LN rms"], b["2 LN a1"], b["2 LN median1"], b["2 LN s1"], b["2 LN median2"], b["2 LN s2"], b["2 LN rms"], a["n"]])
+        tab.table(["curve", "quantity", "area as digitised", "mode", "mean", "1 LN median", r"1 LN \(s\)", "1 LN rms", r"2 LN \(a_1\)", "median 1", r"\(s_1\)", "median 2", r"\(s_2\)", "2 LN rms", "chosen n"], body,
+                  "The statistics of the digitised curve (scaled to area 1) and the two fits; the radius is r/&eta; (the paper's own radius: D/2, r0, R_ivs, R, R*), the swirl in u_K or u' as stated.")
+    for tid, note in (("ghira2025", "Fig. 15(a) of this paper (the pdf of R_ivs/R_B, Full and Sampled DNS) was not digitised: it is the variable of Fig. 5(b) of Ghira et al. (2022), digitised in that tab."),
+                      ("das2006", "Fig. 9 of this paper (the pdf of the circulation of the eddies, in &Gamma;*) was not digitised: it is a different variable from the radius and the swirl.")):
+        tab = next((t for t in book.tabs if t.id == tid), None)
+        if tab:
+            tab.h("%d. A figure left out" % next_number(tab))
+            tab.p(note)
+
+
 def fill(book):
     f = fits()
     tanahashi2001(book, f)
@@ -255,3 +321,4 @@ def fill(book):
     tanahashi2004(book, f, after)
     das2006(book, f)
     pirozzoli(book, f)
+    dnspdfs(book)

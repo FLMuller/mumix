@@ -1,0 +1,9 @@
+cell,nu_cm2_s,U_cm_s,u_prime_cm_s,Re_printed,Re_used,Re_lambda_printed,Re_lambda_used,lambda_um,eta_um,flag
+2,1.6e-2,39,8,41000,41000,151,151,3000,127,
+2,2.1e-2,284,94,2.3e5,2.3e5,674,674,1520,26,
+2,4.6e-4,128,37,4.7e6,4.7e6,2300,2300,276,2.9,
+2,3.3e-4,136,52,7e6,7e6,5040,5040,320,2,eta printed with one digit (+-25%)
+2,4.4e-4,128,27,5e6,5e6,1550,1550,262,3.4,
+2,1.1e-3,64,13,2e6,1e6,822,822,680,12,MISPRINT: Re printed 2e6; U L / nu with L = 17.0 cm (the other four cell 2 runs) gives 1.0e6; Po implied by the printed value is 0.018 against 0.14 with 1e6
+1,2.7e-2,118,29,16700,16700,188,188,1740,64,
+1,2.6e-4,27.4,6.1,4.3e5,4.3e5,879,439,187,5,MISPRINT: Re_lambda printed 879; u' lambda / nu = 439 from its own row (and eta from u' lambda nu agrees to 10%)

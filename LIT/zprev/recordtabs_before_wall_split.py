@@ -1,0 +1,245 @@
+r"""recordtabs.py  The content of the recording book: one function per tab, and fill(book) that makes them all (recordbook.py draws them).
+
+A tab for a paper is a list of steps. Every number of the table in the summary tab is made again here from the paper's own numbers:
+the generic tab of a source (generic_tab) takes its rows from sourcedata.py (what we typed from the paper) and shows the chain
+paper number -> converted -> corrected -> SI with the formulas and a worked example; the pdf sources (Tanahashi 2001 and 2004, Das 2006,
+Pirozzoli 2012) have their own tabs (pdftabs.py) with the figure, the digitising, the fits and the grid and detection of each.
+Anything we guessed is written with tab.guess(what, why): red in the page, listed at the top of the tab and in the summary.
+
+VERSION  M1 m01.v01 (2026-11-12): first version: the summary tab, the generic tab of every source.
+"""
+import math
+import os
+import re
+import sys
+from html.parser import HTMLParser
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ANALYSIS = os.path.join(os.path.dirname(HERE), "analysis")
+sys.path.insert(0, ANALYSIS)
+sys.path.insert(0, HERE)
+
+import sourcedata as sd                     # noqa: E402
+import build_data_sections as bds           # noqa: E402
+from recordbook import paper_line, plain      # noqa: E402
+import evidence                               # noqa: E402
+
+__all__ = ["fill"]
+
+TAB_ID = {"Ghira22": "ghira2022", "Ghira25": "ghira2025", "Jimenez93": "jimenez1993", "Tanahashi01": "tanahashi2001", "Aligolzadeh23": "aligolzadeh2023",
+          "DaSilva11": "dasilva2011", "Mouri09": "mouri2009", "Mouri07": "mouri2007", "Mouri04": "mouri2004", "Mouri03": "mouri2003", "Belin96": "belin1996",
+          "Kida02": "kida2002", "Pirozzoli09": "pirozzoli", "Ishihara13": "ishihara", "Sassa05": "sassa2005", "Wall": "das2006"}
+
+
+TAB_PDFS = {"ghira2022": ["Ghira (2022).pdf"], "ghira2025": ["Ghira (2025).pdf", "Ghira (2024).pdf"], "jimenez1993": ["Jimenez (1993).pdf"], "tanahashi2001": ["Tanahashi (2001).pdf"],
+            "tanahashi2004": ["Tanahashi (2004).pdf"], "aligolzadeh2023": ["Aligolzadeh (2023).pdf"], "dasilva2011": ["Da Silva (2011).pdf"], "mouri2009": ["Mouri (2009).pdf"],
+            "mouri2007": ["Mouri (2007).pdf"], "mouri2004": ["Mouri (2004).pdf"], "mouri2003": ["Mouri (2003).pdf"], "belin1996": ["Belin (1996).pdf"], "kida2002": ["Kida (2002).pdf"],
+            "pirozzoli": ["Pirozzoli (2012).pdf", "Pirozzoli (2009).pdf"], "ishihara": ["Ishihara (2011).pdf", "Ishihara (2013).pdf"], "sassa2005": ["Sassa (2005).pdf"],
+            "das2006": ["Das (2006).pdf", "Wang (2007).pdf"]}
+
+
+def number(v, fmt="%.4g"):
+    return "&mdash;" if v is None else fmt % v
+
+
+def used_in_model(tab, key):
+    """The last step of a paper's tab: every row of the source as the model sees it (calculated from the paper, corrected, and whether it is fitted)."""
+    import json
+    sys.path.insert(0, os.path.join(os.path.dirname(HERE), "fittingtool"))
+    import fitdata
+    import modelselect
+    rows = [x for x in modelselect.load({}) if x["src"] == key]
+    with open(modelselect.CORR, encoding="utf-8") as f:
+        data = json.load(f)
+    tab.h("2. Data consolidation: every number of this paper, from the value in the paper to the value used in the model")
+    if not rows:
+        tab.p("This source has no row in the data of the fits.")
+        return
+    left = data.get("excluded", {}).get(key)
+    part = data.get("excluded_quantities", {}).get(key, {})
+    out = []
+    for x in rows:
+        def state(kind, value):
+            if value is None:
+                return "&mdash;"
+            if x["re"] is None:
+                return "shown, not fitted (no single Re)"
+            if left:
+                return "<span class=\"guess\">not used</span>"
+            if kind in part:
+                return "<span class=\"guess\">shown, not fitted</span>"
+            return "<span class=\"used\">fitted</span>"
+        re_text = "%g" % x["re"] if x["re"] is not None else ("%g&ndash;%g" % (x["re_lo"], x["re_hi"]) if x["re_lo"] is not None else "&mdash;")
+        out.append([re_text, number(x["r_raw"], "%.3f"), "&times; %.3f" % x["factor_r"], "<b>%s</b>" % number(x["r"], "%.3f"), state("r", x["r"]),
+                    number(x["u_raw"], "%.3f"), "&times; %.2f" % x["factor_u"], "<b>%s</b>" % number(x["u"], "%.3f"), state("U", x["u"])])
+    tab.table([r"\(Re_\lambda\)", r"\(r_{\max}/\eta\) from the paper", "correction", r"\(r_{\max}/\eta\) used", "radius in the fit", r"\(U_{\max}/U_\eta\) from the paper", "correction", r"\(U_{\max}/U_\eta\) used", "swirl in the fit"],
+              out, "These are the numbers the fits read (fittingtool/data/tubes.csv with corrections.json). The corrections and their rationale are in the tab Corrections.")
+    if left:
+        tab.p("<b>Why not used:</b> " + left)
+    for kind, why in part.items():
+        if kind != "G":
+            tab.p("<b>Why the swirl is not fitted:</b> " + why)
+    c = data["corrections"].get(key)
+    if c:
+        tab.p("<b>Rationale of the correction (as decided):</b> " + c["why"])
+
+
+def generic_tab(book, src):
+    """The tab of a source made from sourcedata.py alone: the places in the paper, how its numbers were taken, and the chain of conversions to the table row."""
+    tab = book.tab(TAB_ID[src["key"]], src["short"].replace("&eacute;", "é"))
+    tab.h("1. The paper and where the numbers are")
+    paper_line(tab, TAB_PDFS[tab.id], [plain(src["cite"]).replace("&eacute;", "é")] if len(TAB_PDFS[tab.id]) == 1 else None)      # one pdf: the reference as the page cites it; several: the file names
+    tab.p("<b>%s</b>. Tube set: <b>%s tubes</b>. Method: %s." % (plain(src["cite"]).replace("&eacute;", "é"), src["tubes"], src.get("method", "")))
+    tab.p("Where in the paper: %s" % plain(src["where"]))
+    tab.p("What was measured, and how the tubes were picked: %s" % plain(src["selection"]))
+    used_in_model(tab, src["key"])
+    tab.h("3. The evidence: the pages of the paper and what was read from them")
+    evidence.evidence_steps(tab)
+    tab.h("4. The numbers taken from the paper")
+    head = ["quantity", r"\(Re_\lambda\)", r"\(\nu\) (paper's units)", r"\(\varepsilon\) (paper's units)", "entries of the paper", "value used", "role", "note"]
+    rows = []
+    for r in src["rows"]:
+        mark = ""
+        if "assum" in (" ".join(map(str, r["raw"])) + r["note"]).lower():
+            mark = " " + tab.guess("a value assumed in the page", "the paper does not give it: %s" % (r["note"] or " ".join(map(str, r["raw"]))))
+        rows.append([plain(sd.MSHORT[r["mtype"]]), str(r["Re"]), bds.nu_text(r["nu"]), bds.eps_text(r["eps"]), plain(", ".join(map(str, r["raw"]))) + mark,
+                     bds.num(r["used"]) if hasattr(bds, "num") else "%.4g" % r["used"], "fitted" if r["role"] == "fit" else "comparison", plain(r["note"])])
+    tab.table(head, rows, "One row for each number: the entries are the numbers printed in the paper (or read from its text), 'value used' is what the conversions below make of them.")
+    if src.get("notes"):
+        tab.p("Remarks in the page: %s" % plain(src["notes"]))
+    tab.h("5. The conversions")
+    for eq in src.get("eqs", []):
+        tab.math(eq)
+    tab.p(r"The Burgers vortex: \(x=1.2564312\) is the root of \(e^{x}-2x-1=0\), \(K_B=1-e^{-x}=0.71531\), \(r_{\max}=\sqrt{x}\,R_B=1.1209\,R_B\), "
+          r"\(U_{\max}=K_B\,\Gamma/(2\pi r_{\max})\), so \(\Gamma/\nu=(2\pi/K_B)\,Re_c=8.784\,Re_c\) with \(Re_c=r_{\max}U_{\max}/\nu\).")
+    items = [it for it in bds.tube_items(corrected=True) if it["src"] == src["key"]]
+    tab.h("6. From the entries to the row of the summary table")
+    if not items:
+        tab.p("No row of the summary table (this source has no tube values that the table can complete).")
+        return tab
+    head = [r"\(Re_\lambda\)", r"\(r_{\max}/\eta\) (as read)", "× factor", r"\(r_{\max}/\eta\) used", r"\(U_{\max}/U_\eta\) (as read)", "× factor", r"\(U_{\max}/U_\eta\) used", r"\(Re_c=\beta U\)", r"\(\Gamma/\nu\)", "table: included?"]
+    rows = []
+    for it in items:
+        rows.append([str(it["Re"]), number(it["beta_raw"], "%.3f"), "%.3g" % it["fr"], number(it["beta"], "%.3f"), number(it["U_raw"], "%.3f"), "%.3g" % it["fu"], number(it["U"], "%.3f"),
+                     number(it["rec"], "%.2f"), number(it["RG"], "%.1f"), it["included"] or "yes"])
+    tab.table(head, rows, r"Radius and swirl in units of \(\eta\) and \(U_\eta=(\nu\varepsilon)^{1/4}\), the correction factors of the page (sourcedata.CORR: Mouri and Hori radius ÷ 1.75 and swirl × 3, Ghira swirl × 0.6; the others 1).")
+    first = items[0]
+    if first["eta"]:
+        nu, eps = None, None
+        r0 = next(r for r in src["rows"])
+        nu, eps, eta, how = sd.physical(r0)
+        tab.p(r"Worked example, the first row (\(Re_\lambda\) = %s). The model side needs lengths in metres, so \(\eta\) is made from a \(\nu\) and an \(\varepsilon\) (%s):" % (first["Re"], "measured in the paper" if how == "measured" else
+              "reference values: " + tab.guess("water, ν = 1e-6 m²/s, ε = 0.1 W/kg", "the paper's flow has no physical units, and the page converts every length given in η with these reference values")))
+        tab.math(r"\eta=\left(\frac{\nu^3}{\varepsilon}\right)^{1/4}=\left(\frac{(%.3g)^3}{%.3g}\right)^{1/4}=%.4g\ \mathrm{m}=%.4g\ \mu\mathrm{m}" % (nu, eps, eta, eta * 1e6))
+        tab.math(r"U_\eta=(\nu\varepsilon)^{1/4}=%.4g\ \mathrm{m/s}=%.4g\ \mathrm{mm/s}" % ((nu * eps) ** 0.25, (nu * eps) ** 0.25 * 1e3))
+        if first["beta"] is not None:
+            tab.math(r"r_{\max}=\beta\,\eta=%.3f\times%.4g\ \mu\mathrm{m}=%.4g\ \mu\mathrm{m}" % (first["beta"], eta * 1e6, first["beta"] * eta * 1e6))
+        if first["U"] is not None:
+            tab.math(r"U_{\max}=U\,U_\eta=%.3f\times%.4g\ \mathrm{mm/s}=%.4g\ \mathrm{mm/s}" % (first["U"], (nu * eps) ** 0.25 * 1e3, first["U"] * (nu * eps) ** 0.25 * 1e3))
+        if first["beta"] is not None:
+            tab.math(r"\gamma=\frac{4x}{\beta^2}\left(\frac{\varepsilon}{\nu}\right)^{1/2}=\frac{4\times1.2564}{%.3f^2}\left(\frac{%.3g}{%.3g}\right)^{1/2}=%.4g\ \mathrm{s^{-1}}" % (first["beta"], eps, nu, first["gam"] or float("nan")))
+    else:
+        tab.p("This row has no η, so no physical units: " + tab.guess("the row is shown without η, u_η, r_max, U_max, γ and Γ in SI units",
+              r"the paper gives no single \(Re_\lambda\) or no \(\nu\) and \(\varepsilon\), so the page cannot place it on the \(Re_\lambda\) axis"))
+    if src["key"] == "Belin96":
+        import belintab                                                           # the wire-and-tube model, the fit and the corrections: sections 7 onwards, added at the end of the tab
+        belintab.extra(tab)
+    import mourisassa                                                             # the methods of Mouri et al. and Sassa and Makita on the model tubes
+    if src["key"] in mourisassa.KEYS:
+        mourisassa.extra(tab, src["key"])
+    return tab
+
+
+def summary_tab(book):
+    tab = book.tab("summary", "Summary")
+    tab.h("The recording book")
+    tab.p("One tab for each paper, from the paper to the numbers of the table below. Click a line to comment on it: the box at the bottom takes your comment and saves it "
+          "(tabs/NAME.notes, beside the file of each tab). Our guesses are in <span class=\"guess\">red</span>; this tab ends with a list of all of them.")
+    tab.p("The tab <b>The paper</b> is the paper itself (vortex-energy-balance.html), line by line, so that it takes comments in the same way; the tabs after it are the evidence for its numbers.")
+    tab.h("The table of the tube data used by the model (the data table of the page)")
+    tab.p(r"Each row is one source at one \(Re_\lambda\). 'a' to 'e' on a reference are the page's footnotes (corrections and augmentations). Every row is made again, step by step, in the tab of its source.")
+    tab.add("t", "<div class=\"tablebox\">" + plain(bds.model_input_table()) + "</div>")
+    return tab
+
+
+class Blocks(HTMLParser):
+    """The top-level pieces of an html fragment, in order: each element that is a direct child (with all its markup) and each run of text between them."""
+
+    def __init__(me, text):
+        super().__init__(convert_charrefs=False)
+        me.text, me.depth, me.start, me.out, me.tag = text, 0, None, [], ""
+        me.lines = [0]
+        for row in text.split("\n"):
+            me.lines.append(me.lines[-1] + len(row) + 1)
+        me.last = 0
+        me.feed(text)
+        me.flush(len(text))
+
+    def at(me):
+        row, col = me.getpos()
+        return me.lines[row - 1] + col
+
+    def flush(me, upto):
+        piece = me.text[me.last:upto]
+        if piece.strip():
+            me.out.append(("text", piece.strip()))
+        me.last = upto
+
+    def handle_starttag(me, tag, attrs):
+        if tag in ("br", "img", "hr", "meta", "link", "input"):
+            return
+        if me.depth == 0:
+            me.flush(me.at())
+            me.start, me.tag = me.at(), tag
+        me.depth += 1
+
+    def handle_endtag(me, tag):
+        if tag in ("br", "img", "hr", "meta", "link", "input") or me.depth == 0:
+            return
+        me.depth -= 1
+        if me.depth == 0:
+            end = me.text.index(">", me.at()) + 1
+            me.out.append((me.tag, me.text[me.start:end]))
+            me.last = end
+
+
+def paper_tab(book):
+    """The paper (../vortex-energy-balance.html) as a tab of the book: every heading, paragraph, formula, figure, table and list is one numbered line that takes comments.
+    The line numbers follow the paper as it is when the book is built: a comment keeps its text if the paper changes, but may then sit on another line."""
+    tab = book.tab("paper", "The paper")
+    with open(os.path.join(os.path.dirname(HERE), "vortex-energy-balance.html"), encoding="utf-8") as f:
+        page = f.read()
+    main = page[page.index("<main>") + 6:page.index("</main>")]
+    for tag, markup in Blocks(main).out:
+        if tag == "text":
+            for piece in re.split(r"(\$\$.*?\$\$)", markup, flags=re.S):          # display formulas stand alone between the elements
+                if piece.strip():
+                    tab.add("eq" if piece.startswith("$$") else "p", piece.strip())
+        elif tag in ("h1", "h2", "h3"):
+            tab.add("h" if tag != "h3" else "h3", re.sub(r"^<h\d[^>]*>|</h\d>$", "", markup))
+        elif tag == "script":
+            continue
+        else:
+            tab.add("p", markup)
+    return tab
+
+
+def guess_index(book, tab):
+    tab.h("All the guesses of the book")
+    rows = []
+    for t in book.tabs:
+        for k, (gid, what, why) in enumerate(t.guesses, 1):
+            rows.append(["<b>%s</b>, guess %d" % (t.title, k), "<span class=\"guess\">%s</span>" % what, why])
+    tab.table(["where", "what we guessed", "why"], rows, "%d guesses. Each is in red in the tab named, and the tab lists its own at the top." % len(rows))
+
+
+def fill(book):
+    summary = summary_tab(book)
+    paper_tab(book)
+    evidence.corrections_tab(book)
+    for src in sd.SOURCES:
+        generic_tab(book, src)
+    import pdftabs
+    pdftabs.fill(book)
+    evidence.model_tab(book)
+    guess_index(book, summary)

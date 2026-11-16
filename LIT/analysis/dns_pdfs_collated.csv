@@ -1,0 +1,17 @@
+curve,mode,median,mean
+"Tanahashi 2001 (mixing layer)",4.822,5.848,8.032
+"Tanahashi 2004, channel Re_tau 800",4.311,5.782,8.154
+"Das 2006, channel Re_tau 180, open symbols",6.119,8.209,10.235
+"Pirozzoli 2012, DNS",4.228,5.263,7.211
+"Wang 2007, mixing layer",3.901,5.527,8.332
+"Ghira 2022, R_ivs, Re_lambda 90-399",4.019,4.098,4.283
+"Jimenez and Wray 1998, worms, R",2.731,3.979,4.408
+"Aligolzadeh 2023, PIV experiment",3.980,4.534,4.934
+"Aligolzadeh 2023, DNS sets",4.286,5.080,5.544
+"Tanahashi 2004 (channel)",1.232,2.298,2.623
+"Pirozzoli 2012, DNS",1.398,2.066,2.470
+"Wang 2007, mixing layer",1.346,2.700,3.145
+"Tanahashi 2001 (mixing layer), Re_lambda 80 assumed",2.165,3.409,3.714
+"Tanahashi 2001 (mixing layer)",0.476,0.750,0.817
+"Das 2006 (channel)",0.375,0.586,0.691
+"Jimenez and Wray 1998, worms, u0/u'",0.879,0.970,0.977

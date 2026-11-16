@@ -32,7 +32,7 @@ import sourcedata as sd
 
 X = sd.x
 GROUP = {"Ghira22": "A", "Ghira25": "A", "Jimenez93": "A", "DaSilva11": "A",
-         "Tanahashi01": "B", "Kida02": "B", "Pirozzoli09": "B", "Ishihara13": "B", "Wall": "B",
+         "Tanahashi01": "B", "Kida02": "B", "Pirozzoli09": "B", "Ishihara13": "B", "Das06": "B", "Miyauchi06": "B", "Wang07": "B",
          "Aligolzadeh23": "C", "Mouri03": "C", "Mouri04": "C", "Mouri07": "C", "Mouri09": "C", "Belin96": "C", "Sassa05": "C"}
 GNAME = {"A": "A  DNS, intense (top 1% volume)", "B": "B  DNS, whole tubes (mean or mode)", "C": "C  experiments (probe, PIV)"}
 COLOUR = {"A": "#c0392b", "B": "#2471a3", "C": "#1e8449"}

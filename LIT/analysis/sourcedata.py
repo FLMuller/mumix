@@ -99,20 +99,24 @@ g25["epsunit"] = "code units"
 j93 = source(key="Jimenez93", cite="Jim&eacute;nez, Wray, Saffman and Rogallo (1993)", short="Jim&eacute;nez et al. (1993)", tubes="intense",
              where=r"Table 3 (average worm characteristics from the tracking algorithm, one row per simulation); the algorithm is described in the text above the table.",
              selection=r"Worms: connected regions of vorticity above a threshold (the 1% of the volume of highest vorticity); the radius is the \(1/e\) radius of a Gaussian fitted to the azimuthal mean of the axial vorticity.",
-             eqs=[r"r_{\max}=\sqrt{x}\,R_B=1.12\,R", r"\dfrac{\Gamma}{\nu}=\dfrac{Re_\gamma}{Re_\lambda^{1/2}}\,Re_\lambda^{1/2}"],
+             eqs=[r"r_{\max}=\sqrt{x}\,R_B=1.12\,R", r"\dfrac{\Gamma}{\nu}=\dfrac{Re_\gamma}{Re_\lambda^{1/2}}\,Re_\lambda^{1/2}",
+                  r"\dfrac{U_{\max}}{U_\eta}=\dfrac{\Gamma/\nu}{8.784\,r_{\max}/\eta}\qquad(\text{the swirl is not listed: derived from the total circulation and the radius})"],
              notes=r"The \(1/e\) radius of a Gaussian vorticity profile is the Burgers radius. The circulation of the table is that of the fitted Gaussian (the total circulation): \(\Gamma/\nu=Re_\gamma\). \(\nu\) is not read here because the copy of Table 1 is a scan.")
 for Re, R in ((35.8, 4.22), (62.8, 4.16), (94.5, 4.16), (168.1, 3.85)):
     row(j93, "rmax", Re, None, ["%.2f" % R], 1.12 * R, "fit")
 # the circulation column of Table 3 (Re_gamma/Re_lambda^(1/2): the circulation of the fitted Gaussian, so the total circulation; checked on the page image 2026-11-12)
 for Re, RG in ((35.8, 21.1), (62.8, 17.0), (94.5, 18.1), (168.1, 16.5)):
     row(j93, "gam", Re, None, ["%.1f" % RG], RG * math.sqrt(Re), "cmp")
-j93["rawcols"] = {"rmax": [r"\(R/\eta\)"], "gam": [r"\(Re_\gamma Re_\lambda^{-1/2}\)"]}
+# the swirl is not listed; it follows from the total circulation and the radius: Gamma/nu = 8.784 r_max U_max (Burgers) -> U_max/U_eta = Gamma/nu / (8.784 r_max/eta)   (added 2026-11-14)
+for Re, R, RG in ((35.8, 4.22, 21.1), (62.8, 4.16, 17.0), (94.5, 4.16, 18.1), (168.1, 3.85, 16.5)):
+    row(j93, "swirl", Re, None, ["%.1f" % RG, "%.2f" % R], RG * math.sqrt(Re) / (G * 1.12 * R), "cmp", "derived from the listed circulation and the radius")
+j93["rawcols"] = {"rmax": [r"\(R/\eta\)"], "gam": [r"\(Re_\gamma Re_\lambda^{-1/2}\)"], "swirl": [r"\(Re_\gamma Re_\lambda^{-1/2}\)", r"\(R/\eta\)"]}
 j93["nuunit"] = ""
 
 # ----------------------------------------------------------------------------------------------- Tanahashi 2001
 t01 = source(key="Tanahashi01", cite="Tanahashi, Iwase and Miyauchi (2001)", short="Tanahashi et al. (2001)", tubes="whole",
              where=r"Fig. 7 and the text around it (DNS of a turbulent mixing layer, \(Re_{\theta0}=500\)).",
-             selection=r"Coherent fine-scale eddies educed with the second invariant of the velocity gradient and the vorticity, without a vorticity threshold; the radius is the distance from the centre to the maximum of the mean azimuthal velocity.",
+             selection=r"Coherent fine-scale eddies educed from the local maxima of the second invariant of the velocity gradient (the scheme of Tanahashi et al. 1999; the statistics are those of every eddy found, thresholds are used for visualisation only: Q* >= 0.03 and Q* Re_lambda >= 1); the radius is the distance from the centre to the maximum of the mean azimuthal velocity.",
              eqs=[r"r_{\max}=\dfrac{D}{2}"],
              notes=r"The probability density function of the diameter peaks at \(D\approx9\,\eta\) (the text says the mean diameter stays about \(8\,\eta\)). Fig. 1(b) of the paper gives \(Re_\lambda\) against time: about 80 (75&ndash;85, read from the figure) for \(Re_{\omega,0}=500\) at the times analysed (\(t=70\)&ndash;130); the text says the highest value is about 100, for \(Re_{\omega,0}=900\). Ghira et al. (2022), Table I, list this flow at \(Re_\lambda=80\)&ndash;100. (Until 2026-11-12 the page assumed 200.)")
 row(t01, "rmax", 80, None, ["9 (peak of the pdf)"], 4.5, "fit", "Re_lambda read from Fig. 1(b)")
@@ -221,8 +225,8 @@ b96 = source(key="Belin96", cite="Belin, Maurer, Tabeling and Willaime (1996)", 
              selection=r"Intense events in the tails of the pdf of the velocity derivative, in helium gas between counter-rotating disks (hot film on a 7 \(\mu\)m carbon fibre, resolution 0.2&ndash;3 \(\eta\)), selected by conditional sampling and interpreted as Burgers filaments crossing the probe close to their axis; \(R\) is the Gaussian width of the vorticity, \(\omega=\omega_0e^{-r^2/2R^2}\).",
              eqs=[r"R=0.31\,U\,\Delta t\quad(\text{peak spacing }\Delta x=U\Delta t\approx3.2\,R=2\,r_{\max})",
                   r"r_{\max}=\sqrt{2x}\,R=1.585\,R\qquad(R_B=\sqrt{2}\,R)"],
-             notes=r"The method measures a time record, which the mean velocity \(U\) turns into a distance (frozen flow); the radius follows from the spacing of the two extrema of the signal as the filament passes, and the peak amplitude gives \(U_{\max}\). The value \(R=3.5\,\eta\) is the position of the maximum of the size distribution seen by the probe (Fig. 5, which collapses for \(Re_\lambda=151\)&ndash;718), quoted by the authors as the mean worm size; the same distribution built from the DNS of Jim&eacute;nez et al. through the same probe geometry (their Eq. 9) peaks at 2.8 \(\eta\), so the probe sizes are 1.25 times the DNS sizes. The distribution is skewed with a tail to about 20 \(\eta\), and a rough reading of the figure puts its mean near 6 \(\eta\) and its median near 5 \(\eta\). The row uses the peak, \(r_{\max}=1.585\times3.5=5.5\,\eta\), as a range of \(Re_\lambda\). Above \(Re_\lambda\approx700\) the size distribution widens: the mean velocity increment across the filament decreases and its mean radius increases so that the circulation does not change; the authors read this as an instability of the filaments. The paper has no table of \(R\), \(U_{\max}\) or the circulation by \(Re_\lambda\).")
-row(b96, "rmax", "151&ndash;718", None, ["3.5 (text)"], 1.585 * 3.5, "cmp", "range")
+             notes=r"The method measures a time record, which the mean velocity \(U\) turns into a distance (frozen flow); the radius follows from the spacing of the two extrema of the signal as the filament passes, and the peak amplitude gives \(U_{\max}\). The value \(R=3.5\,\eta\) is the position of the maximum of the size distribution seen by the probe (Fig. 5, which collapses for \(Re_\lambda=151\)&ndash;718), quoted by the authors as the mean worm size; the same distribution built from the DNS of Jim&eacute;nez et al. through the same probe geometry (their Eq. 9) peaks at 2.8 \(\eta\), so the probe sizes are 1.25 times the DNS sizes. The distribution is skewed with a tail to about 20 \(\eta\), and a rough reading of the figure puts its mean near 6 \(\eta\) and its median near 5 \(\eta\). The row uses the median of the digitised Fig. 5, \(r_{\max}=1.585\times4.8=7.6\,\eta\) (the peak, 5.5 \(\eta\), is a statistic of the chord distribution), as a range of \(Re_\lambda\); the wire-and-tube model corrects it (appendix A0c). Above \(Re_\lambda\approx700\) the size distribution widens: the mean velocity increment across the filament decreases and its mean radius increases so that the circulation does not change; the authors read this as an instability of the filaments. The paper has no table of \(R\), \(U_{\max}\) or the circulation by \(Re_\lambda\).")
+row(b96, "rmax", "151&ndash;718", None, ["4.8 (median of the digitised Fig. 5)"], 1.585 * 4.8, "cmp", "range")
 b96["rawcols"] = {"rmax": [r"\(R/\eta\)"]}
 b96["nuunit"] = ""
 
@@ -248,7 +252,7 @@ k02["epsunit"] = "code units"
 # ----------------------------------------------------------------------------------------------- Pirozzoli 2009
 p09 = source(key="Pirozzoli09", cite="Pirozzoli (2009, 2012)", short="Pirozzoli (2009, 2012)", tubes="whole",
              where=r"Pirozzoli (2009), Table 1 (average radius of vortex cores extracted from DNS and from the experiments of Mouri et al.); Pirozzoli (2012), Sec. 3 and Fig. 2 (pdfs of core radius and induced velocity, DNS at several \(Re_\lambda\)).",
-             selection=r"Vortex cores scanned out of the DNS database without a vorticity threshold (candidate centres from pressure minima, \(r_0\) the radius of maximum velocity); all classes of vortices.",
+             selection=r"Vortex cores scanned out of the DNS database without a vorticity threshold (candidate centres at local maxima of the vorticity modulus in the coordinate planes, vorticity within 20 degrees of the plane normal, a clear swirling pattern required; \(r_0\) the radius of maximum velocity); all classes of vortices.",
              eqs=[r"r_{\max}=r_0"],
              notes=r"One DNS value, \(Re_\lambda=250\): \(r_0/\eta=5.12\). Pirozzoli (2012) states that typical tubes have \(r_0\approx6\,\eta\) and \(v_0\approx2\,u_K\) at all the \(Re_\lambda\) of his DNS, without a table. The experimental entries of the table (5.18, 5.24, 5.56, 5.97, 5.66 at \(Re_\lambda\) 332, 488, 716, 945, 1080) repeat the 0.1%-threshold radii of Mouri et al. (2007) and are not counted again.")
 row(p09, "rmax", 250, None, ["5.12"], 5.12, "cmp", "DNS")
@@ -280,19 +284,35 @@ for Re, W, field in ((19, 2.1, "LSG"), (19, 2.8, "LSG"), (190, 4.0, "LSE"), (300
 s05["rawcols"] = {"rmax": [r"\(D/\eta\)"], "swirl": [r"\(w_{\max}/u_K\)"]}
 s05["nuunit"] = ""
 
-# ----------------------------------------------------------------------------------------------- wall-bounded and mixing-layer DNS (no Re_lambda)
-w = source(key="Wall", cite="Das et al. (2006); Miyauchi et al. (2006); Wang et al. (2007)", short="Das, Miyauchi, Wang (2006, 2007)", tubes="whole",
-           where=r"Abstracts (Das et al., Theor. Comput. Fluid Dyn. 20, 55; Miyauchi et al., Fluid Mech. Appl. 79, 71; Wang et al., Int. J. Heat Fluid Flow 28, 1280).",
-           selection=r"Coherent fine-scale eddies in channel flow (\(Re_\tau\) up to 1270) and in a mixing layer (\(Re_{\omega0}=700\)), most expected values of the pdfs.",
-           eqs=[r"r_{\max}=\dfrac{D}{2}"],
-           notes=r"These flows have no isotropic \(Re_\lambda\), so the rows cannot be placed on the \(Re_\lambda\) axis. Das et al.: \(D=10\)&ndash;\(12\,\eta\) and a mean maximum azimuthal velocity \(0.5\)&ndash;\(0.6\,u'_{\text{rms}}\); Miyauchi et al.: \(D\approx10\,\eta\), \(2.0\,u_K\) near the wall and \(8.5\,\eta\), \(1.7\,u_K\) in the logarithmic region; Wang et al.: \(D\approx8\,\eta\), swirl \(2.0\to1.2\,u_K\) through the transition.")
-row(w, "rmax", "&mdash;", None, ["10&ndash;12 (channel)"], 5.5, "cmp", "Das 2006")
-row(w, "rmax", "&mdash;", None, ["10; 8.5 (channel)"], 4.6, "cmp", "Miyauchi 2006")
-row(w, "rmax", "&mdash;", None, ["8 (mixing layer)"], 4.0, "cmp", "Wang 2007")
-row(w, "swirl", "&mdash;", None, ["2.0; 1.7 (channel)"], 1.85, "cmp", "Miyauchi 2006")
-row(w, "swirl", "&mdash;", None, ["2.0 to 1.2 (mixing layer)"], 1.6, "cmp", "Wang 2007")
-w["rawcols"] = {"rmax": [r"\(D/\eta\)"], "swirl": [r"\(u_{\theta,\max}/u_K\)"]}
-w["nuunit"] = ""
+# ----------------------------------------------------------------------------------------------- wall-bounded and mixing-layer DNS: three papers, one source each (split 2026-11-15)
+das = source(key="Das06", cite="Das, Tanahashi, Shoji and Miyauchi (2006)", short="Das et al. (2006)", tubes="whole",
+             where=r"Abstract (Das et al., Theor. Comput. Fluid Dyn. 20, 55); the pdfs are in its Fig. 7.",
+             selection=r"Coherent fine-scale eddies in channel flow (\(Re_\tau\) up to 1270), most expected value of the pdf of the diameter.",
+             eqs=[r"r_{\max}=\dfrac{D}{2}"],
+             notes=r"Channel flow: no isotropic \(Re_\lambda\) in the paper, so the row cannot be placed on the \(Re_\lambda\) axis. \(D=10\)&ndash;\(12\,\eta\) and a mean maximum azimuthal velocity \(0.5\)&ndash;\(0.6\,u'_{\text{rms}}\) (in units of \(u'_{\text{rms}}\), not \(u_K\): not converted).")
+row(das, "rmax", "&mdash;", None, ["10&ndash;12 (channel)"], 5.5, "cmp", "Das 2006")
+das["rawcols"] = {"rmax": [r"\(D/\eta\)"]}
+das["nuunit"] = ""
+
+miy = source(key="Miyauchi06", cite="Miyauchi et al. (2006)", short="Miyauchi et al. (2006)", tubes="whole",
+             where=r"Abstract (Miyauchi et al., Fluid Mech. Appl. 79, 71); there is no pdf of this paper in the folder.",
+             selection=r"Coherent fine-scale eddies in channel flow, most expected values of the pdfs.",
+             eqs=[r"r_{\max}=\dfrac{D}{2}"],
+             notes=r"Channel flow: no isotropic \(Re_\lambda\) in the abstract. \(D\approx10\,\eta\), \(2.0\,u_K\) near the wall and \(8.5\,\eta\), \(1.7\,u_K\) in the logarithmic region; the rows are the means of the two.")
+row(miy, "rmax", "&mdash;", None, ["10; 8.5 (channel)"], 4.6, "cmp", "Miyauchi 2006")
+row(miy, "swirl", "&mdash;", None, ["2.0; 1.7 (channel)"], 1.85, "cmp", "Miyauchi 2006")
+miy["rawcols"] = {"rmax": [r"\(D/\eta\)"], "swirl": [r"\(u_{\theta,\max}/u_K\)"]}
+miy["nuunit"] = ""
+
+wng = source(key="Wang07", cite="Wang, Tanahashi and Miyauchi (2007)", short="Wang et al. (2007)", tubes="whole",
+             where=r"Abstract (Wang et al., Int. J. Heat Fluid Flow 28, 1280); the pdfs are in its Figs. 6 (diameter) and 7 (maximum azimuthal velocity); \(Re_\lambda\) of the layer in its Fig. 1a.",
+             selection=r"Coherent fine-scale eddies in a spatially developing mixing layer (\(Re_{\omega0}=700\)), most expected values of the pdfs.",
+             eqs=[r"r_{\max}=\dfrac{D}{2}"],
+             notes=r"\(Re_\lambda=115\) is read from the flat end of the curve of Fig. 1a (the centre of the spatially developing layer, \(x>14\Lambda\); the temporally developing layer of Tanahashi et al. (2001) ends at 85). \(D\approx8\,\eta\), swirl \(2.0\to1.2\,u_K\) through the transition.")
+row(wng, "rmax", 115, None, ["8 (mixing layer)"], 4.0, "cmp", "Wang 2007")   # Re_lambda 115: the flat end (x > 14 Lambda) of the curve of Fig. 1a of Wang et al., spatially developing mixing layer (2026-11-14)
+row(wng, "swirl", 115, None, ["2.0 to 1.2 (mixing layer)"], 1.6, "cmp", "Wang 2007")
+wng["rawcols"] = {"rmax": [r"\(D/\eta\)"], "swirl": [r"\(u_{\theta,\max}/u_K\)"]}
+wng["nuunit"] = ""
 
 BY_KEY = {s["key"]: s for s in SOURCES}
 
@@ -314,7 +334,7 @@ METHOD = {
     "Mouri04": "hot wire, 1D velocity increments", "Mouri03": "hot wire, 1D velocity increments, grid",
     "Belin96": "hot film, 1D velocity derivative, helium",
     "Kida02": "DNS, forced isotropic", "Pirozzoli09": "DNS, isotropic", "Ishihara13": "DNS, isotropic 4096^3",
-    "Sassa05": "probe records, conditional sampling", "Wall": "DNS, channel and mixing layer",
+    "Sassa05": "probe records, conditional sampling", "Das06": "DNS, channel", "Miyauchi06": "DNS, channel", "Wang07": "DNS, mixing layer",
 }
 for _s in SOURCES:
     _s["method"] = METHOD[_s["key"]]
@@ -338,7 +358,9 @@ WHY = {
     ("Pirozzoli09", "swirl"): "typical value without an Re<sub>&lambda;</sub>",
     ("Ishihara13", "rmax"): "order of magnitude only (D ~ 10 &eta;)",
     ("Sassa05", "rmax"): "trend only; the values are in a figure",
-    ("Wall", "*"): "wall or mixing-layer flow, no isotropic Re<sub>&lambda;</sub>",
+    ("Das06", "*"): "channel flow, no isotropic Re<sub>&lambda;</sub>; not fitted for now",
+    ("Miyauchi06", "*"): "channel flow, no isotropic Re<sub>&lambda;</sub>; not fitted for now",
+    ("Wang07", "*"): "mixing layer; Re<sub>&lambda;</sub> = 115 is read from his Fig. 1a; not fitted for now",
 }
 
 
@@ -355,14 +377,16 @@ CORR = {
                         r"crossings lower the amplitude by a factor 2&ndash;3.5 (tilt limit 20&ndash;70&deg;, true radius 4.5&ndash;5.4 \(\eta\)); the factor 3 is the value at which the swirl lies "
                         r"within 3% of the common curve through Ghira et al. (&times;0.6), Da Silva et al. and Kida et al. (the data allow 2.5 as well). The threshold averages of Mouri et al. (2004, 2007) "
                         r"come from the same experiments and are left out of the fits (A8, A9)."},
-    "Ghira22": {"swirl": 0.6,
-                "text": r"Swirl multiplied by 0.6. The listed \(U_{ivs}/u'=1.0\)&ndash;1.25 is high against the other simulations of intense tubes (Jim&eacute;nez and Wray 0.86&ndash;0.99, "
+    "Ghira22": {"rmax": 1.25, "swirl": 0.67,
+                "text": r"Radius multiplied by 1.25, swirl by 0.67. The criterion of Ghira et al. keeps the 1% of the volume with the strongest vorticity, a subset of the tubes that is smaller and faster than the whole population. Reference: Pirozzoli (2012), whose pdfs of the radius and of the maximum velocity are of all the vortex cores found, with no lower threshold on the vorticity; they are linked by his most frequent circulation, &Gamma;/&nu; = 80, and the cut of Ghira et al. is applied to them with the tubes filling 35% of the flow (section 9a). The multipliers are the value of the reference over the value of the kept tubes: radius 1.22&ndash;1.28 (the narrow family of the radius pdf over the mean radius of the kept tubes), swirl 0.66&ndash;0.68 (all tubes over the kept tubes); 1.25 and 0.67 are used. Swirl: The listed \(U_{ivs}/u'=1.0\)&ndash;1.25 is high against the other simulations of intense tubes (Jim&eacute;nez and Wray 0.86&ndash;0.99, "
                         r"Da Silva et al. 0.68&ndash;0.76, mixing layer 0.5) and the hot wire (0.5&ndash;0.8). Their own mean axis vorticity (\(\omega_{ivs}/\omega_{rms}=3.9\)&ndash;4.8, Table III) "
                         r"and the Burgers radius imply a peak swirl of 5.5&ndash;6.2 \(U_\eta\) at all \(Re_\lambda\), against the listed 6&ndash;9.5: the excess grows with \(u'\), which "
                         r"suggests that the swirl at \(R_{ivs}\) includes a velocity from the surrounding flow. A constant factor of 0.58 (0.56&ndash;0.60 for the seven runs) puts the swirl on "
-                        r"the curve \(U_{\max}/U_\eta\propto Re_\lambda^{0.34}\) of the other sources; 0.6 is used. At the same \(Re_\lambda\) of 83&ndash;120 the swirl of Kida et al. (3.7&ndash;3.9) "
+                        r"the curve \(U_{\max}/U_\eta\propto Re_\lambda^{0.34}\) of the other sources; 0.6 was used before the derivation from the population, which gives 0.66&ndash;0.68. At the same \(Re_\lambda\) of 83&ndash;120 the swirl of Kida et al. (3.7&ndash;3.9) "
                         r"and Da Silva et al. (3.7&ndash;4.3) is well below the listed 6.1&ndash;7.1, so more data at low \(Re_\lambda\) support moving Ghira et al. than moving the others; with the "
                         r"swirl as listed the fits are 17&ndash;19% off, against 8% with the factor."},
+    "Ghira25": {"rmax": 1.25, "swirl": 0.67,
+                "text": r"The same method and group as Ghira et al. (2022) (the 1% of the volume with the strongest vorticity): the same factors, radius 1.25 and swirl 0.67, so that the two papers are treated alike (see the correction of Ghira et al. 2022)."},
 }
 
 

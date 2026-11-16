@@ -1,0 +1,48 @@
+Re_lambda 332 (probe 1.9 eta, increment 0.70 eta): population mean r_max 8.58, U_max 14.8
+   0.1%       R0 8.12 (paper 5.18)  V0/uK 13.00 (paper 7.60) | peak reading r 8.00, v 12.24 | true r 7.54, U 20.0 | events 1112
+   1%         R0 10.61 (paper 6.53)  V0/uK 10.62 (paper 5.61) | peak reading r 10.50, v 9.95 | true r 9.46, U 18.2 | events 2938
+   all k=1.5  R0 12.18 (paper 8.45)  V0/uK 8.24 (paper 2.43) | peak reading r 12.00, v 7.75 | true r 9.09, U 16.8 | events 6697
+   all k=2    R0 11.30 (paper 8.45)  V0/uK 9.13 (paper 2.43) | peak reading r 11.00, v 8.61 | true r 8.71, U 17.2 | events 5122
+   all k=3    R0 10.04 (paper 8.45)  V0/uK 10.61 (paper 2.43) | peak reading r 10.00, v 10.04 | true r 7.94, U 18.0 | events 3177
+Re_lambda 719 (probe 3.5 eta, increment 1.23 eta): population mean r_max 8.58, U_max 19.2
+   0.1%       R0 8.29 (paper 5.21)  V0/uK 15.93 (paper 8.67) | peak reading r 8.00, v 15.22 | true r 6.66, U 24.6 | events 1339
+   1%         R0 10.32 (paper 6.50)  V0/uK 12.87 (paper 6.11) | peak reading r 10.00, v 12.21 | true r 8.20, U 22.8 | events 3228
+   all k=1.5  R0 13.11 (paper 8.56)  V0/uK 9.73 (paper 2.43) | peak reading r 13.00, v 9.14 | true r 9.44, U 21.4 | events 7269
+   all k=2    R0 12.22 (paper 8.56)  V0/uK 10.78 (paper 2.43) | peak reading r 12.00, v 10.16 | true r 9.08, U 21.8 | events 5696
+   all k=3    R0 11.02 (paper 8.56)  V0/uK 12.52 (paper 2.43) | peak reading r 11.00, v 11.84 | true r 8.47, U 22.6 | events 3753
+Re_lambda 1098 (probe 5.6 eta, increment 1.44 eta): population mean r_max 8.58, U_max 22.1
+   0.1%       R0 9.17 (paper 5.64)  V0/uK 17.60 (paper 10.00) | peak reading r 9.00, v 16.88 | true r 7.04, U 28.0 | events 1495
+   1%         R0 11.13 (paper 6.61)  V0/uK 14.27 (paper 6.83) | peak reading r 11.00, v 13.56 | true r 8.44, U 26.1 | events 3394
+   all k=1.5  R0 13.69 (paper 8.91)  V0/uK 10.66 (paper 2.56) | peak reading r 13.50, v 10.04 | true r 9.53, U 24.5 | events 7427
+   all k=2    R0 12.87 (paper 8.91)  V0/uK 11.78 (paper 2.56) | peak reading r 12.50, v 11.14 | true r 9.32, U 24.9 | events 5911
+   all k=3    R0 11.73 (paper 8.91)  V0/uK 13.69 (paper 2.56) | peak reading r 11.50, v 12.99 | true r 8.79, U 25.8 | events 3978
+Re_lambda 1934 (probe 10.5 eta, increment 2.22 eta): population mean r_max 8.58, U_max 26.7
+   0.1%       R0 11.43 (paper 6.20)  V0/uK 20.72 (paper 14.00) | peak reading r 11.00, v 20.10 | true r 8.21, U 34.7 | events 1524
+   1%         R0 12.83 (paper 7.03)  V0/uK 16.40 (paper 9.17) | peak reading r 12.50, v 15.77 | true r 8.96, U 31.4 | events 3413
+   all k=1.5  R0 15.05 (paper 8.81)  V0/uK 12.10 (paper 3.18) | peak reading r 14.50, v 11.50 | true r 9.80, U 29.6 | events 7380
+   all k=2    R0 14.37 (paper 8.81)  V0/uK 13.46 (paper 3.18) | peak reading r 14.00, v 12.83 | true r 9.61, U 30.1 | events 5855
+   all k=3    R0 13.29 (paper 8.81)  V0/uK 15.71 (paper 3.18) | peak reading r 13.00, v 15.05 | true r 9.22, U 31.1 | events 3941
+Sassa, Re_lambda 19 (probe 1 eta): population mean r_max 8.58, U_max 5.7
+   C=1.5    diameter D/eta 23.0 (r_peak x 2), V peak 3.77 uK | Burgers R0 11.57 V0 4.03 | true r 10.69 U 6.8 | events 4767
+   C=2.0    diameter D/eta 22.0 (r_peak x 2), V peak 4.21 uK | Burgers R0 10.93 V0 4.53 | true r 10.37 U 7.3 | events 3133
+   C=2.5    diameter D/eta 20.0 (r_peak x 2), V peak 4.58 uK | Burgers R0 10.14 V0 4.93 | true r 9.91 U 7.7 | events 2077
+   C=3.0    diameter D/eta 19.0 (r_peak x 2), V peak 4.88 uK | Burgers R0 9.60 V0 5.29 | true r 9.52 U 8.1 | events 1409
+   C=3.5    diameter D/eta 17.0 (r_peak x 2), V peak 5.15 uK | Burgers R0 8.65 V0 5.58 | true r 8.51 U 8.4 | events 995
+Sassa, Re_lambda 300 (probe 1 eta): population mean r_max 8.58, U_max 14.3
+   C=1.5    diameter D/eta 26.0 (r_peak x 2), V peak 6.87 uK | Burgers R0 13.19 V0 7.34 | true r 10.74 U 15.8 | events 7794
+   C=2.0    diameter D/eta 25.0 (r_peak x 2), V peak 7.51 uK | Burgers R0 12.79 V0 8.03 | true r 10.85 U 16.1 | events 6295
+   C=2.5    diameter D/eta 25.0 (r_peak x 2), V peak 8.05 uK | Burgers R0 12.55 V0 8.62 | true r 10.94 U 16.4 | events 5208
+   C=3.0    diameter D/eta 24.0 (r_peak x 2), V peak 8.66 uK | Burgers R0 12.14 V0 9.27 | true r 10.90 U 16.7 | events 4232
+   C=3.5    diameter D/eta 24.0 (r_peak x 2), V peak 9.16 uK | Burgers R0 11.95 V0 9.82 | true r 10.91 U 17.1 | events 3535
+Sassa, Re_lambda 820 (probe 1 eta): population mean r_max 8.58, U_max 20.0
+   C=1.5    diameter D/eta 28.0 (r_peak x 2), V peak 8.63 uK | Burgers R0 13.97 V0 9.25 | true r 10.73 U 21.9 | events 8385
+   C=2.0    diameter D/eta 27.0 (r_peak x 2), V peak 9.34 uK | Burgers R0 13.59 V0 10.01 | true r 10.92 U 22.2 | events 7021
+   C=2.5    diameter D/eta 26.0 (r_peak x 2), V peak 10.04 uK | Burgers R0 13.17 V0 10.75 | true r 10.97 U 22.4 | events 5938
+   C=3.0    diameter D/eta 26.0 (r_peak x 2), V peak 10.65 uK | Burgers R0 12.95 V0 11.41 | true r 11.05 U 22.6 | events 5106
+   C=3.5    diameter D/eta 25.0 (r_peak x 2), V peak 11.27 uK | Burgers R0 12.61 V0 12.06 | true r 11.08 U 22.9 | events 4387
+Sassa, Re_lambda 2391 (probe 1 eta): population mean r_max 8.58, U_max 28.6
+   C=1.5    diameter D/eta 29.0 (r_peak x 2), V peak 11.00 uK | Burgers R0 14.67 V0 11.81 | true r 10.72 U 31.1 | events 8745
+   C=2.0    diameter D/eta 28.0 (r_peak x 2), V peak 11.85 uK | Burgers R0 14.27 V0 12.70 | true r 10.94 U 31.4 | events 7528
+   C=2.5    diameter D/eta 28.0 (r_peak x 2), V peak 12.63 uK | Burgers R0 14.03 V0 13.55 | true r 11.11 U 31.5 | events 6555
+   C=3.0    diameter D/eta 27.0 (r_peak x 2), V peak 13.41 uK | Burgers R0 13.63 V0 14.38 | true r 11.15 U 31.8 | events 5749
+   C=3.5    diameter D/eta 26.0 (r_peak x 2), V peak 14.15 uK | Burgers R0 13.26 V0 15.15 | true r 11.18 U 32.0 | events 5076

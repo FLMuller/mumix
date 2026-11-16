@@ -32,7 +32,7 @@ Radius = r_max/η = D/(2η) (Pirozzoli: r0/η). Fit: a1·LN(median1, s1) + (1−
 | | 512x769x384 (2 pi d x 2d x pi d) | Re_tau = 800 | 9.82 | 6.54 | not given | |
 | Das 2006 (channel) | 128x129x128 | Re_tau = 180 (also 100) | 17.7 (computed) | 8.8 (computed) | not given | Tanahashi local flow pattern; eta = (nu^3/eps)^(1/4) |
 | | 192x193x160 | Re_tau = 180 | - | - | not given | |
-| Pirozzoli 2012 (isotropic) | 256^3 | Re_lambda = 38.3 | - | - | kmax eta = 8.55 | Candidate centres at pressure minima in coordinate planes; r0 = radius of maximum velocity; arbitrary core shapes |
+| Pirozzoli 2012 (isotropic) | 256^3 | Re_lambda = 38.3 | - | - | kmax eta = 8.55 | Candidate centres at local maxima of the vorticity modulus in coordinate planes (vorticity within 20 degrees of the plane normal, clear swirl pattern required); r0 = radius of maximum velocity; arbitrary core shapes |
 | | 256^3 | Re_lambda = 71.3 | - | - | kmax eta = 3.81 | |
 | | 256^3 | Re_lambda = 99.9 | - | - | kmax eta = 2.16 | |
 | | 512^3 | Re_lambda = 98.6 (D: the curve) | - | - | kmax eta = 4.49 | |

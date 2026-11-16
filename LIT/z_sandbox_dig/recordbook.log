@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\LIT\record\recordbook.py", line 295, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\LIT\record\recordbook.py", line 280, in main
+    made = build()
+  File "C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\LIT\record\recordbook.py", line 263, in build
+    recordtabs.fill(book)
+    ~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\LIT\record\recordtabs.py", line 244, in fill
+    generic_tab(book, src)
+    ~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\LIT\record\recordtabs.py", line 152, in generic_tab
+    mourisassa.extra(tab, src["key"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Frans PREFLM\OneDrive - University of Leeds\code\Claude\mumix\LIT\record\mourisassa.py", line 70, in extra
+    cls = [c for c in classes if round(c["Re_lambda"]) == round(row["Re_lambda"])][0]
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range

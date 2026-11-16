@@ -1,0 +1,228 @@
+"""data_corrected_plot.py  v01  The tube data of the page as read, and with the model's multipliers applied to the observed (probe) data: r_max / eta, U_max / U_eta and G = Gamma / nu against Re_lambda.
+Rows      top: every data point as read (fittingtool/data/tubes.csv, raw values); bottom: the DNS rows as read and the observed rows corrected with the multipliers of the Belin-fit tubes (belin_correctors*.json).
+Columns   r_max / eta, U_max / U_eta, G = 8.784 r_max U_max / nu (from the two values of a row; a row without a swirl but with a listed Gamma / nu, Jimenez et al., shows the listed value; otherwise no G, see data_G_derivation.csv).
+Multipliers (corrected = m x printed value; interpolated linearly in log Re_lambda, constant outside the Re_lambda range of the runs, 100-2000)
+          Belin 1996: r of Belin's wire and U by his published rule (shape match, belin_correctors.json); his U is not a row of the table: it is derived from his Fig. 6, U_max / U_eta = 1.585 exp(mu) Re_lambda^(1/2) / r_max with the median exp(mu) of the lognormal fit of x and r_max = 7.608 eta of the table row;  Mouri et al. 2007 (0.1% and 1% classes, the class of a row is the one with the smaller r at the same Re_lambda: 0.1%) and 2004 (1% class): the Mouri class multipliers;
+          Mouri and Hori 2009: all-tube average at 0.5 sigma (belin_correctors_all.json);  Sassa and Makita 2005: C = 2.5 (belin_correctors_sassa.json; below Re_lambda 100 the value at 100).
+          Ghira et al. 2022 and 2025: radius x 1.25 and swirl x 0.67 (section 9a, from the all-tube population of Pirozzoli 2012).
+          Not corrected (no multiplier yet): Mouri 2003 (a range only), Aligolzadeh 2023, the wall flows and the other DNS rows.
+Usage     python data_corrected_plot.py     writes data_corrected_plot.png and data_G_derivation.csv
+Versions  M01 m01.v04 (2026-11-15): trends of r and U fitted to the dots of the bottom row (fit_trends) and drawn in red; data_corrected_fits.json.
+          M01 m01.v03 (2026-11-15): linear axes (Re_lambda and G).
+          M01 m01.v02 (2026-11-15): Ghira et al. (2022, 2025) corrected with radius x 1.25 and swirl x 0.67 in the bottom row.
+          M01 m01.v01 (2026-11-14): first version.
+"""
+import csv
+import json
+import math
+import os
+import sys
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "fittingtool"))
+import fitdata                        # noqa: E402
+sys.path.insert(0, HERE)
+import belin_gamma_pdf as bg          # noqa: E402
+
+DATA = os.path.join(os.path.dirname(HERE), "fittingtool", "data", "tubes.csv")
+G0 = fitdata.G0
+
+
+def load(name):
+    with open(os.path.join(HERE, name), encoding="utf-8") as f:
+        return json.load(f)
+
+
+class Table:
+    """Multiplier against Re_lambda from a list of (Re_lambda, value), linear in log Re_lambda, constant outside."""
+
+    def __init__(self, points):
+        pts = sorted(points)
+        self.x = np.log([p[0] for p in pts])
+        self.y = np.array([p[1] for p in pts])
+
+    def __call__(self, re):
+        return float(np.interp(math.log(re), self.x, self.y))
+
+
+def tables():
+    c = load("belin_correctors.json")
+    a = load("belin_correctors_all.json")
+    s = load("belin_correctors_sassa.json")
+    t = {}
+    for name in ("Mouri 1%", "Mouri 0.1%"):
+        t[name] = (Table([(r["Re_lambda"], r["r"][name]["shape"]) for r in c]), Table([(r["Re_lambda"], r["U"][name]["shape"]) for r in c]))
+    t["Belin"] = (Table([(r["Re_lambda"], r["r"]["Belin's wire"]["shape"]) for r in c]), Table([(r["Re_lambda"], r["U"]["Belin's wire, published rule dS/(2 x 0.14)"]["shape"]) for r in c]))
+    t["Mouri09"] = (Table([(r["Re_lambda"], r["k=0.5"]["m_r"]) for r in a]), Table([(r["Re_lambda"], r["k=0.5"]["m_U"]) for r in a]))
+    t["Ghira"] = (Table([(100, 1.25), (2000, 1.25)]), Table([(100, 0.67), (2000, 0.67)]))                              # the 1%-volume DNS to the whole population (section 9a): radius x 1.25, swirl x 0.67
+    t["Sassa05"] = (Table([(r["Re_lambda"], r["C=2.5"]["m_r"]) for r in s]), Table([(r["Re_lambda"], r["C=2.5"]["m_U"]) for r in s]))
+    return t
+
+
+def fit_trends(out, exclude=()):
+    """Trends of r_max/eta and U_max/U_eta with Re_lambda fitted to the dots of the bottom row (the values as plotted there: Ghira and the observed rows corrected, the other DNS as read); the lines (rows with a range of Re_lambda: Belin, Mouri 2003, the range of Sassa) are not used.
+    Least squares of ln y on ln Re_lambda, each source with the same weight in each quantity (the weights 1/n of its points, scaled to sum to the number of points).  r: a constant or a power law, chosen by AICc;  U: a power law with a free exponent, and with the exponent 1/3 for comparison."""
+    pts = {"r": [], "U": []}
+    for d in out:
+        if d["lo"] is None or d["lo"] != d["hi"] or d["src"] in exclude:
+            continue
+        corr = d["corrected"] and (not d["method"].startswith("DNS") or d["src"].startswith("Ghira"))
+        for key, raw, lo in (("r", d["r_raw"], d.get("r_lo")), ("U", d["u_raw"], d.get("u_lo"))):
+            v = (lo if corr else raw)
+            if v is not None and v > 0:
+                pts[key].append((d["lo"], v, d["src"]))
+    fits = {}
+    for key, models in (("r", (("constant", 0), ("power", None), ("straight line", "line"))), ("U", (("power", None), ("power, exponent 1/3", 1.0 / 3.0), ("power, exponent 1/2", 0.5), ("straight line", "line")))):
+        data = pts[key]
+        re, y, src = np.array([p[0] for p in data]), np.array([p[1] for p in data]), [p[2] for p in data]
+        w = np.array([1.0 / src.count(s) for s in src])
+        w *= len(w) / w.sum()
+        x, ly = np.log(re), np.log(y)
+        n = len(y)
+        res = {}
+        for name, b in models:
+            if b == "line":                                                          # y = a + b Re, least squares of ln y (the same measure as the others)
+                from scipy.optimize import least_squares
+                p0 = np.polyfit(re, y, 1, w=np.sqrt(w))
+                sol = least_squares(lambda q: np.sqrt(w) * (ly - np.log(np.maximum(q[0] + q[1] * re, 1e-9))), [p0[1], p0[0]]).x
+                a_, b_, k = float(sol[0]), float(sol[1]), 2
+                rss = float(np.sum(w * (ly - np.log(a_ + b_ * re)) ** 2))
+                aic = n * math.log(rss / n) + 2 * k + 2 * k * (k + 1) / max(n - k - 1, 1)
+                res[name] = dict(a=a_, b=b_, k=k, rms_log_pct=100 * math.sqrt(rss / n), aicc=aic, line=True)
+                continue
+            if b is None:
+                A = np.c_[np.ones(n), x]
+                sol = np.linalg.lstsq(A * np.sqrt(w)[:, None], ly * np.sqrt(w), rcond=None)[0]
+                a_, b_, k = float(sol[0]), float(sol[1]), 2
+            else:
+                b_ = float(b)
+                a_ = float(np.sum(w * (ly - b_ * x)) / np.sum(w))
+                k = 1
+            rss = float(np.sum(w * (ly - a_ - b_ * x) ** 2))
+            aic = n * math.log(rss / n) + 2 * k + 2 * k * (k + 1) / max(n - k - 1, 1)
+            res[name] = dict(a=math.exp(a_), b=b_, k=k, rms_log_pct=100 * math.sqrt(rss / n), aicc=aic)
+        best = min((m for m in res if not res[m].get("line")), key=lambda m: res[m]["aicc"])
+        bm = res[best]
+        resid = ly - math.log(bm["a"]) - bm["b"] * x                                   # residuals of the best model, ln
+        by = {}
+        for s in sorted(set(src)):
+            sel = [i for i, q in enumerate(src) if q == s]
+            by[s] = dict(n=len(sel), mean_ln=float(np.mean(resid[sel])), sd_ln=float(np.std(resid[sel])))
+        fits[key] = dict(n=n, n_sources=len(set(src)), models=res, best=best, by_source=by, re_range=[float(re.min()), float(re.max())])
+    return fits
+
+
+def main():
+    rows = fitdata.load(DATA)
+    mult = tables()
+    pair = {}
+    for x in rows:                                                                  # the class of a Mouri 2007 row: at one Re_lambda the smaller r is the 0.1% class
+        if x["src"] == "Mouri07":
+            pair.setdefault(x["re"], []).append(x)
+    cls = {}
+    for re, rs in pair.items():
+        rs = sorted(rs, key=lambda x: x["r_raw"])
+        cls[rs[0]["id"]], cls[rs[-1]["id"]] = "Mouri 0.1%", "Mouri 1%"
+    out = []                                                                        # per row: raw r, u, corrected r, u, source of the multiplier
+    for x in rows:
+        key = {"Mouri07": cls.get(x["id"]), "Mouri04": "Mouri 1%", "Belin96": "Belin", "Mouri09": "Mouri09", "Sassa05": "Sassa05", "Ghira22": "Ghira", "Ghira25": "Ghira"}.get(x["src"])
+        f = dict(r=lambda re: 1.0, u=lambda re: 1.0)
+        if key:
+            f = dict(r=mult[key][0], u=mult[key][1] if mult[key][1] else (lambda re: 1.0))
+        lo, hi = x["re_lo"], x["re_hi"]
+        mid = math.sqrt(lo * hi) if lo is not None else None
+        d = dict(src=x["src"], tube_set=x["tube_set"], method=x["method"], lo=lo, hi=hi, r_raw=x["r_raw"], u_raw=x["u_raw"], gamma_listed=x["gamma_listed"], corrected=bool(key), key=key, id=x["id"])
+        if lo is not None:
+            d["r_lo"], d["r_hi"] = (None if x["r_raw"] is None else x["r_raw"] * f["r"](lo)), (None if x["r_raw"] is None else x["r_raw"] * f["r"](hi))
+            d["u_lo"], d["u_hi"] = (None if x["u_raw"] is None else x["u_raw"] * f["u"](lo)), (None if x["u_raw"] is None else x["u_raw"] * f["u"](hi))
+        out.append(d)
+    mu, _, _ = bg.lognormal_fit()                                                    # Belin's Fig. 6: the lognormal of x = Re_f / Re_lambda^(1/2), median exp(mu)
+    rb = [d for d in out if d["src"] == "Belin96"][0]["r_raw"]                        # Belin's r_max / eta of the table (7.608)
+    rl = np.exp(np.linspace(math.log(151), math.log(718), 30))
+    belin = dict(re=rl, r_raw=np.full(len(rl), rb), u_raw=1.585 * math.exp(mu) * np.sqrt(rl) / rb)    # U_max / U_eta = 1.585 x Re_lambda^(1/2) / r_max (Re_f = U_max R / nu, R = r_max / 1.585, nu = eta U_eta)
+    belin["r_cor"] = belin["r_raw"] * np.array([mult["Belin"][0](x) for x in rl])
+    belin["u_cor"] = belin["u_raw"] * np.array([mult["Belin"][1](x) for x in rl])
+    sources = sorted({d["src"] for d in out})
+    fits = fit_trends(out)
+    fits["without_Mouri09"] = fit_trends(out, exclude=("Mouri09",))
+    fits["without_Mouri09_Wang07"] = fit_trends(out, exclude=("Mouri09", "Wang07"))
+    fits["without_left_out"] = fit_trends(out, exclude=("Mouri03", "Mouri04", "Mouri07", "DaSilva11", "Sassa05", "Ishihara13"))      # the rows that the selection of the paper leaves out of the swirl fit
+    cmap = plt.get_cmap("tab20")
+    colour = {s: cmap(i % 20) for i, s in enumerate(sources)}
+    marks = "osD^v<>pPhXd*o"
+    marker = {s: marks[i % len(marks)] for i, s in enumerate(sources)}
+    observed = lambda d: not d["method"].startswith("DNS")
+    fig, ax = plt.subplots(2, 3, figsize=(17, 10))
+    for row in (0, 1):
+        for d in out:
+            if d["lo"] is None:
+                continue
+            show_corr = row == 1 and d["corrected"] and (observed(d) or d["src"].startswith("Ghira"))
+            r_a, r_b = (d["r_lo"], d["r_hi"]) if show_corr else (d["r_raw"], d["r_raw"])
+            u_a, u_b = (d["u_lo"], d["u_hi"]) if show_corr else (d["u_raw"], d["u_raw"])
+            if row == 1 and observed(d) and not d["corrected"]:
+                pass                                                              # observed, no multiplier yet: shown as read, open symbol
+            g_a = G0 * r_a * u_a if r_a is not None and u_a is not None else None
+            g_b = G0 * r_b * u_b if r_b is not None and u_b is not None else None
+            if g_a is None and d["gamma_listed"] and r_a is not None and u_a is None:      # no swirl in the source: its listed Gamma / nu
+                g_a = g_b = d["gamma_listed"]
+            for col, (va, vb) in enumerate(((r_a, r_b), (u_a, u_b), (g_a, g_b))):
+                if va is None:
+                    continue
+                a = ax[row, col]
+                open_symbol = row == 1 and observed(d) and not d["corrected"]
+                kw = dict(color=colour[d["src"]], marker=marker[d["src"]], ms=6, mfc="none" if open_symbol else colour[d["src"]], ls="")
+                if d["lo"] == d["hi"]:
+                    a.plot([d["lo"]], [va], **kw)
+                else:
+                    a.plot([d["lo"], d["hi"]], [va, vb], color=colour[d["src"]], lw=2.5, alpha=0.7)
+    for row in (0, 1):
+        r_b, u_b = (belin["r_raw"], belin["u_raw"]) if row == 0 else (belin["r_cor"], belin["u_cor"])
+        ax[row, 1].plot(rl, u_b, color=colour["Belin96"], lw=2.5, alpha=0.7)
+        ax[row, 2].plot(rl, G0 * r_b * u_b, color=colour["Belin96"], lw=2.5, alpha=0.7)
+    re_line = np.exp(np.linspace(math.log(30), math.log(2000), 100)) if False else np.linspace(30, 2000, 200)
+    fr, fu = fits["r"]["models"][fits["r"]["best"]], fits["U"]["models"]["power"]
+    r_line = fr["a"] * re_line ** fr["b"]
+    u_line = fu["a"] * re_line ** fu["b"]
+    ax[1, 0].plot(re_line, r_line, "r-", lw=2.2, zorder=5)
+    ax[1, 1].plot(re_line, u_line, "r-", lw=2.2, zorder=5)
+    ax[1, 2].plot(re_line, G0 * r_line * u_line, "r-", lw=2.2, zorder=5)
+    fl = fits["r"]["models"]["straight line"]                                       # dashed: the straight line of r, the power law of U fitted without Mouri and Hori 2009
+    fw = fits["without_Mouri09"]["U"]["models"]["power"]
+    r_dash, u_dash = fl["a"] + fl["b"] * re_line, fw["a"] * re_line ** fw["b"]
+    ax[1, 0].plot(re_line, r_dash, "r--", lw=1.6, zorder=5)
+    ax[1, 1].plot(re_line, u_dash, "r--", lw=1.6, zorder=5)
+    ax[1, 2].plot(re_line, G0 * r_dash * u_dash, "r--", lw=1.6, zorder=5)
+    f5 = fits["U"]["models"]["power, exponent 1/2"]                                  # dotted: U = a Re^0.5 fitted to all the dots
+    ax[1, 1].plot(re_line, f5["a"] * re_line ** 0.5, "r:", lw=2.0, zorder=5)
+    for row in (0, 1):
+        for col, label in enumerate(("r_max / eta", "U_max / U_eta", "G = Gamma / nu = 8.784 r_max U_max / nu")):
+            a = ax[row, col]
+            a.set_xlabel("Re_lambda")
+            a.set_ylabel(label)
+        ax[row, 0].set_title("every data point as read" if row == 0 else "Ghira (r x 1.25, U x 0.67) and observed data corrected; other DNS as read", fontsize=10)
+    handles = [plt.Line2D([], [], color=colour[s], marker=marker[s], ls="", label=s) for s in sources]
+    handles.append(plt.Line2D([], [], color="r", lw=2.2, label="fit to the dots of the bottom row"))
+    handles.append(plt.Line2D([], [], color="r", lw=1.6, ls="--", label="r: straight line; U: fit without Mouri-Hori 2009"))
+    handles.append(plt.Line2D([], [], color="r", lw=2.0, ls=":", label="U = a Re^0.5"))
+    fig.legend(handles=handles, loc="lower center", ncol=8, fontsize=8)
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    fig.savefig(os.path.join(HERE, "data_corrected_plot.png"), dpi=90)
+    with open(os.path.join(HERE, "data_corrected_fits.json"), "w", encoding="utf-8") as f:
+        json.dump(fits, f, indent=1)
+    with open(os.path.join(HERE, "data_G_derivation.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["id", "src", "re_lo", "re_hi", "r_raw", "u_raw", "G_from_r_u", "gamma_listed", "route"])
+        for d in out:
+            both = d["r_raw"] is not None and d["u_raw"] is not None
+            route = "r from the table row, U derived from Fig. 6 (not in the csv): G = 8.784 r U" if d["src"] == "Belin96" else "8.784 r U (both values)" if both else ("Gamma/nu as listed by the source (no U)" if d["gamma_listed"] else ("no G: r only" if d["r_raw"] is not None else "no G: U only"))
+            w.writerow([d["id"], d["src"], d["lo"], d["hi"], d["r_raw"], d["u_raw"], "" if not both else "%.1f" % (G0 * d["r_raw"] * d["u_raw"]), d["gamma_listed"] or "", route])
+
+
+if __name__ == "__main__":
+    main()
