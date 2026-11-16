@@ -84,7 +84,7 @@ def two_population_figure(rows_raw, tp, c6):
     re = np.exp(np.linspace(math.log(15), math.log(3000), 100))
     ax.plot(re, tp["intense"]["c"] * re ** tp["intense"]["s"], "-", color="tab:red", lw=1.8, label=r"intense tubes: $%.2f\,Re_\lambda^{%.2f}$" % (tp["intense"]["c"], tp["intense"]["s"]))
     ax.plot(re, tp["all_free"]["a"] * re ** tp["all_free"]["s"], "-", color="tab:blue", lw=1.8, label=r"all tubes: $%.2f\,Re_\lambda^{%.2f}$" % (tp["all_free"]["a"], tp["all_free"]["s"]))
-    ax.plot(re, c6 * re ** (1 / 3), "--", color="k", lw=1.3, label=r"single law of section 11: $%.3f\,Re_\lambda^{1/3}$ (corrected data)" % c6)
+    ax.plot(re, c6 * re ** 0.5, "--", color="k", lw=1.3, label=r"single law of section 11: $%.3f\,Re_\lambda^{1/2}$ (corrected data)" % c6)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$Re_\lambda$", fontsize=11)
@@ -133,7 +133,7 @@ $$S(s)=\sin\alpha\;\mathrm{sgn}(s)\,v_\theta(|s|),\qquad \Delta S=2\sin\alpha\,U
     text += r"""<p><strong>Comparison with the DNS.</strong> The radius of the tubes found from the hot-wire pdfs is that of the DNS: median %(rp).1f and mean %(rpm).1f \(\eta\) for all tubes (Tanahashi et al.: %(rt).1f and %(rtm).1f), and %(ri).1f and %(rim).1f for the intense tubes, close to the narrow lognormal of the DNS at about 5 \(\eta\) that the closure uses. The swirl is not: the median \(U_{\max}/u'\) of all tubes is %(up).2f and of the intense tubes %(ui).2f, against %(ut).2f of Tanahashi et al. (a factor 1.8 and 2.3); in units of \(U_\eta\) the intense tubes have %(ui2).0f at \(Re_\lambda=659\), about three times the law \(0.77\,Re_\lambda^{1/3}\). Three assumptions bear on this and are not tested by the pdfs of Belin et al.: the Gaussian spread of \(\sin\alpha\) with \(u'/U\), the independence of radius and swirl, and the use of one pdf (Fig. 6) pooled over \(Re_\lambda=151\)&ndash;718 for two Reynolds numbers.</p>
 """ % dict(rp=pc["r_population"]["median"], rpm=pc["r_population"]["mean"], rt=pc["r_tanahashi"]["median"], rtm=pc["r_tanahashi"]["mean"], ri=pc["r_intense"]["median"], rim=pc["r_intense"]["mean"],
         up=pc["u_population"]["median"], ui=pc["u_intense"]["median"], ut=pc["u_tanahashi"]["median"], ui2=r659["U_read_true"]["median"])
-    text += r"""<p class="note">The DNS law of this section, \(U_{\max}=0.769\,Re_\lambda^{1/3}U_\eta\), is the coefficient of the selected law at the time the model was fitted; the selection of section 10 now gives @C6@ (after the swirl rows of Jim&eacute;nez et al., the factors of Ghira et al. of section 9a and the other changes of the data). The multipliers of this section and of the recording book were computed with 0.769 and were not recomputed; the effect of the difference on them was not tested.</p>
+    text += r"""<p class="note">The DNS law of this section, \(U_{\max}=0.769\,Re_\lambda^{1/3}U_\eta\), is the law of the selection at the time the model was fitted; the selection of section 10 now gives \(U_{\max}/U_\eta=@C6@\,Re_\lambda^{1/2}\) (\(U_{\max}=@KAPPA@\,u'\)), on the data of Fig. 1b. The tubes found from the records of Belin et al. do not depend on it: their swirl, 2.58 times the old law, is fitted to their Fig. 6 and is the fixed product \(1.98\,Re_\lambda^{1/3}U_\eta\), so the multipliers computed on them (Fig. 1b, the recording book) stand. The runs with tubes of the DNS (this section and the next) were not repeated with the new law, which is larger than the old one by a factor @DNSRATIO@ at \(Re_\lambda=332\) and @DNSRATIO2@ at 1934.</p>
 """
     return text
 
@@ -229,9 +229,9 @@ def ghira_cut_section():
     with open(os.path.join(TOOL, "results", "modelselect.json"), encoding="utf-8") as f:
         scen = json.load(f)["scenarios"]
     now = {m["key"]: m for m in scen[0]["models"]}
-    old = {m["key"]: m for m in [s for s in scen if s["label"].startswith("Ghira radius as listed")][0]["models"]}               # the same fits with the radius of Ghira et al. as listed
-    big = {m["key"]: m for m in [s for s in scen if s["label"].startswith("Ghira radius x 1.85")][0]["models"]}                   # and with the whole-pdf mean as the target (x 1.85, x 0.6)
-    keys = ("D6", "D2", "L1")
+    old = {m["key"]: m for m in [s for s in scen if s["label"].startswith("without Mouri-Hori, Ghira radius as listed")][0]["models"]}               # the same fits with the radius of Ghira et al. as listed
+    big = {m["key"]: m for m in [s for s in scen if s["label"].startswith("without Mouri-Hori, Ghira radius x 1.85")][0]["models"]}                   # and with the whole-pdf mean as the target (x 1.85, x 0.6)
+    keys = ("D4", "D2", "L1")
     def rng(d, k):
         lo, hi = "%.0f" % min(d[x][k] for x in keys), "%.0f" % max(d[x][k] for x in keys)
         return "%s%%" % lo if lo == hi else "%s%% to %s%%" % (lo, hi)
@@ -250,7 +250,7 @@ def ghira_cut_section():
 <p class="note">Table D3. The cut of Ghira et al. on the all-tube population of Pirozzoli (2012): the cut \(\omega_c/\omega_{rms}\), the radius \(r_c\) above which a tube is not kept, the fraction of the tubes kept, their mean radius (\(\eta\)) and swirl (\(u_K\)), and the factors: \(f_R\), the mean radius of the narrow family (4.55 \(\eta\)) over that of the kept tubes, and \(f_U\), the mean swirl of all the tubes over that of the kept tubes.</p>
 """ + table(["tubes fill", "pairing", r"\(\omega_c/\omega_{rms}\)", r"\(r_c\)", "kept", r"mean \(r\) kept", r"mean \(U\) kept", r"\(f_R\)", r"\(f_U\)"], body) + r"""
 <p>What fixes the result. (1) <em>The radius target.</em> The vorticity cut cannot see the large tubes of the broad family, and the narrow family is the tube of the model, so the radius is brought to the narrow family; brought to the mean of all the tubes (7.2 \(\eta\), and 6 in his text) the factor would be 1.7 to 2.0, and the fits are then much worse (below). (2) <em>The filling \(\varphi\).</em> It is an input; its range in the literature is the one quoted. (3) <em>The pairing.</em> Independent \(r\) and \(U\) would give a most frequent \(G\) of 44, not his 80, so a negative correlation of \(\ln r\) and \(\ln U\) (\(-0.9\) in version b) is needed.</p>
-<p>Limits. The pdfs are those of one population at one \(Re_\lambda\) (251, the open circles of his Fig. 2; the caption says case D, 98.6), the runs of Ghira et al. cover 90 to 399, and their structures are larger than the kept tubes of the model (\(r_{\max}\) of 4.5 to 5.0 \(\eta\) against 3.6 to 3.7), so the corrected radius, 5.6 to 6.2 \(\eta\), lies above the narrow family. The consequence in the fits (section 10): with the radius of Ghira et al. multiplied by 1.25 and the swirl by 0.67 the rms misfit of the best models is """ + rng(now, "rms") + r""" and the leave-one-source-out error """ + rng(now, "loso") + r"""; with the radius as listed they are """ + rng(old, "rms") + r""" and """ + rng(old, "loso") + r""", and with the radius multiplied by 1.85 (the mean of all the tubes as the target) """ + rng(big, "rms") + r""" and """ + rng(big, "loso") + r""".</p>
+<p>Limits. The pdfs are those of one population at one \(Re_\lambda\) (251, the open circles of his Fig. 2; the caption says case D, 98.6), the runs of Ghira et al. cover 90 to 399, and their structures are larger than the kept tubes of the model (\(r_{\max}\) of 4.5 to 5.0 \(\eta\) against 3.6 to 3.7), so the corrected radius, 5.6 to 6.2 \(\eta\), lies above the narrow family. The consequence in the fits (section 10): with the radius of Ghira et al. multiplied by 1.25 and the swirl by 0.67 the standard error of the fit of the best models is """ + rng(now, "rms") + r""" and the leave-one-source-out error """ + rng(now, "loso") + r"""; with the radius as listed they are """ + rng(old, "rms") + r""" and """ + rng(old, "loso") + r""", and with the radius multiplied by 1.85 (the mean of all the tubes as the target) """ + rng(big, "rms") + r""" and """ + rng(big, "loso") + r""".</p>
 """
     return text
 
@@ -286,14 +286,19 @@ def selection_text(models):
 
 
 def sens_text(scen):
-    """The paragraph after Table 2: the sensitivity of the selection to the radius divisor of Mouri and Hori and to the factors of Ghira et al."""
+    """The paragraph after Table 2: the sensitivity of the selection to the threshold of the all-tube average of Mouri and Hori, to the factors of Ghira et al. and to the two rows of Sassa and Makita."""
     best = lambda s: sorted(s["models"], key=lambda m: m["loso"])[0]
-    d6 = lambda s: {m["key"]: m for m in s["models"]}["D6"]["loso"]
+    d4 = lambda s: {m["key"]: m for m in s["models"]}["D4"]["loso"]
     find = lambda start: [s for s in scen if s["label"].startswith(start)][0]
-    div = [d6(find("Mouri-Hori r/1.6")), d6(find("Mouri-Hori r/1.9"))]
-    listed = min(best(find("Ghira swirl as listed (x 1), Mouri-Hori U x 3"))["loso"], best(find("Ghira swirl as listed (x 1), Mouri-Hori U x 5"))["loso"])
-    return ("<p>The selection is robust to the radius divisor of Mouri and Hori (the score of D6 is %.1f%% to %.1f%% for 1.6 to 1.9) and fragile to the factors of Ghira et al. (Table 2). With their swirl as listed no single law predicts left-out sources better than %.0f%%, whatever its number of parameters: the single law exists only with both swirl factors. "
-            "The radius of Ghira et al. matters as well: multiplied by 1.85 (the mean of all tubes as the target) the best score is %.1f%%, with the adopted 1.25 %.1f%%, as listed %.1f%%.</p>" % (min(div), max(div), listed, best(find("Ghira radius x 1.85"))["loso"], best(scen[0])["loso"], best(find("Ghira radius as listed"))["loso"]))
+    ks = [(k, find("with Mouri-Hori at k = " + k)) for k in ("0.25", "0.5", "1")] + [("0.33", find("Fig. 1b data with Mouri-Hori"))]
+    ks.sort(key=lambda t: float(t[0]))
+    parts = ["%s at k = %s (%.1f%%)" % (best(s)["key"], k, best(s)["loso"]) for k, s in ks]
+    listed, rad, big, sas = find("without Mouri-Hori, Ghira as listed"), find("without Mouri-Hori, Ghira radius as listed"), find("without Mouri-Hori, Ghira radius x 1.85"), find("without Mouri-Hori, the two rows")
+    return ("<p>With the all-tube average of Mouri and Hori included, the best model is, by the threshold of its average, " + ", ".join(parts) + "; D4 scores %.1f%% at k = 0.33 against %.1f%% without it. " % (d4(ks[1][1]), d4(scen[0])) +
+            "The selection is therefore the same for the thresholds in the range in which the model reproduces their values, and it is the average of Mouri and Hori itself, not the threshold, that raises the error: its rows are the least certain of the corrected data. "
+            "With the factors of Ghira et al. as listed (radius &times; 1, swirl &times; 1) the best is %s (%.1f%%) and D4 %.1f%%; with the radius as listed and the swirl &times; 0.67 %s (%.1f%%) and D4 %.1f%%; with the whole-pdf mean as the target (&times; 1.85, &times; 0.6) %s (%.1f%%), D4 %.1f%%. "
+            "Keeping the two rows of Sassa and Makita at \\(Re_\\lambda=820\\) and 2391 gives %s (%.1f%%) and D4 %.1f%%.</p>" % (best(listed)["key"], best(listed)["loso"], d4(listed), best(rad)["key"], best(rad)["loso"], d4(rad), best(big)["key"], best(big)["loso"], d4(big),
+                                                                                                                                      best(sas)["key"], best(sas)["loso"], d4(sas)))
 
 
 def fit_numbers():
@@ -392,11 +397,12 @@ def build():
     refs = ("<h2>References</h2>\n<p>Papers cited, with the DOI where one was found in the paper itself or in the Scopus export. Entries marked 'not checked' were not confirmed from a copy of the paper.</p>\n"
             "<ol style=\"padding-left:1.4em\">\n" + "\n".join(items) + "\n</ol>\n")
 
-    rows = modelselect.load({})
+    rows = modelselect.dots(**modelselect.SCENARIOS[0][1])                           # the data of Fig. 1b without the all-tube average of Mouri and Hori
     obs = fitdata.observations(rows)
     models = {m.key: m for m in fitmodels.models(obs)}
-    res6 = fitmodels.fit(models["D6"], obs)
-    c6 = float(res6["params"][0])
+    res6 = modelselect.fit(models["D4"], obs)                                        # the selected model: radius 5, swirl proportional to u'
+    kappa = float(res6["params"][0])                                                 # U_max = kappa u', u'/U_eta = (Re/sqrt 15)^(1/2)
+    c6 = kappa / 15 ** 0.25                                                          # U_max/U_eta = c6 Re^(1/2)
     scen = sel["scenarios"]
     main0 = {m["key"]: m for m in scen[0]["models"]}
     tp = sel["two_population"]
@@ -412,11 +418,11 @@ def build():
     sens_rows = []
     for sc in scen:
         ms = sorted(sc["models"], key=lambda m: m["loso"])
-        d = next(m for m in ms if m["key"] == "D6")
+        d = next(m for m in ms if m["key"] == "D4")
         sens_rows.append([sc["label"], "%s (%.1f%%)" % (ms[0]["key"], ms[0]["loso"]), "%.1f%%" % d["loso"], "%.3f" % d["params"][0]])
     pred_rows = []
     for Re in (50, 100, 300, 1000, 2000):
-        U1 = c6 * Re ** (1 / 3)
+        U1 = c6 * Re ** 0.5
         U2 = tp["all_free"]["a"] * Re ** tp["all_free"]["s"]
         Ui = tp["intense"]["c"] * Re ** tp["intense"]["s"]
         v1, d1 = bud(U1)
@@ -425,16 +431,17 @@ def build():
                           "%.3f" % (4.91 * 0.01 * (Ui / 5) ** 2)])
     n_src = len({x["src"] for x in rows})
     keys = {
-        "@C6@": "%.3f" % c6, "@RMS6@": "%.1f" % main0["D6"]["rms"], "@LOSO6@": "%.1f" % main0["D6"]["loso"], "@LOSOL1@": "%.1f" % main0["L1"]["loso"], "@DAIC6@": "%.1f" % main0["D6"]["d_aicc"],
-        "@L1A@": "%.2f" % main0["L1"]["params"][0], "@L1B@": "%.2f" % main0["L1"]["params"][1], "@NR@": str(len(obs["r"]["re"])), "@NU@": str(len(obs["U"]["re"])), "@NG@": str(main0["D6"]["groups"]),
+        "@C6@": "%.3f" % c6, "@RMS6@": "%.1f" % main0["D4"]["rms"], "@LOSO6@": "%.1f" % main0["D4"]["loso"], "@LOSOL1@": "%.1f" % main0["L1"]["loso"], "@DAIC6@": "%.1f" % main0["D4"]["d_aicc"], "@KAPPA@": "%.2f" % kappa,
+        "@DNSRATIO@": "%.2f" % (c6 * 332 ** 0.5 / (0.769 * 332 ** (1 / 3))), "@DNSRATIO2@": "%.2f" % (c6 * 1934 ** 0.5 / (0.769 * 1934 ** (1 / 3))),
+        "@L1A@": "%.2f" % main0["L1"]["params"][0], "@L1B@": "%.2f" % main0["L1"]["params"][1], "@NR@": str(len(obs["r"]["re"])), "@NU@": str(len(obs["U"]["re"])), "@NG@": str(main0["D4"]["groups"]),
         "@IC@": "%.2f" % tp["intense"]["c"], "@IS@": "%.2f" % tp["intense"]["s"], "@IRMS@": "%.0f" % tp["intense"]["rms_power"], "@IN@": str(tp["intense"]["n"]),
         "@AA@": "%.2f" % tp["all_free"]["a"], "@AS@": "%.2f" % tp["all_free"]["s"], "@AF@": "%.2f" % tp["all_free"]["f"], "@ARMS@": "%.1f" % tp["all_free"]["rms"],
         "@A3S@": "%.2f" % tp["all_f3.0"]["s"], "@A3RMS@": "%.1f" % tp["all_f3.0"]["rms"], "@SM@": "%.2f" % tp["slope_Mouri09"], "@SK@": "%.2f" % tp["slope_Kida02"],
         "@SHARE@": "%.2f" % share5, "@NSRC@": str(n_src),
-        "@VK83A@": "%.2f" % bud(c6 * 83 ** (1 / 3))[0], "@VK170A@": "%.2f" % bud(c6 * 170 ** (1 / 3))[0],
+        "@VK83A@": "%.2f" % bud(c6 * 83 ** 0.5)[0], "@VK170A@": "%.2f" % bud(c6 * 170 ** 0.5)[0],
         "@VK83B@": "%.2f" % bud(tp["all_free"]["a"] * 83 ** tp["all_free"]["s"])[0], "@VK170B@": "%.2f" % bud(tp["all_free"]["a"] * 170 ** tp["all_free"]["s"])[0],
-        "@SELTABLE@": table(["model", "parameters", "rms %", "LOSO %", "&Delta;AICc", "&Delta;BIC", "form"], sel_rows),
-        "@SENSTABLE@": table(["corrections", "best model by LOSO", "LOSO of the selected model", "its coefficient \\(c\\)"], sens_rows),
+        "@SELTABLE@": table(["model", "parameters", "s %", "LOSO %", "&Delta;AICc", "&Delta;BIC", "form"], sel_rows),
+        "@SENSTABLE@": table(["data", "best model by LOSO", "LOSO of the selected model D4", "its \\(\\kappa=U_{\\max}/u'\\)"], sens_rows),
         "@PREDTABLE@": table([r"\(Re_\lambda\)", r"\(U_{\max}/U_\eta\) (I)", r"\(\Gamma/\nu\) (I)", r"\(V_f\) (I)", r"\(d/\eta\) (I)", r"\(U_{\max}/U_\eta\) (II, all)", r"\(\Gamma/\nu\) (II)", r"\(V_f\) (II)", r"\(d/\eta\) (II)",
                               r"\(U_{\max}/U_\eta\) (II, intense)", "dissipation share of the intense tubes (1% of the volume)"], pred_rows),
         "@DATAFIG@": pagefigures.data_figure(rows), "@MODELFIG@": pagefigures.model_figure(res6, rows), "@TWOFIG@": two_population_figure(rows_raw, tp, c6),
@@ -442,8 +449,8 @@ def build():
         "@CORRFIG@": corrected_fig_section(),
         "@SELTEXT@": selection_text(scen[0]["models"]),
         "@SENSTEXT@": sens_text(scen),
-        "@RFIT@": "%.1f" % main0["D2"]["params"][0], "@RRMS6@": "%.1f" % main0["D6"]["rms_r"],
-        "@R1000@": "%.2f" % ((c6 * 1000 ** (1 / 3)) / (tp["all_free"]["a"] * 1000 ** tp["all_free"]["s"])),
+        "@RFIT@": "%.1f" % main0["D2"]["params"][0], "@RRMS6@": "%.1f" % main0["D4"]["rms_r"],
+        "@R1000@": "%.2f" % ((c6 * 1000 ** 0.5) / (tp["all_free"]["a"] * 1000 ** tp["all_free"]["s"])),
         "@P251@": "%.1f" % (tp["all_free"]["a"] * 251 ** tp["all_free"]["s"]),
         "@DNSPDF@": dns_pdf_section(),
         "@RL100@": "%.1f" % (fit_numbers()["o"]["r_line"]["a"] + 100 * fit_numbers()["o"]["r_line"]["b"]), "@RL2000@": "%.1f" % (fit_numbers()["o"]["r_line"]["a"] + 2000 * fit_numbers()["o"]["r_line"]["b"]),
@@ -460,8 +467,8 @@ def build():
     appendix = bds.build_appendix().replace("<h2>Appendix: the source data, how it was converted, and what the model uses</h2>",
                                             "<h2>Appendix: the source data, how it was converted, and what the model uses</h2>\n<p class=\"note\">The appendix lists every source with its conversions, made from the same data file as the fits. Its paragraphs on the corrections (A0c) give the rationale as it was decided; the review of that rationale is in sections 9 and 12, and the page-by-page evidence is in the recording book (<code>LIT/record</code>).</p>", 1)
     best_of = lambda s: sorted(s["models"], key=lambda m: m["loso"])[0]
-    listed = [s for s in scen if s["label"].startswith("Ghira swirl as listed (x 1), Mouri-Hori U x 3")][0]
-    appendix = appendix.replace("@LRMS@", "%.1f" % best_of(listed)["rms"]).replace("@NRMS@", "%.1f" % best_of(scen[0])["rms"])
+    listed = [s for s in scen if s["label"].startswith("without Mouri-Hori, Ghira as listed")][0]
+    appendix = appendix.replace("@LRMS@", "%.1f" % best_of(listed)["loso"]).replace("@NRMS@", "%.1f" % best_of(scen[0])["loso"])
     typeset = "<script>if (document.typeset) { document.typeset(); }</script>\n"      # in the report server the doc block loads MathJax on request; a plain browser uses the script of the head
     return head + "\n" + body + "\n" + refs + appendix + sos_appendix() + "</main>\n" + typeset
 
@@ -471,7 +478,7 @@ TEXT_FRONT = r"""
 <p class="lede">Working paper (Burgers Vortex Energy Balance). Symbols: \(\gamma\) axial stretching rate, \(\Gamma\) circulation, \(\nu\) kinematic viscosity, \(\varepsilon\) dissipation rate per unit mass, \(\eta\), \(U_\eta\), \(\gamma_\eta\) the Kolmogorov length, velocity and rate, \(Re_\lambda\) the Taylor-scale Reynolds number, \(r_{\max}=\beta\eta\) the radius of maximum swirl of a tube and \(U_{\max}\) that swirl.</p>
 
 <h2>Abstract</h2>
-<p>The smallest scales of turbulence, where micromixing and viscous dissipation take place, are organised in stretched vortex tubes. We model a tube as a Burgers vortex, close its energy budget with the Kolmogorov scales, and determine its two free quantities, the radius of maximum swirl and the swirl velocity, from @NSRC@ published sources (simulations and experiments) covering \(35\le Re_\lambda\le1934\). Every number is traced from the page of its paper to the fit in an open recording book, and each correction is listed with its rationale. The radius is \(r_{\max}\approx5\,\eta\) in all flows (@RFIT@ \(\eta\) fitted); simulations and experiments together show only a very small reduction with the Reynolds number, from @RL100@ \(\eta\) at \(Re_\lambda=100\) to @RL2000@ \(\eta\) at 2000. With the corrections adopted for probe measurements, a single one-parameter law, \(U_{\max}/U_\eta=@C6@\,Re_\lambda^{1/3}\), predicts sources left out of the fit to within @LOSO6@%, and no model with more parameters predicts them better. A review of the sources shows, however, that the uncorrected data separate into two populations: the 1% most intense tubes, \(U_{\max}/U_\eta=@IC@\,Re_\lambda^{@IS@}\), and all tubes, \(U_{\max}/U_\eta=@AA@\,Re_\lambda^{@AS@}\). The second reading needs one fitted probe factor instead of two corrections and reproduces the measured volume fraction of the tubes. We give the closure in a form usable in computational fluid dynamics, with the tube strain rate, circulation, volume fraction and spacing as functions of the local \(k\) and \(\varepsilon\), and add a first-order lag for the time the energy cascade takes to reach the tubes, \(T_c/\tau_\eta=C_c\,(Re_\lambda/\sqrt{15}-\beta^{2/3})\).</p>
+<p>The smallest scales of turbulence, where micromixing and viscous dissipation take place, are organised in stretched vortex tubes. We model a tube as a Burgers vortex, close its energy budget with the Kolmogorov scales, and determine its two free quantities, the radius of maximum swirl and the swirl velocity, from @NSRC@ published sources (simulations and experiments) covering \(35\le Re_\lambda\le1934\). Every number is traced from the page of its paper to the fit in an open recording book, and each correction is listed with its rationale. The radius is \(r_{\max}\approx5\,\eta\) in all flows (@RFIT@ \(\eta\) fitted); simulations and experiments together show only a very small reduction with the Reynolds number, from @RL100@ \(\eta\) at \(Re_\lambda=100\) to @RL2000@ \(\eta\) at 2000. With the corrections computed for the probe measurements from the models of their signals, a single one-parameter law, \(U_{\max}/U_\eta=@C6@\,Re_\lambda^{1/2}\), that is \(U_{\max}=@KAPPA@\,u'\), describes simulations and experiments together and predicts sources left out of the fit to within @LOSO6@%; no model with more parameters predicts them better. Read as calculated from the papers, the data separate into two populations: the 1% most intense tubes, \(U_{\max}/U_\eta=@IC@\,Re_\lambda^{@IS@}\), and all tubes, \(U_{\max}/U_\eta=@AA@\,Re_\lambda^{@AS@}\). The second reading needs one fitted probe factor and reproduces the measured volume fraction of the tubes. We give the closure in a form usable in computational fluid dynamics, with the tube strain rate, circulation, volume fraction and spacing as functions of the local \(k\) and \(\varepsilon\), and add a first-order lag for the time the energy cascade takes to reach the tubes, \(T_c/\tau_\eta=C_c\,(Re_\lambda/\sqrt{15}-\beta^{2/3})\).</p>
 <p class="src">Keywords: micromixing; vortex tubes; Burgers vortex; turbulence closure; energy cascade; model selection.</p>
 
 <h2>1. Introduction</h2>
@@ -490,8 +497,8 @@ TEXT_BACK = r"""
 @CORRFIG@
 
 <h3>Corrections</h3>
-<p>Four corrections were adopted before the fits (the radius and the swirl of Mouri and Hori, the radius of Belin et al., the radius and the swirl of Ghira et al.); their rationale is given in full in the recording book (tab Corrections) and in appendix A0c.</p>
-<p><strong>The radius of the all-event hot-wire average (Mouri and Hori 2009), divided by 1.75.</strong> A probe crosses a tube along a chord at a random offset and tilt, so the mean profile of all events is wider than the tube; the authors say so and give no factor. A model of the crossing statistics (the chord model of appendix A0c, without the incidence angle; the wire-and-tube model below, applied to the method of Mouri and Hori with tubes of the DNS, gives a radius factor of 1.5&ndash;1.9 and a swirl factor of 2.4&ndash;3.8 at the thresholds that reproduce their averages, which supports the two factors) gives a ratio of 1.7 to 1.85. The corrected radii (4.7 to 5.3 \(\eta\)) agree with the simulations, and the fits are insensitive to the divisor between 1.6 and 1.9 (section 10).</p>
+<p>Four corrections were adopted before the fits (the radius and the swirl of Mouri and Hori, the radius of Belin et al., the radius and the swirl of Ghira et al.); their rationale is given in full in the recording book (tab Corrections) and in appendix A0c. These four constant corrections are those of the first selection; the selection of section 10 and Fig. 1b use instead the multipliers computed from the models of the probes, which depend on \(Re_\lambda\) and which these constants approximate (for Mouri and Hori, the radius factor 1/1.75 = 0.57 and the swirl factor 3 against the model multipliers 0.46 to 0.58 and 2.7 to 3.8 for k = 0.33 between \(Re_\lambda=100\) and 2000).</p>
+<p><strong>The radius of the all-event hot-wire average (Mouri and Hori 2009), divided by 1.75.</strong> A probe crosses a tube along a chord at a random offset and tilt, so the mean profile of all events is wider than the tube; the authors say so and give no factor. A model of the crossing statistics (the chord model of appendix A0c, without the incidence angle; the wire-and-tube model below, applied to the method of Mouri and Hori with tubes of the DNS, gives a radius factor of 1.5&ndash;1.9 and a swirl factor of 2.4&ndash;3.8 at the thresholds that reproduce their averages, which supports the two factors) gives a ratio of 1.7 to 1.85. The corrected radii (4.7 to 5.3 \(\eta\)) agree with the simulations.</p>
 <p><strong>The swirl of the same source, multiplied by 3,</strong> for the same reason: the chord model gives 2 to 3.5. <strong>The swirl of Ghira et al. (2022, 2025), multiplied by 0.67,</strong> to bring the swirl of the 1% most intense tubes to the whole population (section 9a; the factor 0.6 used before agrees with the level of the other sources at the same \(Re_\lambda\)). The threshold averages of Mouri et al. (2004, 2007) are left out, as tails of the distribution that the all-event average of Mouri and Hori contains whole.</p>
 <p><strong>The radius of Belin et al. (1996), divided by 1.15.</strong> The row is the median of their Fig. 5 (7.6 \(\eta\) as \(r_{\max}\)), not its peak, and the factor is the ratio of the radius read to the true radius of the intense tubes in the wire-and-tube model below (1.06 at \(Re_\lambda=151\) to 1.18 at 718); the corrected radius is 6.6 \(\eta\) (provisional: it rests on the tubes found from their own records, which the one-dimensional methods of Mouri et al. and of Sassa and Makita do not support, section 9). Their swirl, \(\Delta S/(2\sin\alpha)\) with \(\sin\alpha=0.14\), is too high by a factor of about 2.6 in the model, and the model value is itself about three times the DNS law; it is not a row of the table.</p>
 <p><strong>The radius of Ghira et al. (2022, 2025), multiplied by 1.25.</strong> The strongest 1% of the volume by vorticity is a subset of the tubes, smaller and faster than the whole population. The factors are worked out in section 9a, in steps, from the all-tube population of Pirozzoli (2012), chosen as the reference because it has no lower threshold on the vorticity: his pdfs of the radius and of the maximum velocity are linked by his most frequent circulation (\(\Gamma/\nu=80\)), the cut of Ghira et al. is applied with the tubes filling 35% of the flow, and the multipliers are the value of the reference (the narrow family of the radius pdf, all tubes for the swirl) over that of the kept tubes: 1.22 to 1.28 for the radius and 0.66 to 0.68 for the swirl. The corrected radius is 5.6 to 6.2 \(\eta\) and the swirl is multiplied by 0.67 in place of 0.6.</p>
@@ -509,20 +516,20 @@ TEXT_BACK = r"""
 @DNSPDF@
 
 <h2>10. Selection of the model</h2>
-<p>Candidate models express \(r_{\max}/\eta\) and \(U_{\max}/U_\eta\) as functions of \(Re_\lambda\) with one to four parameters: a constant radius or one that varies as a power or a logarithm of \(Re_\lambda\), and a swirl that is a power law, a power law with a fixed exponent (1/2: proportional to the r.m.s. velocity; 1/3), a logarithmic law, or that follows from a law for the circulation. Each is fitted by least squares of the logarithmic residuals of the radius (@NR@ points) and the swirl (@NU@ points), every source having the same weight in each quantity (@NG@ source-quantity groups).</p>
-<p>An earlier version chose the model with the fewest parameters within 25% of the best root-mean-square (rms) residual; the width of that band has no basis. Here the choice is made by cross-validation: each source in turn is left out, the model is fitted to the others and predicts the one left out, and the rms of those prediction errors (LOSO, in per cent) is the score. A parameter that follows the noise of one source worsens the score, so complexity is penalised by the data. The Akaike criterion with small-sample correction (AICc) and the Bayesian criterion (BIC), with a source-quantity group as the unit of data, are given for comparison; differences below 2 carry no evidence (Burnham and Anderson 2002).</p>
+<p>Candidate models express \(r_{\max}/\eta\) and \(U_{\max}/U_\eta\) as functions of \(Re_\lambda\) with one to four parameters: a constant radius or one that varies as a power or a logarithm of \(Re_\lambda\), and a swirl that is a power law, a power law with a fixed exponent (1/2: proportional to the r.m.s. velocity; 1/3), a logarithmic law, or that follows from a law for the circulation. Each is fitted by minimising the weighted sum of squares of the last appendix over the radius (@NR@ points) and the swirl (@NU@ points) of Fig. 1b, every point having the same weight (@NG@ source-quantity groups).</p>
+<p>An earlier version chose the model with the fewest parameters within 25% of the best root-mean-square (rms) residual; the width of that band has no basis. Here the choice is made by cross-validation: each source in turn is left out, the model is fitted to the others and predicts the one left out, and the standard error of those prediction errors, measured with the same sum of squares (LOSO, in per cent), is the score. A parameter that follows the noise of one source worsens the score, so complexity is penalised by the data. The Akaike criterion with small-sample correction (AICc) and the Bayesian criterion (BIC), with a source-quantity group as the unit of data, are given for comparison; differences below 2 carry no evidence (Burnham and Anderson 2002).</p>
 @SELTABLE@
-<p class="note">Table 1. The candidate models, sorted by the leave-one-source-out error. Corrections as adopted in section 9.</p>
+<p class="note">Table 1. The candidate models, sorted by the leave-one-source-out error, on the data of Fig. 1b without the all-tube average of Mouri and Hori (2009); s is the standard error of the fit of the last appendix, in per cent.</p>
 @SELTEXT@
 @SENSTABLE@
-<p class="note">Table 2. The selection under other corrections.</p>
+<p class="note">Table 2. The selection under other treatments of the data.</p>
 @SENSTEXT@
 
 <h2>11. The selected single-population model (model I)</h2>
-$$r_{\max}=5\,\eta,\qquad \frac{U_{\max}}{U_\eta}=@C6@\,Re_\lambda^{1/3}$$
+$$r_{\max}=5\,\eta,\qquad \frac{U_{\max}}{U_\eta}=@C6@\,Re_\lambda^{1/2},\quad\text{that is}\quad U_{\max}=@KAPPA@\,u',\qquad \frac{u'}{U_\eta}=\left(\frac{Re_\lambda}{\sqrt{15}}\right)^{1/2}$$
 <p>and, from sections 3 to 7 with \(\beta=5\),</p>
 $$\frac{\gamma}{\gamma_\eta}=\frac{4x}{\beta^2}=0.201,\qquad \frac{\Gamma}{\nu}=8.78\,\beta\,\frac{U_{\max}}{U_\eta},\qquad V_f=\left(1-\frac{75.8}{\beta^4}\right)\frac{\beta^2}{4.91\,(U_{\max}/U_\eta)^2},\qquad \frac{d}{\eta}=\beta\sqrt{\frac{\pi}{V_f}} .$$
-<p>The rms residual is @RRMS6@% for the radius and @RMS6@% for radius and swirl together. The swirl dissipation of the tubes is @SHARE@ of the total at \(\beta=5\), the remainder being the dissipation of the background strain; the volume fraction \(V_f\) follows from this balance and is a prediction, not a fit.</p>
+<p>The standard error of the fit (last appendix) is @RRMS6@% for the radius and @RMS6@% for radius and swirl together. The swirl dissipation of the tubes is @SHARE@ of the total at \(\beta=5\), the remainder being the dissipation of the background strain; the volume fraction \(V_f\) follows from this balance and is a prediction, not a fit.</p>
 @MODELFIG@
 <p class="note">Fig. 2. Model I with the data (corrected as in section 9).</p>
 
@@ -539,7 +546,7 @@ $$\frac{U_{\max}}{U_\eta}\bigg|_{\text{all}}=@AA@\,Re_\lambda^{@AS@},\qquad\text
 <p><strong>Checks with data not used in a fit.</strong> Kida et al. measured the volume fraction of their vortex cores: 0.35 at \(Re_\lambda=83\) and 0.31 at 170. The budget of section 7 gives @VK83B@ and @VK170B@ with the all-tube swirl of model II, and @VK83A@ and @VK170A@ with model I. Sassa and Makita (2005), who sample events at a moderate threshold between \(Re_\lambda=19\) and 2391, report an exponent 0.28 for the swirl, between the two families. The mean swirl of all tubes in the mixing layer of Tanahashi et al. (2001; \(Re_\lambda\approx80\)) is 3.7 \(U_\eta\) (model II: 3.6); that of Pirozzoli (2012; \(Re_\lambda\approx99\), the test case D named in the caption of his Fig. 2) is 2.5 (model II: 3.7); the plotted symbols are those of his case E (\(Re_\lambda=251\); model II: @P251@), so the disagreement remains whichever case it is.</p>
 @PREDTABLE@
 <p class="note">Table 3. Predictions of the two models at \(\beta=5\). The last column is \(4.91\,V_f\,(U_{\max}/\beta U_\eta)^2\) for \(V_f=0.01\).</p>
-<p><strong>Which model.</strong> Model I is the simplest description of the corrected data and is retained as the reference. Model II rests on fewer adjustments (one fitted factor against two), agrees with what the authors of the hot-wire papers conclude, and reproduces the measured volume fraction at both Reynolds numbers; its weakness is that the all-tube law rests on two sources. The two differ little near \(Re_\lambda\approx100\), where most simulations are, and by a factor @R1000@ in the swirl at \(Re_\lambda=1000\) (Table 3). For a closure of micromixing, which depends on all tubes weighted by their volume, we recommend model II and regard the difference between the two as the uncertainty of the swirl at high Reynolds number. The intense tubes, if they keep 1% of the volume, carry 6% of the dissipation at \(Re_\lambda=100\) and a growing share above (Table 3, last column).</p>
+<p><strong>Which model.</strong> Model I is retained as the reference. With the corrections computed from the models of the probes (section 9) it describes simulations and experiments together with one parameter, the swirl proportional to the r.m.s. velocity, \(U_{\max}=@KAPPA@\,u'\), the scaling that Mouri et al. (2007) report for intense tubes; model II reads the values as calculated as two populations and rests on one fitted factor for the chord effect, and its weakness is that the all-tube law rests on two sources. The two differ little near \(Re_\lambda\approx100\), where most simulations are, and by a factor @R1000@ in the swirl at \(Re_\lambda=1000\) (Table 3). For a closure of micromixing, which depends on all tubes weighted by their volume, we recommend model I and regard the difference between the two as the uncertainty of the swirl at high Reynolds number. The intense tubes, if they keep 1% of the volume, carry 6% of the dissipation at \(Re_\lambda=100\) and a growing share above (Table 3, last column).</p>
 
 <h2>13. Use as a closure in CFD, and the delay of the cascade</h2>
 <h3>The closure</h3>
@@ -568,7 +575,7 @@ $$\frac{D\varepsilon_t}{Dt}=\frac{\varepsilon-\varepsilon_t}{T_c}+\nabla\!\cdot\
 </ul>
 
 <h2>15. Conclusions</h2>
-<p>The vortex tubes of the dissipative range have a radius of maximum swirl of about \(5\eta\) (@RFIT@ \(\eta\) fitted) in every flow examined, with only a very small reduction with the Reynolds number, from @RL100@ \(\eta\) at \(Re_\lambda=100\) to @RL2000@ \(\eta\) at 2000; this is the firmest result. Their swirl is described by one law, \(U_{\max}/U_\eta=@C6@\,Re_\lambda^{1/3}\), if probe data and the most intense tubes are corrected to a common level, and by two laws without swirl corrections if the most intense tubes and all tubes are taken as two populations. Model selection with leave-one-source-out validation shows that the data support no more than one or two parameters in either case. The Burgers budget then gives the strain rate, circulation, volume fraction and spacing of the tubes from \(k\) and \(\varepsilon\), which places the engulfment model of micromixing on measured ground, and a first-order lag with one constant accounts for the time the cascade takes to feed the tubes. The path of every number from its paper to the model is recorded and open to comment.</p>
+<p>The vortex tubes of the dissipative range have a radius of maximum swirl of about \(5\eta\) (@RFIT@ \(\eta\) fitted) in every flow examined, with only a very small reduction with the Reynolds number, from @RL100@ \(\eta\) at \(Re_\lambda=100\) to @RL2000@ \(\eta\) at 2000; this is the firmest result. Their swirl is described by one law, \(U_{\max}/U_\eta=@C6@\,Re_\lambda^{1/2}\), that is a constant fraction \(@KAPPA@\) of the r.m.s. velocity, if probe data and the most intense tubes are corrected to a common level with the multipliers computed from the models of the probes, and by two laws without swirl corrections if the most intense tubes and all tubes are taken as two populations. Model selection with leave-one-source-out validation shows that the data support no more than one or two parameters in either case. The Burgers budget then gives the strain rate, circulation, volume fraction and spacing of the tubes from \(k\) and \(\varepsilon\), which places the engulfment model of micromixing on measured ground, and a first-order lag with one constant accounts for the time the cascade takes to feed the tubes. The path of every number from its paper to the model is recorded and open to comment.</p>
 """
 
 

@@ -223,37 +223,37 @@ def model_tab(book):
     import modelselect
     with open(os.path.join(LIT, "fittingtool", "results", "modelselect.json"), encoding="utf-8") as f:
         res = json.load(f)
-    rows = modelselect.load({})
+    rows = modelselect.dots(**modelselect.SCENARIOS[0][1])
     obs = fitdata.observations(rows)
     tab.h("1. Which numbers enter the fits")
-    tab.p(r"The fits use the rows of the summary table that have one \(Re_\lambda\), after the corrections (tab Corrections). Each source has the same total weight in each quantity, however many rows it has.")
+    tab.p(r"The fits use the dots of the bottom row of Fig. 1b of the paper (rows with one \(Re_\lambda\)): Ghira et al. and the observed rows with the multipliers computed from the models of the probes (tab Corrections of each paper), the other simulations as read; the all-tube average of Mouri and Hori (2009) and the rows of Sassa and Makita at \(Re_\lambda\) 820 and 2391 are left out of the main scenario. Every point has the same weight (the weighted sum of squares of the last appendix of the paper).")
     lines = []
     for kind, label in (("r", r"\(r_{\max}/\eta\)"), ("U", r"\(U_{\max}/U_\eta\)")):
         o = obs[kind]
         by = {}
-        for s, v, re in zip(o["src"], o["val"], o["re"]):
-            by.setdefault(s, []).append((re, v))
-        for s, pts in sorted(by.items()):
-            lines.append([label, s, str(len(pts)), "%g&ndash;%g" % (min(p[0] for p in pts), max(p[0] for p in pts)), "%.2f&ndash;%.2f" % (min(p[1] for p in pts), max(p[1] for p in pts))])
+        for s_, v, re in zip(o["src"], o["val"], o["re"]):
+            by.setdefault(s_, []).append((re, v))
+        for s_, pts in sorted(by.items()):
+            lines.append([label, s_, str(len(pts)), "%g&ndash;%g" % (min(p_[0] for p_ in pts), max(p_[0] for p_ in pts)), "%.2f&ndash;%.2f" % (min(p_[1] for p_ in pts), max(p_[1] for p_ in pts))])
     tab.table(["quantity", "source", "rows", r"\(Re_\lambda\)", "values (corrected)"], lines, "The data of the fits: %d radius points and %d swirl points from %d source-quantity groups." % (len(obs["r"]["re"]), len(obs["U"]["re"]), len(lines)))
-    tab.h("2. The selection of the model (model I: one population, the corrections as decided)")
-    tab.p(r"Every candidate is fitted to the same data by least squares of the log residuals. Three criteria: AICc and BIC (information criteria; a difference under 2 is no evidence, over 10 is decisive), counted with one unit a source-quantity group, and LOSO: each source in turn is left out, the model fitted to the rest predicts it, and the rms of those errors is the score. LOSO penalises a parameter that follows the noise of one source, so the penalty on complexity comes from the data. (The earlier rule was: the fewest parameters within 25% of the best rms.)")
+    tab.h("2. The selection of the model (model I: one population)")
+    tab.p(r"Every candidate is fitted to the same data by minimising the weighted sum of squares S of the last appendix of the paper (relative plus absolute error, linear domain; s = sqrt(S/(N-p)) is quoted in per cent). Three criteria: AICc and BIC (information criteria; a difference under 2 is no evidence, over 10 is decisive), counted with one unit a source-quantity group, and LOSO (leave one source out: the model is fitted without a source and predicts it). LOSO is the criterion used; among the best the model with the fewest parameters is taken.")
     models = sorted(res["scenarios"][0]["models"], key=lambda m: m["loso"])
-    tab.table(["model", "parameters", "rms %", "LOSO %", "&Delta;AICc", "&Delta;BIC", "what it is"],
+    tab.table(["model", "parameters", "s %", "LOSO %", "&Delta;AICc", "&Delta;BIC", "what it is"],
               [[m["key"], str(m["k"]), "%.1f" % m["rms"], "%.1f" % m["loso"], "%.1f" % m["d_aicc"], "%.1f" % m["d_bic"], m["name"]] for m in models],
-              "Scenario: the corrections as decided. Sorted by LOSO.")
+              "Scenario: the data of Fig. 1b without the all-tube average of Mouri and Hori. Sorted by LOSO.")
+    best = models[0]
     d6 = next(m for m in models if m["key"] == "D6")
-    l1 = next(m for m in models if m["key"] == "L1")
-    tab.p(r"<b>Reading.</b> L1 (radius 5, swirl \(a+b\ln Re_\lambda\), two parameters) predicts left-out sources best (%.1f%%); D6 (radius 5, swirl \(c\,Re_\lambda^{1/3}\), one parameter) follows at %.1f%%, and the information criteria cannot separate them (&Delta;AICc %.1f). No model with three or four parameters does better out of sample than these two: the extra parameters fit noise. With the penalty on complexity the one-parameter model stays: \(U_{\max}/U_\eta=%.3f\,Re_\lambda^{1/3}\), \(r_{\max}=5\,\eta\). L1 is \(U_{\max}/U_\eta=%.2f+%.2f\ln Re_\lambda\); it goes negative below \(Re_\lambda\approx13\), which a power law cannot." % (
-        l1["loso"], d6["loso"], d6["d_aicc"], d6["params"][0], l1["params"][0], l1["params"][1]))
-    tab.h("3. How the choice depends on the corrections")
+    tab.p("<b>Reading.</b> %s (%s, %d parameter%s) predicts left-out sources best (%.1f%%); D6 (radius 5, swirl c Re^(1/3)) scores %.1f%%. kappa = U_max/u' = %.3f for D4, that is U_max/U_eta = %.3f Re_lambda^(1/2)." % (
+        best["key"], best["name"], best["k"], "" if best["k"] == 1 else "s", best["loso"], d6["loso"], next(m for m in models if m["key"] == "D4")["params"][0], next(m for m in models if m["key"] == "D4")["params"][0] / 15 ** 0.25))
+    tab.h("3. How the choice depends on the data")
     rowsx = []
     for sc in res["scenarios"]:
         ms = sorted(sc["models"], key=lambda m: m["loso"])
-        d = next(m for m in ms if m["key"] == "D6")
+        d = next(m for m in ms if m["key"] == "D4")
         rowsx.append([sc["label"], "%s (%.1f%%)" % (ms[0]["key"], ms[0]["loso"]), "%.1f%%" % d["loso"], "%.3f" % d["params"][0]])
-    tab.table(["scenario", "best by LOSO", "D6 LOSO", "D6 coefficient c"], rowsx, "The same comparison under other corrections.")
-    tab.p(r"<b>Reading.</b> The radius divisor hardly matters (1.6 to 1.9). The swirl factors decide everything: with Ghira as listed no single law fits (errors of 21&ndash;23%), and with Mouri and Hori &times; 2 the errors grow to 16%. Model I stands or falls with the pair (&times; 3, &times; 0.6).")
+    tab.table(["scenario", "best by LOSO", "D4 LOSO", "D4 coefficient kappa = U_max/u'"], rowsx, "The same comparison under other treatments of the data.")
+    tab.p("<b>Reading.</b> D4 is the best model in most scenarios and within about 0.1 to 1.5 percentage points of the best in the others; the all-tube average of Mouri and Hori raises the error whatever its threshold (k = 0.25 to 1), and the factors of Ghira et al. decide the rest (section 9a of the paper).")
     tab.h("4. Model II: two populations, no swirl correction")
     tp = res["two_population"]
     tab.p(r"The swirl as calculated from the papers splits into two families. <b>Intense tubes</b> (the 1%% of highest vorticity in DNS: Ghira et al.; the 0.1%% threshold of the hot wire: Mouri et al. 2007): \(U_{\max}/U_\eta=%.2f\,Re_\lambda^{%.2f}\), rms %.0f%%, %d points, no correction. <b>All tubes</b> (Kida et al.; Mouri and Hori with one fitted chord factor): \(U_{\max}/U_\eta=%.2f\,Re_\lambda^{%.2f}\) with a chord factor %.2f, rms %.1f%%. The exponent inside Mouri and Hori alone is %.2f and inside Kida et al. alone %.2f: the all-tube swirl grows slowly, as Mouri and Hori say (it scales with \(u_K\))." % (
@@ -262,12 +262,15 @@ def model_tab(book):
               [["%.1f%s" % (tp[k]["f"], " (free fit)" if k == "all_free" else ""), r"\(%.2f\,Re_\lambda^{%.3f}\)" % (tp[k]["a"], tp[k]["s"]), "%.1f" % tp[k]["rms"]] for k in ("all_f1.0", "all_f1.5", "all_free", "all_f2.0", "all_f2.5", "all_f3.0")],
               "The all-tube swirl against the chord factor: the factor 3 of model I is not preferred by these data.")
     tab.h("5. Independent checks (data not used in any fit)")
-    tab.table(["check", "measured", "model I (D6)", "model II (all tubes)"],
-              [[r"volume fraction of the tubes, Kida et al., \(R_\lambda=83\)", "0.35", "0.36", "0.35"],
-               [r"volume fraction of the tubes, Kida et al., \(R_\lambda=170\)", "0.31", "0.22", "0.29"],
-               [r"swirl exponent, Sassa and Makita (conditional sampling, \(R_\lambda\) 19&ndash;2391)", "0.28", "1/3", "0.13 (all), 0.32 (intense)"],
-               [r"swirl of all tubes at \(Re_\lambda\approx80\), Tanahashi et al. (2001) pdf, mean", "3.7", "3.3", "3.6"],
-               [r"swirl of all tubes at \(Re_\lambda\approx99\), Pirozzoli (2012) pdf, mean", "2.5", "3.6", "3.7"]],
+    import fitmodels
+    kap = next(m for m in models if m["key"] == "D4")["params"][0] / 15 ** 0.25                       # model I: U_max/U_eta = kap Re^(1/2)
+    vf = lambda re: float(fitmodels.budget(5.0, kap * re ** 0.5)["vf"])
+    tab.table(["check", "measured", "model I (D4)", "model II (all tubes)"],
+              [[r"volume fraction of the tubes, Kida et al., \(R_\lambda=83\)", "0.35", "%.2f" % vf(83), "0.35"],
+               [r"volume fraction of the tubes, Kida et al., \(R_\lambda=170\)", "0.31", "%.2f" % vf(170), "0.29"],
+               [r"swirl exponent, Sassa and Makita (conditional sampling, \(R_\lambda\) 19&ndash;2391)", "0.28", "1/2", "0.13 (all), 0.32 (intense)"],
+               [r"swirl of all tubes at \(Re_\lambda\approx80\), Tanahashi et al. (2001) pdf, mean", "3.7", "%.1f" % (kap * 80 ** 0.5), "3.6"],
+               [r"swirl of all tubes at \(Re_\lambda\approx99\), Pirozzoli (2012) pdf, mean", "2.5", "%.1f" % (kap * 99 ** 0.5), "3.7"]],
               r"The volume fraction of the model is \(V_f=(1-75.8/\beta^4)\,\beta^2/(4.91\,U^2)\) with \(\beta=5\).")
     tab.p(r"Kida et al. also report that the vortex cores hold 31% of the dissipation. A Burgers vortex has only 10% of its swirl dissipation inside \(r_{\max}\) (37% inside \(1.5\,r_{\max}\), 61% inside \(2\,r_{\max}\)): most of the dissipation of a tube is in the annulus around the core, as Kida et al. describe. The model's vortex share of the dissipation (88% at \(\beta=5\)) is the whole swirl field, so the two numbers are not in conflict, but they are not a quantitative check either.")
     return tab

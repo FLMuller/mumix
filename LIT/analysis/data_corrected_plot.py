@@ -7,7 +7,8 @@ Multipliers (corrected = m x printed value; interpolated linearly in log Re_lamb
           Ghira et al. 2022 and 2025: radius x 1.25 and swirl x 0.67 (section 9a, from the all-tube population of Pirozzoli 2012).
           Not corrected (no multiplier yet): Mouri 2003 (a range only), Aligolzadeh 2023, the wall flows and the other DNS rows.
 Usage     python data_corrected_plot.py     writes data_corrected_plot.png and data_G_derivation.csv
-Versions  M01 m01.v19 (2026-11-16): data_corrected_fits.json also holds the statistics of the values fitted (min, max, mean, b, weight ratio) and the best model by s.
+Versions  M01 m01.v20 (2026-11-16): writes data_corrected_dots.csv (the dots with the values the fits use) for fittingtool/modelselect.py.
+          M01 m01.v19 (2026-11-16): data_corrected_fits.json also holds the statistics of the values fitted (min, max, mean, b, weight ratio) and the best model by s.
           M01 m01.v18 (2026-11-16): the relative term of the SOS carries the factor b = |(mean^2/max^2 - 1)/(mean^2/min^2 - 1)| of the values fitted (balance()).
           M01 m01.v17 (2026-11-16): SOS = sqrt(S / (N - p)), S = sum((1 - calc/exp)^2) + sum((calc - exp)^2) / mean(exp)^2 (one square root, N - p for p fitted parameters).
           M01 m01.v16 (2026-11-16): SOS per point and dimensionless: sqrt(sum((calc/exp-1)^2)/(N-1)) + sqrt(sum((calc-exp)^2)/(N-1))/mean(exp).
@@ -94,6 +95,26 @@ def sos(calc, exp, p=1):
     return float(np.sqrt((balance(exp) * np.sum((1.0 - calc / exp) ** 2) + np.sum((calc - exp) ** 2) / np.mean(exp) ** 2) / (len(exp) - p)))
 
 
+def write_dots(out, mult):
+    """data_corrected_dots.csv: the dots of the bottom row of the figure (rows with a single Re_lambda) with the values the fits use (the corrected values of Ghira and of the observed rows, the other simulations as read), the multipliers applied,
+    and for the all-tube average of Mouri and Hori the multipliers of the other thresholds (k = 0.25, 0.33, 0.5, 1).  Read by fittingtool/modelselect.py."""
+    allk = load("belin_correctors_all.json")
+    ks = ("0.25", "0.33", "0.5", "1")
+    tabs = {k: (Table([(q["Re_lambda"], q["k=%s" % k]["m_r"]) for q in allk]), Table([(q["Re_lambda"], q["k=%s" % k]["m_U"]) for q in allk])) for k in ks}
+    with open(os.path.join(HERE, "data_corrected_dots.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["id", "src", "reference", "group", "tube_set", "method", "re", "r_raw", "u_raw", "r", "u"] + ["m_r_k%s" % k for k in ks] + ["m_u_k%s" % k for k in ks])
+        for d in out:
+            if d["lo"] is None or d["lo"] != d["hi"]:
+                continue
+            corr = d["corrected"] and (not d["method"].startswith("DNS") or d["src"].startswith("Ghira"))
+            r = (d["r_lo"] if corr else d["r_raw"]) if d["r_raw"] is not None else None
+            u = (d["u_lo"] if corr else d["u_raw"]) if d["u_raw"] is not None else None
+            alt = [[("%.5f" % tabs[k][i](d["lo"])) if d["src"] == "Mouri09" else "" for k in ks] for i in (0, 1)]
+            w.writerow([d["id"], d["src"], d["reference"], d["group"], d["tube_set"], d["method"], d["lo"], "" if d["r_raw"] is None else d["r_raw"], "" if d["u_raw"] is None else d["u_raw"],
+                        "" if r is None else "%.5f" % r, "" if u is None else "%.5f" % u] + alt[0] + alt[1])
+
+
 def fit_trends(out, exclude=(), domain="sos", exclude_ids=()):
     """Trends of r_max/eta and U_max/U_eta with Re_lambda fitted to the dots of the bottom row (the values as plotted there: Ghira and the observed rows corrected, the other DNS as read); the lines (rows with a range of Re_lambda: Belin, Mouri 2003, the range of Sassa) are not used.
     Least squares in the LINEAR domain, SS = sum w (y - model)^2 (domain="log": of ln y, the version of m01.v04); each source has the same weight in each quantity (the weights 1/n of its points, scaled to sum to the number of points).
@@ -175,7 +196,7 @@ def main():
             f = dict(r=mult[key][0], u=mult[key][1] if mult[key][1] else (lambda re: 1.0))
         lo, hi = x["re_lo"], x["re_hi"]
         mid = math.sqrt(lo * hi) if lo is not None else None
-        d = dict(src=x["src"], tube_set=x["tube_set"], method=x["method"], lo=lo, hi=hi, r_raw=x["r_raw"], u_raw=x["u_raw"], gamma_listed=x["gamma_listed"], corrected=bool(key), key=key, id=x["id"])
+        d = dict(src=x["src"], tube_set=x["tube_set"], method=x["method"], lo=lo, hi=hi, r_raw=x["r_raw"], u_raw=x["u_raw"], gamma_listed=x["gamma_listed"], corrected=bool(key), key=key, id=x["id"], reference=x["reference"], group=x["group"])
         if lo is not None:
             d["r_lo"], d["r_hi"] = (None if x["r_raw"] is None else x["r_raw"] * f["r"](lo)), (None if x["r_raw"] is None else x["r_raw"] * f["r"](hi))
             d["u_lo"], d["u_hi"] = (None if x["u_raw"] is None else x["u_raw"] * f["u"](lo)), (None if x["u_raw"] is None else x["u_raw"] * f["u"](hi))
@@ -187,6 +208,7 @@ def main():
     belin["r_cor"] = belin["r_raw"] * np.array([mult["Belin"][0](x) for x in rl])
     belin["u_cor"] = belin["u_raw"] * np.array([mult["Belin"][1](x) for x in rl])
     sources = sorted({d["src"] for d in out})
+    write_dots(out, mult)
     fits = fit_trends(out, exclude_ids=OUTLIER_IDS)                                 # all the dots but the last one of Sassa and Makita
     fits["without_Mouri09"] = fit_trends(out, exclude=("Mouri09",), exclude_ids=OUTLIER_IDS)
     fits["without_left_out"] = fit_trends(out, exclude=("Mouri03", "Mouri04", "Mouri07", "DaSilva11", "Sassa05", "Ishihara13"))      # the rows that the selection of the paper leaves out of the swirl fit

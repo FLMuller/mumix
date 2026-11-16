@@ -1,0 +1,68 @@
+id,src,reference,group,tube_set,method,re,r_raw,u_raw,r,u,m_r_k0.25,m_r_k0.33,m_r_k0.5,m_r_k1,m_u_k0.25,m_u_k0.33,m_u_k0.5,m_u_k1
+1,Sassa05,Sassa and Makita (2005),C,whole,"probe records, conditional sampling",19.0,,2.8,,4.39811,,,,,,,,
+2,Jimenez93,Jiménez et al. (1993),A,intense,"DNS, forced isotropic",35.8,4.7264,3.041,4.72640,3.04100,,,,,,,,
+3,Ghira25,Ghira et al. (2025),A,intense,"DNS, forced isotropic",54.0,4.9534,4.208,6.19175,2.81936,,,,,,,,
+4,Ghira25,Ghira et al. (2025),A,intense,"DNS, forced isotropic",54.0,4.8841,4.2838,6.10513,2.87015,,,,,,,,
+5,Jimenez93,Jiménez et al. (1993),A,intense,"DNS, forced isotropic",62.8,4.6592,3.2919,4.65920,3.29190,,,,,,,,
+6,Tanahashi01,Tanahashi et al. (2001),B,whole,"DNS, mixing layer",80.0,4.5,,4.50000,,,,,,,,,
+7,Kida02,Kida et al. (2002),B,whole,"DNS, forced isotropic",83.0,5.2,3.6425,5.20000,3.64250,,,,,,,,
+8,Ghira22,Ghira et al. (2022),A,intense,"DNS, forced isotropic",90.0,4.9933,6.1151,6.24162,4.09712,,,,,,,,
+9,Jimenez93,Jiménez et al. (1993),A,intense,"DNS, forced isotropic",94.5,4.6592,4.2994,4.65920,4.29940,,,,,,,,
+10,DaSilva11,Da Silva et al. (2011),A,intense,"DNS, isotropic and plane jet",111.0,5.204,3.6816,5.20400,3.68160,,,,,,,,
+11,Wang07,Wang et al. (2007),B,whole,"DNS, mixing layer",115.0,4.0,1.6,4.00000,1.60000,,,,,,,,
+12,DaSilva11,Da Silva et al. (2011),A,intense,"DNS, isotropic and plane jet",120.0,5.3113,4.295,5.31130,4.29500,,,,,,,,
+13,Ghira22,Ghira et al. (2022),A,intense,"DNS, forced isotropic",148.0,4.8343,7.2039,6.04287,4.82661,,,,,,,,
+14,Jimenez93,Jiménez et al. (1993),A,intense,"DNS, forced isotropic",168.1,4.312,5.6483,4.31200,5.64830,,,,,,,,
+15,Kida02,Kida et al. (2002),B,whole,"DNS, forced isotropic",170.0,5.4,3.8775,5.40000,3.87750,,,,,,,,
+16,Aligolzadeh23,Aligolzadeh et al. (2023),C,intense,"3D scanning PIV, water tank",179.0,6.0126,,6.01260,,,,,,,,,
+17,Sassa05,Sassa and Makita (2005),C,whole,"probe records, conditional sampling",190.0,,4.0,,6.82572,,,,,,,,
+18,Ghira22,Ghira et al. (2022),A,intense,"DNS, forced isotropic",191.0,4.734,7.9495,5.91750,5.32616,,,,,,,,
+19,Ghira22,Ghira et al. (2022),A,intense,"DNS, forced isotropic",242.0,4.64,8.4197,5.80000,5.64120,,,,,,,,
+20,Pirozzoli09,"Pirozzoli (2009, 2012)",B,whole,"DNS, isotropic",250.0,5.12,,5.12000,,,,,,,,,
+21,Ghira22,Ghira et al. (2022),A,intense,"DNS, forced isotropic",292.0,4.5486,9.4937,5.68575,6.36078,,,,,,,,
+22,Mouri04,Mouri et al. (2004),C,intense,"hot wire, 1D velocity increments",295.0,6.08,5.23,4.87869,6.46437,,,,,,,,
+23,Sassa05,Sassa and Makita (2005),C,whole,"probe records, conditional sampling",300.0,,4.2,,7.58117,,,,,,,,
+24,Ghira22,Ghira et al. (2022),A,intense,"DNS, forced isotropic",314.0,4.5486,9.4532,5.68575,6.33364,,,,,,,,
+25,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",332.0,8.45,2.43,4.55460,7.48035,0.51144,0.53901,0.58079,0.66967,3.37587,3.07833,2.65954,2.08950
+26,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",332.0,5.18,7.6,5.63441,8.06004,,,,,,,,
+27,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",332.0,6.53,5.61,5.25632,7.08912,,,,,,,,
+28,Ghira22,Ghira et al. (2022),A,intense,"DNS, forced isotropic",399.0,4.5031,10.3861,5.62887,6.95869,,,,,,,,
+29,Mouri04,Mouri et al. (2004),C,intense,"hot wire, 1D velocity increments",430.0,6.04,5.55,4.85284,7.36109,,,,,,,,
+30,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",488.0,8.47,2.39,4.45507,7.69286,0.49947,0.52598,0.56609,0.64974,3.53296,3.21877,2.77622,2.18381
+31,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",488.0,5.24,8.37,5.33444,9.31836,,,,,,,,
+32,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",488.0,6.44,5.98,5.11235,8.13101,,,,,,,,
+33,Sassa05,Sassa and Makita (2005),C,whole,"probe records, conditional sampling",586.0,,3.6,,7.03940,,,,,,,,
+34,Mouri04,Mouri et al. (2004),C,intense,"hot wire, 1D velocity increments",655.0,6.28,6.31,4.84500,9.06962,,,,,,,,
+35,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",716.0,8.59,2.47,4.40146,8.31386,0.48702,0.51239,0.55069,0.62955,3.69982,3.36593,2.89903,2.28175
+36,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",716.0,5.56,9.53,5.20796,11.05192,,,,,,,,
+37,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",716.0,6.92,6.65,5.27375,9.66258,,,,,,,,
+38,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",719.0,8.56,2.43,4.38467,8.18337,0.48687,0.51223,0.55050,0.62930,3.70176,3.36764,2.90048,2.28286
+39,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",719.0,5.21,8.67,4.87781,10.06074,,,,,,,,
+40,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",719.0,6.5,6.11,4.95074,8.88228,,,,,,,,
+41,Sassa05,Sassa and Makita (2005),C,whole,"probe records, conditional sampling",820.0,,2.1,,4.27369,,,,,,,,
+42,Mouri04,Mouri et al. (2004),C,intense,"hot wire, 1D velocity increments",861.0,7.14,7.1,5.29966,10.53856,,,,,,,,
+43,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",945.0,9.21,2.73,4.61804,9.49834,0.47694,0.50142,0.53803,0.61303,3.82869,3.47925,2.99535,2.35525
+44,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",945.0,5.97,10.6,5.41599,12.79242,,,,,,,,
+45,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",945.0,7.38,7.28,5.40384,10.92070,,,,,,,,
+46,Mouri04,Mouri et al. (2004),C,intense,"hot wire, 1D velocity increments",1054.0,6.98,7.73,4.98715,11.74434,,,,,,,,
+47,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",1080.0,8.93,2.83,4.41342,10.01105,0.47122,0.49422,0.53084,0.60358,3.89572,3.53747,3.04496,2.39285
+48,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1080.0,5.66,11.7,4.96091,14.23235,,,,,,,,
+49,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1080.0,7.14,7.83,5.06294,11.93120,,,,,,,,
+50,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",1098.0,8.91,2.56,4.39406,9.07525,0.47043,0.49316,0.52984,0.60227,3.90447,3.54502,3.05139,2.39771
+51,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1098.0,5.64,10.0,4.91345,12.16440,,,,,,,,
+52,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1098.0,6.61,6.83,4.66293,10.42809,,,,,,,,
+53,Ishihara13,"Ishihara et al. (2011, 2013)",B,whole,"DNS, isotropic 4096^3",1131.0,5.0,,5.00000,,,,,,,,,
+54,Mouri04,Mouri et al. (2004),C,intense,"hot wire, 1D velocity increments",1258.0,7.37,8.37,4.97705,12.98780,,,,,,,,
+55,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",1304.0,8.28,2.88,3.99173,10.43571,0.46225,0.48209,0.51953,0.58867,3.99551,3.62351,3.11835,2.44826
+56,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1304.0,6.15,12.8,5.01830,15.57044,,,,,,,,
+57,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1304.0,7.19,8.53,4.79832,13.29216,,,,,,,,
+58,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",1416.0,9.12,2.79,4.34831,10.21453,0.45833,0.47679,0.51459,0.58215,4.03914,3.66112,3.15044,2.47248
+59,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1416.0,5.47,11.3,4.31875,13.74578,,,,,,,,
+60,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1416.0,6.92,7.53,4.49187,11.84746,,,,,,,,
+61,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",1693.0,8.72,2.91,4.06377,10.90710,0.44727,0.46603,0.50292,0.56695,4.13440,3.74814,3.22402,2.52744
+62,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1693.0,5.87,12.8,4.41509,15.64951,,,,,,,,
+63,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1693.0,6.76,8.41,4.28016,13.45686,,,,,,,,
+64,Mouri09,Mouri and Hori (2009),C,whole,"hot wire, 1D velocity increments",1934.0,8.81,3.18,4.03741,12.13139,0.43813,0.45828,0.49389,0.55524,4.20560,3.81490,3.28026,2.56925
+65,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1934.0,6.2,14.0,4.53452,17.21176,,,,,,,,
+66,Mouri07,Mouri et al. (2007),C,intense,"hot wire, 1D velocity increments",1934.0,7.03,9.17,4.42643,14.83614,,,,,,,,
+67,Sassa05,Sassa and Makita (2005),C,whole,"probe records, conditional sampling",2391.0,,6.5,,14.64316,,,,,,,,
